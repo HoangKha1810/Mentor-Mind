@@ -1,16 +1,13 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { NewBookingForm } from '@/components/dashboard/new-booking-form';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function NewBookingPage() {
   return (
-    <WorkspacePage
-      role="student"
+    <DashboardShell
       title="Đặt buổi học"
       subtitle="Chọn mentor, ngày giờ và thêm ghi chú học viên trước khi xác nhận."
-      highlights={[
-        'Xem khung giờ phù hợp với mentor',
-        'Tự động rõ ràng theo múi giờ của học viên',
-        'Admin có thể hỗ trợ điều chỉnh khi lịch học thay đổi',
-      ]}
-    />
+    >
+      <NewBookingForm />
+    </DashboardShell>
   );
 }

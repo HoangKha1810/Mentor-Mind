@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import Link from 'next/link';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -11,12 +12,16 @@ export function WorkspacePage({
   subtitle,
   highlights,
   children,
+  primaryHref,
+  primaryLabel = 'Mở quy trình',
 }: {
   role: 'student' | 'mentor' | 'admin';
   title: string;
   subtitle: string;
   highlights: string[];
   children?: ReactNode;
+  primaryHref?: string;
+  primaryLabel?: string;
 }) {
   return (
     <DashboardShell role={role} title={title} subtitle={subtitle}>
@@ -41,12 +46,24 @@ export function WorkspacePage({
         <Card>
           <CardHeader>
             <CardTitle>Hành động tiếp theo</CardTitle>
-            <CardDescription>Tiếp tục quy trình với bước quan trọng nhất hiện tại.</CardDescription>
+            <CardDescription>
+              {primaryHref
+                ? 'Tiếp tục quy trình với bước quan trọng nhất hiện tại.'
+                : 'Trang này đang chờ dữ liệu hoặc cấu hình từ hệ thống.'}
+            </CardDescription>
           </CardHeader>
-          <Button className="w-full">
-            Mở quy trình chính
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          {primaryHref ? (
+            <Link href={primaryHref}>
+              <Button className="w-full">
+                {primaryLabel}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <Button className="w-full" disabled>
+              Chưa có hành động
+            </Button>
+          )}
         </Card>
       </div>
     </DashboardShell>

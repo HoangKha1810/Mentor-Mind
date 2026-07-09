@@ -1,16 +1,13 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { CodeSubmissionsPanel } from '@/components/dashboard/code-practice-panel';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function SubmissionsPage() {
   return (
-    <WorkspacePage
-      role="student"
+    <DashboardShell
       title="Lịch sử bài nộp"
       subtitle="Xem kết quả chấm, hiệu năng, test chưa đạt và ghi chú cải thiện từ AI."
-      highlights={[
-        'Kết quả đúng/sai cho từng lần nộp',
-        'AI đánh giá theo từng bài nộp',
-        'Theo dõi bài đã giải',
-      ]}
-    />
+    >
+      <CodeSubmissionsPanel />
+    </DashboardShell>
   );
 }

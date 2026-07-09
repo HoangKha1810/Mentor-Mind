@@ -7,11 +7,21 @@ import { authHeaders, apiFetch } from '@/lib/api';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
-export function CodeEditorPanel({ problemId = 'current-problem' }: { problemId?: string }) {
-  const [code, setCode] = useState('function solve(input) {\n  return input;\n}');
+export function CodeEditorPanel({
+  problemId,
+  starterCode = 'function solve(input) {\n  return input;\n}',
+}: {
+  problemId: string;
+  starterCode?: string;
+}) {
+  const [code, setCode] = useState(starterCode);
   const [output, setOutput] = useState('Chạy code để xem kết quả bộ test mẫu.');
 
   async function call(path: string) {
+    if (!problemId) {
+      setOutput('Không tìm thấy ID bài code. Vui lòng mở bài từ danh sách luyện tập.');
+      return;
+    }
     try {
       const result = await apiFetch(path, {
         method: 'POST',

@@ -24,6 +24,8 @@ export class AdminController {
       revenue,
       supportTickets,
       aiLogs,
+      totalRoadmapRequests,
+      activeRoadmaps,
     ] = await this.prisma.$transaction([
       this.prisma.user.count(),
       this.prisma.roadmapRequest.count({ where: { status: 'PENDING_ADMIN_REVIEW' } }),
@@ -37,6 +39,8 @@ export class AdminController {
       this.prisma.payment.aggregate({ _sum: { amount: true }, where: { status: 'PAID' } }),
       this.prisma.supportTicket.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
       this.prisma.aIUsageLog.findMany({ orderBy: { createdAt: 'desc' }, take: 20 }),
+      this.prisma.roadmapRequest.count(),
+      this.prisma.roadmap.count({ where: { status: { in: ['ACTIVE', 'COMPLETED'] } } }),
     ]);
 
     return {
@@ -51,11 +55,11 @@ export class AdminController {
       supportTickets,
       aiLogs,
       conversionFunnel: {
-        visitor: 12800,
-        register: activeStudents + 120,
-        roadmapRequest: pendingRoadmapRequests + 32,
-        consultation: bookingsThisWeek + 18,
-        activePlan: activeStudents,
+        visitor: null,
+        register: activeStudents,
+        roadmapRequest: totalRoadmapRequests,
+        consultation: bookingsThisWeek,
+        activePlan: activeRoadmaps,
       },
     };
   }

@@ -1,13 +1,13 @@
-import { resources } from '@/lib/showcase-data';
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { ResourceSearchPanel } from '@/components/dashboard/resource-search-panel';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function DashboardResourcesPage() {
   return (
-    <WorkspacePage
-      role="student"
+    <DashboardShell
       title="Tài nguyên gợi ý"
-      subtitle="Tìm tài nguyên đã curate và lưu sách, docs, bài viết, dự án hoặc bài luyện tập."
-      highlights={resources}
-    />
+      subtitle="Tìm tài nguyên nội bộ, Tavily và đề xuất AI theo đúng mục tiêu học tập."
+    >
+      <ResourceSearchPanel />
+    </DashboardShell>
   );
 }

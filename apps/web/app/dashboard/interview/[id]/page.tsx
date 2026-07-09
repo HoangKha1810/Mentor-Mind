@@ -1,16 +1,13 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { InterviewSessionPanel } from '@/components/dashboard/interview-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
-export default function InterviewSessionPage() {
+export default function InterviewSessionPage({ params }: { params: { id: string } }) {
   return (
-    <WorkspacePage
-      role="student"
+    <DashboardShell
       title="Buổi phỏng vấn"
       subtitle="Giao diện trả lời dạng chat, có điểm đánh giá, câu trả lời tốt hơn và thao tác kết thúc buổi."
-      highlights={[
-        'Câu hỏi phỏng vấn',
-        'Ô nhập câu trả lời',
-        'Điểm rubric và phản hồi cải thiện câu trả lời',
-      ]}
-    />
+    >
+      <InterviewSessionPanel id={params.id} />
+    </DashboardShell>
   );
 }

@@ -1,14 +1,13 @@
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
-import { formatCurrency } from '@mentormind/shared';
 import { LearningOrbit } from '@/components/home/learning-orbit';
 import { PageShell } from '@/components/layout/page-shell';
+import { PackageBrowser } from '@/components/packages/package-browser';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StaggerContainer, StaggerItem } from '@/components/ui/motion';
-import { packageLevelLabel } from '@/lib/labels';
-import { packages, publicFeatures } from '@/lib/showcase-data';
+import { publicFeatures } from '@/lib/public-content';
 
 export default function HomePage() {
   return (
@@ -99,29 +98,7 @@ export default function HomePage() {
             Xem tất cả gói học
           </Link>
         </div>
-        <StaggerContainer className="grid gap-4 lg:grid-cols-3">
-          {packages.map((pack) => (
-            <StaggerItem key={pack.slug}>
-              <Card>
-                <Badge>{packageLevelLabel(pack.level)}</Badge>
-                <CardHeader className="mt-4">
-                  <CardTitle>{pack.title}</CardTitle>
-                  <CardDescription>{pack.shortDescription}</CardDescription>
-                </CardHeader>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-semibold text-white">
-                    {formatCurrency(pack.price, pack.currency)}
-                  </span>
-                  <Link href={`/packages/${pack.slug}`}>
-                    <Button variant="secondary" size="sm">
-                      Chi tiết
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+        <PackageBrowser compact />
       </section>
     </PageShell>
   );

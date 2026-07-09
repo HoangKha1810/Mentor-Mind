@@ -1,19 +1,19 @@
+import { ResourceSearchPanel } from '@/components/dashboard/resource-search-panel';
 import { PageShell } from '@/components/layout/page-shell';
-import { PublicFeaturePage } from '@/components/layout/public-feature-page';
 
 export default function PublicResourcesPage() {
   return (
     <PageShell>
-      <PublicFeaturePage
-        eyebrow="Tài nguyên"
-        title="Tìm tài nguyên học bằng AI"
-        subtitle="Tìm sách, docs, bài viết, dự án, bài code và gói học phù hợp với mục tiêu của bạn."
-        highlights={[
-          'Ưu tiên tài nguyên đã curate trong hệ thống',
-          'Kết quả bên ngoài được gắn nhãn rõ ràng',
-          'AI giải thích vì sao mỗi tài nguyên hữu ích',
-        ]}
-      />
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-sm font-medium text-secondary">Tài nguyên</p>
+          <h1 className="mt-2 text-4xl font-semibold text-white">Tìm tài nguyên học bằng AI</h1>
+          <p className="mt-3 text-slate-300">
+            Tìm sách, docs, bài viết, dự án, bài code và gói học từ kho nội bộ, Tavily và AI.
+          </p>
+        </div>
+        <ResourceSearchPanel />
+      </section>
     </PageShell>
   );
 }

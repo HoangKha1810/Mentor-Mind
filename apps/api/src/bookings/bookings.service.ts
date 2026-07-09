@@ -88,18 +88,21 @@ export class BookingsService {
     return booking;
   }
 
-  myBookings(user: AuthUser) {
+  async myBookings(user: AuthUser) {
     const where =
       user.role === Role.MENTOR ? { mentorId: user.id } : user.role === Role.STUDENT ? { studentId: user.id } : {};
-    return this.prisma.booking.findMany({ where, orderBy: { startTime: 'desc' } });
+    const bookings = await this.prisma.booking.findMany({ where, orderBy: { startTime: 'desc' } });
+    return this.withPeople(bookings);
   }
 
-  mentorBookings(mentorId: string) {
-    return this.prisma.booking.findMany({ where: { mentorId }, orderBy: { startTime: 'asc' } });
+  async mentorBookings(mentorId: string) {
+    const bookings = await this.prisma.booking.findMany({ where: { mentorId }, orderBy: { startTime: 'asc' } });
+    return this.withPeople(bookings);
   }
 
-  adminBookings() {
-    return this.prisma.booking.findMany({ orderBy: { startTime: 'desc' }, take: 200 });
+  async adminBookings() {
+    const bookings = await this.prisma.booking.findMany({ orderBy: { startTime: 'desc' }, take: 200 });
+    return this.withPeople(bookings);
   }
 
   async updateStatus(user: AuthUser, id: string, input: unknown) {
@@ -226,5 +229,19 @@ export class BookingsService {
       },
     });
     return submission;
+  }
+
+  private async withPeople<T extends { studentId: string; mentorId: string }>(bookings: T[]) {
+    const userIds = [...new Set(bookings.flatMap((booking) => [booking.studentId, booking.mentorId]))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, fullName: true, email: true, avatarUrl: true },
+    });
+    const usersById = new Map(users.map((user) => [user.id, user]));
+    return bookings.map((booking) => ({
+      ...booking,
+      student: usersById.get(booking.studentId) ?? null,
+      mentor: usersById.get(booking.mentorId) ?? null,
+    }));
   }
 }

@@ -1,16 +1,13 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { NotificationsList } from '@/components/dashboard/notifications-list';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function NotificationsPage() {
   return (
-    <WorkspacePage
-      role="student"
+    <DashboardShell
       title="Thông báo"
       subtitle="Duyệt lộ trình, lịch tư vấn, xác nhận buổi học, phản hồi bài tập và trạng thái thanh toán."
-      highlights={[
-        'Nhận cập nhật quan trọng theo đúng thời điểm',
-        'Đánh dấu đã đọc để giữ dashboard gọn gàng',
-        'Mở nhanh đến lộ trình, buổi học, bài tập hoặc thanh toán liên quan',
-      ]}
-    />
+    >
+      <NotificationsList />
+    </DashboardShell>
   );
 }
