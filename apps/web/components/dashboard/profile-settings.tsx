@@ -33,6 +33,8 @@ export function ProfileSettings() {
       weeklyHours: Number(form.get('weeklyHours') || 0) || undefined,
       learningStyle: emptyToUndefined(form.get('learningStyle')),
       budgetRange: emptyToUndefined(form.get('budgetRange')),
+      expectedSalary: emptyToUndefined(form.get('expectedSalary')),
+      preferredLocation: emptyToUndefined(form.get('preferredLocation')),
       timezone: emptyToUndefined(form.get('timezone')),
       bio: emptyToUndefined(form.get('bio')),
     };
@@ -94,6 +96,8 @@ export function ProfileSettings() {
               placeholder="Số giờ mỗi tuần"
             />
             <Input name="budgetRange" defaultValue={profile?.budgetRange ?? ''} placeholder="Ngân sách dự kiến" />
+            <Input name="expectedSalary" defaultValue={profile?.expectedSalary ?? ''} placeholder="Mức lương kỳ vọng" />
+            <Input name="preferredLocation" defaultValue={profile?.preferredLocation ?? ''} placeholder="Địa điểm ưu tiên" />
             <Input name="learningStyle" defaultValue={profile?.learningStyle ?? ''} placeholder="Cách học phù hợp" />
             <Input name="timezone" defaultValue={profile?.timezone ?? 'Asia/Ho_Chi_Minh'} placeholder="Múi giờ" />
           </div>

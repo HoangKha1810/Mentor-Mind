@@ -12,6 +12,8 @@ const updateMeSchema = z.object({
   weeklyHours: z.number().int().positive().optional(),
   learningStyle: z.string().optional(),
   budgetRange: z.string().optional(),
+  expectedSalary: z.string().optional(),
+  preferredLocation: z.string().optional(),
   timezone: z.string().optional(),
   bio: z.string().optional(),
 });
@@ -38,6 +40,8 @@ export class UsersService {
       weeklyHours: body.weeklyHours,
       learningStyle: body.learningStyle,
       budgetRange: body.budgetRange,
+      expectedSalary: body.expectedSalary,
+      preferredLocation: body.preferredLocation,
       timezone: body.timezone,
       bio: body.bio,
     };

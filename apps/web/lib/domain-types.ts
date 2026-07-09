@@ -5,8 +5,11 @@ export type StudentProfile = {
   weeklyHours?: number | null;
   learningStyle?: string | null;
   budgetRange?: string | null;
+  expectedSalary?: string | null;
+  preferredLocation?: string | null;
   timezone?: string | null;
   bio?: string | null;
+  personalContext?: Record<string, unknown> | null;
 };
 
 export type Account = {
@@ -219,6 +222,42 @@ export type FileAsset = {
   size: number;
   url: string;
   createdAt: string;
+};
+
+export type AiContextUpdate = {
+  shouldRemember: boolean;
+  profileUpdates: Partial<StudentProfile>;
+  personalContext: Record<string, unknown>;
+  rememberedFacts: Array<{ label: string; value: string }>;
+};
+
+export type AiMessage = {
+  id?: string;
+  conversationId?: string;
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
+  content: string;
+  metadata?: {
+    contextUpdates?: AiContextUpdate;
+    [key: string]: unknown;
+  };
+  createdAt?: string;
+  pending?: boolean;
+};
+
+export type AiConversation = {
+  id: string;
+  userId: string;
+  title: string;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: AiMessage[];
+};
+
+export type AiChatResponse = {
+  conversationId: string;
+  message: string;
+  contextUpdates: AiContextUpdate;
 };
 
 export type PackageItem = {

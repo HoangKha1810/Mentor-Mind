@@ -252,17 +252,20 @@ model User {
 }
 
 model StudentProfile {
-  id            String  @id @default(cuid())
-  userId        String  @unique
-  targetRole    String?
-  currentLevel  String?
-  goals         String?
-  weeklyHours   Int?
-  learningStyle String?
-  budgetRange   String?
-  timezone      String  @default("Asia/Ho_Chi_Minh")
-  bio           String?
-  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  targetRole        String?
+  currentLevel      String?
+  goals             String?
+  weeklyHours       Int?
+  learningStyle     String?
+  budgetRange       String?
+  expectedSalary    String?
+  preferredLocation String?
+  timezone          String  @default("Asia/Ho_Chi_Minh")
+  bio               String?
+  personalContext   Json?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model MentorProfile {

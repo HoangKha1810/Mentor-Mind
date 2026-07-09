@@ -10,7 +10,7 @@ export class MockAIProvider implements AIProvider {
     const started = Date.now();
     const text =
       input.fallback ??
-      'I can help with your roadmap, interview practice, coding problem, resources, or CV review. Share your target role and current level.';
+      'Mình có thể hỗ trợ lộ trình, luyện phỏng vấn, bài code, tài nguyên và sửa CV. Hãy cho mình biết vai trò mục tiêu, trình độ hiện tại hoặc điều bạn đang vướng.';
     return {
       data: text,
       usage: this.usage(input.prompt, text),

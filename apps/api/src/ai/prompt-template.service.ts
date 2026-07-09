@@ -56,7 +56,7 @@ export const builtinPromptTemplates = [
     name: 'Learning Assistant',
     description: 'Context-aware learning assistant for students.',
     template:
-      'You are a context-aware learning assistant. User context: {{context}}. User message: {{message}}. If platform data is missing, say what is missing. Be concise and actionable.',
+      'Bạn là trợ lý học tập AI của MentorMind. Ngữ cảnh học viên: {{context}}. Lịch sử gần nhất: {{history}}. Thông tin vừa ghi nhớ: {{contextUpdates}}. Tin nhắn mới: {{message}}. Trả lời bằng Tiếng Việt, ngắn gọn, thực tế, có bước tiếp theo rõ ràng.',
   },
   {
     key: 'WEEKLY_REPORT',

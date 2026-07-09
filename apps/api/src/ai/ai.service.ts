@@ -1,5 +1,5 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { AIUsageStatus, PromptTemplate } from '@prisma/client';
+import { AIMessage, AIUsageStatus, Prisma, PromptTemplate } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { AIProvider } from './ai-provider.interface';
@@ -16,6 +16,58 @@ import { resourceRecommendationSchema } from './schemas/resource.schema';
 import { RoadmapDraft, roadmapDraftSchema } from './schemas/roadmap.schema';
 
 export const AI_PROVIDER = Symbol('AI_PROVIDER');
+
+const chatInputSchema = z.object({
+  message: z.string().trim().min(1).max(8000),
+  conversationId: z.string().optional(),
+});
+
+const memoryExtractionSchema = z.object({
+  shouldRemember: z.boolean().default(false),
+  profileUpdates: z
+    .object({
+      targetRole: z.string().nullable().optional(),
+      currentLevel: z.string().nullable().optional(),
+      goals: z.string().nullable().optional(),
+      weeklyHours: z.number().int().positive().nullable().optional(),
+      learningStyle: z.string().nullable().optional(),
+      budgetRange: z.string().nullable().optional(),
+      expectedSalary: z.string().nullable().optional(),
+      preferredLocation: z.string().nullable().optional(),
+      timezone: z.string().nullable().optional(),
+      bio: z.string().nullable().optional(),
+    })
+    .default({}),
+  personalContext: z.record(z.unknown()).default({}),
+  rememberedFacts: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+      }),
+    )
+    .default([]),
+});
+
+type ProfileMemoryUpdates = Partial<{
+  targetRole: string;
+  currentLevel: string;
+  goals: string;
+  weeklyHours: number;
+  learningStyle: string;
+  budgetRange: string;
+  expectedSalary: string;
+  preferredLocation: string;
+  timezone: string;
+  bio: string;
+}>;
+
+type MemoryExtraction = {
+  shouldRemember: boolean;
+  profileUpdates: ProfileMemoryUpdates;
+  personalContext: Record<string, unknown>;
+  rememberedFacts: Array<{ label: string; value: string }>;
+};
 
 @Injectable()
 export class AiService {
@@ -182,15 +234,46 @@ export class AiService {
     );
   }
 
-  async chat(userId: string, message: string, conversationId?: string) {
+  async chat(userId: string, rawMessage: string, conversationId?: string) {
     await this.ensureFeatureAllowed('LEARNING_ASSISTANT', userId);
+    const body = chatInputSchema.parse({ message: rawMessage, conversationId });
+    const conversation =
+      body.conversationId
+        ? await this.prisma.aIConversation.findFirst({ where: { id: body.conversationId, userId } })
+        : null;
+    const previousMessages = conversation
+      ? await this.prisma.aIMessage.findMany({
+          where: { conversationId: conversation.id },
+          orderBy: { createdAt: 'desc' },
+          take: 12,
+        })
+      : [];
+
+    const contextBefore = await this.loadStudentContext(userId);
+    const contextUpdates = await this.extractAndStoreContext(userId, body.message, contextBefore.profile);
     const context = await this.loadStudentContext(userId);
     const template = await this.prompts.getActiveTemplate('LEARNING_ASSISTANT');
-    const prompt = this.prompts.render(template, { message, context });
+    const prompt = `${this.prompts.render(template, {
+      message: body.message,
+      context,
+      history: this.formatConversationHistory(previousMessages),
+      contextUpdates,
+    })}
+
+Bạn là trợ lý học tập AI của MentorMind. Hãy trả lời bằng Tiếng Việt tự nhiên, giống một cuộc chat với mentor kỹ thuật.
+Ngữ cảnh tài khoản hiện tại: ${JSON.stringify(context)}
+Lịch sử hội thoại gần nhất: ${this.formatConversationHistory(previousMessages)}
+Thông tin vừa ghi nhớ từ tin nhắn mới: ${JSON.stringify(contextUpdates.rememberedFacts)}
+Tin nhắn mới của học viên: ${body.message}
+
+Quy tắc:
+- Trả lời trực tiếp, hữu ích, có bước tiếp theo rõ ràng.
+- Nếu vừa ghi nhớ thông tin mới như lương, địa điểm, lịch học, mục tiêu, hãy xác nhận ngắn gọn.
+- Không bịa dữ liệu nền tảng nếu context chưa có.`;
     const result = await this.provider.generateText({
       prompt,
       fallback:
-        'Based on your current context, focus on one measurable next step this week and bring unclear blockers to your mentor session.',
+        'Mình đã nhận câu hỏi của bạn. Dựa trên ngữ cảnh hiện tại, hãy chọn một bước nhỏ có thể làm ngay trong tuần này và lưu lại điểm còn vướng để trao đổi với mentor.',
     });
     await this.usage.log({
       userId,
@@ -201,23 +284,35 @@ export class AiService {
       latencyMs: result.latencyMs,
     });
 
-    const conversation =
-      conversationId
-        ? await this.prisma.aIConversation.findUnique({ where: { id: conversationId } })
-        : null;
     const thread =
       conversation ??
       (await this.prisma.aIConversation.create({
-        data: { userId, title: message.slice(0, 80), type: 'GENERAL' },
+        data: { userId, title: body.message.slice(0, 80), type: 'GENERAL' },
       }));
 
-    await this.prisma.aIMessage.createMany({
-      data: [
-        { conversationId: thread.id, role: 'USER', content: message, metadata: {} },
-        { conversationId: thread.id, role: 'ASSISTANT', content: result.data, metadata: { context } },
-      ],
-    });
-    return { conversationId: thread.id, message: result.data };
+    await this.prisma.$transaction([
+      this.prisma.aIMessage.createMany({
+        data: [
+          {
+            conversationId: thread.id,
+            role: 'USER',
+            content: body.message,
+            metadata: { contextUpdates } as Prisma.InputJsonValue,
+          },
+          {
+            conversationId: thread.id,
+            role: 'ASSISTANT',
+            content: result.data,
+            metadata: { context, contextUpdates } as Prisma.InputJsonValue,
+          },
+        ],
+      }),
+      this.prisma.aIConversation.update({
+        where: { id: thread.id },
+        data: { updatedAt: new Date(), title: thread.title || body.message.slice(0, 80) },
+      }),
+    ]);
+    return { conversationId: thread.id, message: result.data, contextUpdates };
   }
 
   async listPromptTemplates() {
@@ -269,6 +364,399 @@ export class AiService {
       ),
     );
     return this.settings();
+  }
+
+  private async extractAndStoreContext(userId: string, message: string, profile: unknown) {
+    const heuristic = this.heuristicMemoryExtraction(message);
+    if (!this.shouldExtractMemory(message) && !this.hasMemoryUpdate(heuristic)) {
+      return this.emptyMemoryExtraction();
+    }
+
+    const prompt = `Trích xuất thông tin bền vững về học viên để cá nhân hóa MentorMind.
+Chỉ ghi nhớ thông tin người dùng nói rõ về chính họ. Không suy đoán. Không lưu thông tin nhạy cảm không liên quan học tập/nghề nghiệp.
+
+Profile hiện tại: ${JSON.stringify(profile ?? {})}
+Tin nhắn mới: ${message}
+
+Trả về JSON đúng dạng:
+{
+  "shouldRemember": true,
+  "profileUpdates": {
+    "targetRole": "Frontend Intern hoặc null",
+    "currentLevel": "Junior/Fresher/Foundation hoặc null",
+    "goals": "mục tiêu học/nghề nghiệp hoặc null",
+    "weeklyHours": 10,
+    "learningStyle": "cách học phù hợp hoặc null",
+    "budgetRange": "ngân sách/gói học hoặc null",
+    "expectedSalary": "mức lương kỳ vọng hoặc null",
+    "preferredLocation": "địa điểm ưu tiên hoặc null",
+    "timezone": "múi giờ hoặc null",
+    "bio": "ghi chú ngắn về người học hoặc null"
+  },
+  "personalContext": {
+    "expectedSalary": "chuỗi nếu có",
+    "preferredLocation": "chuỗi nếu có",
+    "workMode": "remote/hybrid/onsite nếu có",
+    "availability": "lịch rảnh nếu có",
+    "constraints": ["ràng buộc quan trọng"],
+    "interests": ["mối quan tâm học tập/nghề nghiệp"],
+    "notes": ["sự thật ngắn, bền vững"]
+  },
+  "rememberedFacts": [{"label":"Mức lương kỳ vọng","value":"20 triệu/tháng"}]
+}`;
+
+    let extracted = heuristic;
+    try {
+      const result = await this.provider.generateJson({
+        prompt,
+        schema: memoryExtractionSchema,
+        fallback: heuristic,
+      });
+      await this.usage.log({
+        userId,
+        feature: 'LEARNING_ASSISTANT_CONTEXT',
+        provider: this.provider,
+        usage: result.usage,
+        status: AIUsageStatus.SUCCESS,
+        latencyMs: result.latencyMs,
+      });
+      extracted = this.mergeMemoryExtraction(heuristic, this.parseMemoryExtraction(result.data));
+    } catch (error) {
+      const safe = await this.mockProvider.generateJson({
+        prompt,
+        schema: memoryExtractionSchema,
+        fallback: heuristic,
+      });
+      await this.usage.log({
+        userId,
+        feature: 'LEARNING_ASSISTANT_CONTEXT',
+        provider: this.mockProvider,
+        usage: safe.usage,
+        status: AIUsageStatus.FALLBACK,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        latencyMs: safe.latencyMs,
+      });
+      extracted = this.parseMemoryExtraction(safe.data);
+    }
+
+    const normalized = this.normalizeMemoryExtraction(extracted);
+    if (this.hasMemoryUpdate(normalized)) {
+      await this.applyMemoryExtraction(userId, normalized);
+    }
+    return normalized;
+  }
+
+  private shouldExtractMemory(message: string) {
+    const text = message.toLowerCase();
+    return [
+      'lương',
+      'salary',
+      'thu nhập',
+      'địa điểm',
+      'location',
+      'ở ',
+      'tại ',
+      'remote',
+      'hybrid',
+      'onsite',
+      'mục tiêu',
+      'vai trò',
+      'target role',
+      'trình độ',
+      'level',
+      'ngân sách',
+      'budget',
+      'giờ/tuần',
+      'giờ mỗi tuần',
+      'múi giờ',
+      'timezone',
+      'phong cách học',
+      'cách học',
+      'rảnh',
+      'available',
+    ].some((keyword) => text.includes(keyword));
+  }
+
+  private heuristicMemoryExtraction(message: string): MemoryExtraction {
+    const profileUpdates: MemoryExtraction['profileUpdates'] = {};
+    const personalContext: Record<string, unknown> = {};
+    const rememberedFacts: Array<{ label: string; value: string }> = [];
+
+    const salary = this.matchFirst(message, [
+      /(?:mức lương|lương|salary|thu nhập)(?:\s*(?:mong muốn|kỳ vọng|expected|là|khoảng|:))?\s*([0-9][^,\n.]{0,48}(?:triệu|tr|m|k|usd|vnd|đ|\/tháng|mỗi tháng)?)/i,
+      /([0-9]{1,3}\s*(?:triệu|tr|m|k|usd|vnd|đ)(?:\s*\/\s*tháng)?)/i,
+    ]);
+    if (salary) {
+      profileUpdates.expectedSalary = salary;
+      personalContext.expectedSalary = salary;
+      rememberedFacts.push({ label: 'Mức lương kỳ vọng', value: salary });
+    }
+
+    const location = this.matchFirst(message, [
+      /(?:địa điểm|location|sống ở|đang ở|ở|tại|muốn làm ở|làm việc tại|ưu tiên ở)\s+([A-Za-zÀ-ỹ\s]{2,40})(?=[,.!?\n]|$)/i,
+    ]);
+    if (location) {
+      profileUpdates.preferredLocation = location;
+      personalContext.preferredLocation = location;
+      rememberedFacts.push({ label: 'Địa điểm ưu tiên', value: location });
+    }
+
+    const weeklyHoursText = this.matchFirst(message, [
+      /([0-9]{1,2})\s*(?:giờ|h)\s*(?:\/|mỗi)?\s*(?:tuần|week)/i,
+      /(?:học được|rảnh|available)\s*([0-9]{1,2})\s*(?:giờ|h)/i,
+    ]);
+    if (weeklyHoursText) {
+      const weeklyHours = Number(weeklyHoursText.match(/\d+/)?.[0]);
+      if (weeklyHours > 0) {
+        profileUpdates.weeklyHours = weeklyHours;
+        personalContext.weeklyHours = weeklyHours;
+        rememberedFacts.push({ label: 'Thời gian học mỗi tuần', value: `${weeklyHours} giờ/tuần` });
+      }
+    }
+
+    const role = this.matchFirst(message, [
+      /(?:vai trò mục tiêu|target role|muốn làm|ứng tuyển|vị trí)\s*(?:là|:)?\s*([A-Za-zÀ-ỹ0-9\s/+-]{2,48})(?=[,.!?\n]|$)/i,
+    ]);
+    if (role) {
+      profileUpdates.targetRole = role;
+      rememberedFacts.push({ label: 'Vai trò mục tiêu', value: role });
+    }
+
+    const budget = this.matchFirst(message, [
+      /(?:ngân sách|budget)\s*(?:là|khoảng|:)?\s*([0-9][^,\n.]{0,48}(?:triệu|tr|usd|vnd|đ)?)/i,
+    ]);
+    if (budget) {
+      profileUpdates.budgetRange = budget;
+      personalContext.budgetRange = budget;
+      rememberedFacts.push({ label: 'Ngân sách', value: budget });
+    }
+
+    const workMode = this.matchFirst(message, [/\b(remote|hybrid|onsite|online|offline)\b/i]);
+    if (workMode) {
+      personalContext.workMode = workMode;
+      rememberedFacts.push({ label: 'Hình thức ưu tiên', value: workMode });
+    }
+
+    return this.parseMemoryExtraction({
+      shouldRemember: rememberedFacts.length > 0,
+      profileUpdates,
+      personalContext,
+      rememberedFacts,
+    });
+  }
+
+  private async applyMemoryExtraction(userId: string, extraction: MemoryExtraction) {
+    const current = await this.prisma.studentProfile.findUnique({ where: { userId } });
+    const existingContext = this.asRecord(current?.personalContext);
+    const profileUpdates = this.cleanProfileUpdates(extraction.profileUpdates);
+    const personalContext = this.mergePersonalContext(existingContext, extraction.personalContext);
+    const updateData: Prisma.StudentProfileUncheckedUpdateInput = { ...profileUpdates };
+    if (Object.keys(personalContext).length) {
+      updateData.personalContext = personalContext as Prisma.InputJsonObject;
+    }
+
+    const createData: Prisma.StudentProfileUncheckedCreateInput = { userId, ...profileUpdates };
+    if (Object.keys(personalContext).length) {
+      createData.personalContext = personalContext as Prisma.InputJsonObject;
+    }
+
+    await this.prisma.studentProfile.upsert({
+      where: { userId },
+      create: createData,
+      update: updateData,
+    });
+  }
+
+  private cleanProfileUpdates(profileUpdates: Record<string, unknown>): ProfileMemoryUpdates {
+    const allowedKeys = new Set([
+      'targetRole',
+      'currentLevel',
+      'goals',
+      'weeklyHours',
+      'learningStyle',
+      'budgetRange',
+      'expectedSalary',
+      'preferredLocation',
+      'timezone',
+      'bio',
+    ]);
+    const output: Record<string, string | number> = {};
+    for (const [key, value] of Object.entries(profileUpdates)) {
+      if (!allowedKeys.has(key)) {
+        continue;
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+          output[key] = trimmed;
+        }
+      } else if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        output[key] = Math.round(value);
+      }
+    }
+    return output as ProfileMemoryUpdates;
+  }
+
+  private normalizeMemoryExtraction(extraction: MemoryExtraction): MemoryExtraction {
+    const profileUpdates = this.cleanProfileUpdates(extraction.profileUpdates);
+    const personalContext = this.cleanJsonRecord(extraction.personalContext);
+    if (profileUpdates.expectedSalary && !personalContext.expectedSalary) {
+      personalContext.expectedSalary = profileUpdates.expectedSalary;
+    }
+    if (profileUpdates.preferredLocation && !personalContext.preferredLocation) {
+      personalContext.preferredLocation = profileUpdates.preferredLocation;
+    }
+
+    const generatedFacts = this.factsFromProfileUpdates(profileUpdates);
+    const rememberedFacts = [...extraction.rememberedFacts, ...generatedFacts]
+      .map((fact) => ({ label: fact.label.trim(), value: fact.value.trim() }))
+      .filter((fact) => fact.label && fact.value)
+      .filter(
+        (fact, index, all) =>
+          all.findIndex((item) => item.label === fact.label && item.value === fact.value) === index,
+      )
+      .slice(0, 8);
+
+    return this.parseMemoryExtraction({
+      shouldRemember:
+        extraction.shouldRemember || Object.keys(profileUpdates).length > 0 || Object.keys(personalContext).length > 0,
+      profileUpdates,
+      personalContext,
+      rememberedFacts,
+    });
+  }
+
+  private mergeMemoryExtraction(base: MemoryExtraction, next: MemoryExtraction): MemoryExtraction {
+    return this.parseMemoryExtraction({
+      shouldRemember: base.shouldRemember || next.shouldRemember,
+      profileUpdates: { ...base.profileUpdates, ...next.profileUpdates },
+      personalContext: this.mergePersonalContext(base.personalContext, next.personalContext),
+      rememberedFacts: [...base.rememberedFacts, ...next.rememberedFacts],
+    });
+  }
+
+  private mergePersonalContext(existing: Record<string, unknown>, incoming: Record<string, unknown>) {
+    const cleanIncoming = this.cleanJsonRecord(incoming);
+    const merged: Record<string, unknown> = { ...existing };
+    for (const [key, value] of Object.entries(cleanIncoming)) {
+      const current = merged[key];
+      if (Array.isArray(current) && Array.isArray(value)) {
+        merged[key] = Array.from(new Set([...current, ...value].map((item) => String(item)).filter(Boolean)));
+      } else if (this.isRecord(current) && this.isRecord(value)) {
+        merged[key] = this.mergePersonalContext(current, value);
+      } else {
+        merged[key] = value;
+      }
+    }
+    return this.cleanJsonRecord(merged);
+  }
+
+  private cleanJsonRecord(input: Record<string, unknown>) {
+    const output: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(input)) {
+      const clean = this.cleanJsonValue(value);
+      if (clean !== undefined) {
+        output[key] = clean;
+      }
+    }
+    return output;
+  }
+
+  private cleanJsonValue(value: unknown): unknown {
+    if (value === null || value === undefined) return undefined;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed ? trimmed : undefined;
+    }
+    if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+    if (typeof value === 'boolean') return value;
+    if (Array.isArray(value)) {
+      const clean = value.map((item) => this.cleanJsonValue(item)).filter((item) => item !== undefined);
+      return clean.length ? clean : undefined;
+    }
+    if (this.isRecord(value)) {
+      const clean = this.cleanJsonRecord(value);
+      return Object.keys(clean).length ? clean : undefined;
+    }
+    return undefined;
+  }
+
+  private factsFromProfileUpdates(profileUpdates: ProfileMemoryUpdates) {
+    const labels: Record<string, string> = {
+      targetRole: 'Vai trò mục tiêu',
+      currentLevel: 'Trình độ hiện tại',
+      goals: 'Mục tiêu',
+      weeklyHours: 'Thời gian học mỗi tuần',
+      learningStyle: 'Cách học phù hợp',
+      budgetRange: 'Ngân sách',
+      expectedSalary: 'Mức lương kỳ vọng',
+      preferredLocation: 'Địa điểm ưu tiên',
+      timezone: 'Múi giờ',
+      bio: 'Ghi chú cá nhân',
+    };
+    return Object.entries(profileUpdates)
+      .filter(([, value]) => typeof value === 'string' || typeof value === 'number')
+      .map(([key, value]) => ({
+        label: labels[key] ?? key,
+        value: key === 'weeklyHours' ? `${value} giờ/tuần` : String(value),
+      }));
+  }
+
+  private hasMemoryUpdate(extraction: MemoryExtraction) {
+    return (
+      Object.keys(this.cleanProfileUpdates(extraction.profileUpdates)).length > 0 ||
+      Object.keys(this.cleanJsonRecord(extraction.personalContext)).length > 0
+    );
+  }
+
+  private emptyMemoryExtraction(): MemoryExtraction {
+    return { shouldRemember: false, profileUpdates: {}, personalContext: {}, rememberedFacts: [] };
+  }
+
+  private parseMemoryExtraction(input: unknown): MemoryExtraction {
+    const parsed = memoryExtractionSchema.parse(input);
+    const rememberedFacts = (parsed.rememberedFacts ?? [])
+      .map((fact) => ({
+        label: String(fact.label ?? '').trim(),
+        value: String(fact.value ?? '').trim(),
+      }))
+      .filter((fact) => fact.label && fact.value);
+
+    return {
+      shouldRemember: Boolean(parsed.shouldRemember),
+      profileUpdates: this.cleanProfileUpdates((parsed.profileUpdates ?? {}) as Record<string, unknown>),
+      personalContext: this.cleanJsonRecord((parsed.personalContext ?? {}) as Record<string, unknown>),
+      rememberedFacts,
+    };
+  }
+
+  private formatConversationHistory(messages: AIMessage[]) {
+    return messages
+      .slice()
+      .reverse()
+      .map((message) => {
+        const role = message.role === 'USER' ? 'Học viên' : message.role === 'ASSISTANT' ? 'Trợ lý' : 'Hệ thống';
+        return `${role}: ${message.content.slice(0, 900)}`;
+      })
+      .join('\n');
+  }
+
+  private matchFirst(text: string, patterns: RegExp[]) {
+    for (const pattern of patterns) {
+      const match = text.match(pattern)?.[1]?.trim();
+      if (match) {
+        return match.replace(/\s+/g, ' ');
+      }
+    }
+    return undefined;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> {
+    return this.isRecord(value) ? value : {};
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 
   private async runJson<T>(
