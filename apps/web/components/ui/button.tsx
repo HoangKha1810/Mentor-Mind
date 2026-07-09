@@ -13,11 +13,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', ...props }, ref) => (
     <motion.button
       ref={ref}
-      whileHover={{ y: -2, scale: 1.012 }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={{ y: -2, scale: 1.018, filter: 'brightness(1.06)' }}
+      whileTap={{ scale: 0.97, y: 0, filter: 'brightness(0.96)' }}
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-semibold tracking-normal transition duration-200 focus:outline-none focus:ring-2 focus:ring-success/30 disabled:cursor-not-allowed disabled:opacity-60',
+        'relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full border font-semibold tracking-normal transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-success/30 disabled:cursor-not-allowed disabled:opacity-60',
         variant === 'primary' &&
           'border-transparent bg-[linear-gradient(135deg,#57b846,#18c6a6)] text-white shadow-[0_14px_30px_rgba(87,184,70,0.26)] hover:shadow-[0_18px_42px_rgba(87,184,70,0.34)]',
         variant === 'secondary' &&

@@ -8,13 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StaggerContainer, StaggerItem } from '@/components/ui/motion';
 import { publicFeatures } from '@/lib/public-content';
-
+import { ScrollReveal } from '@/components/ui/scroll-reveal';
+import { GlowingCard } from '@/components/ui/glowing-card';
+import { Particles } from '@/components/ui/particles';
 export default function HomePage() {
   return (
     <PageShell>
       <section className="relative overflow-hidden">
+        <Particles count={50} />
         <div className="grid-fade absolute inset-0" />
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-16 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:pb-20">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-16 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:pb-20">
           <div className="flex flex-col justify-center">
             <Badge className="w-fit text-secondary">
               <Sparkles className="mr-2 h-3.5 w-3.5" />
@@ -54,23 +57,28 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {publicFeatures.map((feature) => (
-            <StaggerItem key={feature.title}>
-              <Card>
-                <feature.icon className="h-6 w-6 text-secondary" />
-                <CardHeader className="mb-0 mt-4">
-                  <CardTitle>{feature.title}</CardTitle>
-                  <CardDescription>{feature.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+        <ScrollReveal delay={0.2} direction="up">
+          <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {publicFeatures.map((feature) => (
+              <StaggerItem key={feature.title}>
+                <GlowingCard className="h-full">
+                  <Card className="border-0 bg-transparent shadow-none">
+                    <feature.icon className="h-6 w-6 text-secondary" />
+                    <CardHeader className="mb-0 mt-4 px-0 pb-0">
+                      <CardTitle>{feature.title}</CardTitle>
+                      <CardDescription>{feature.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </GlowingCard>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </ScrollReveal>
       </section>
 
-      <section className="border-y border-white/8 bg-surface/50">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-5 lg:px-8">
+      <section className="border-y border-white/8 bg-surface/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,212,255,0.05),transparent_50%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-5 lg:px-8">
           {[
             'Cho biết mục tiêu',
             'AI đề xuất kế hoạch',
@@ -78,27 +86,34 @@ export default function HomePage() {
             'Bắt đầu học 1-1',
             'Luyện tập và theo dõi tiến độ',
           ].map((step, index) => (
-            <div key={step} className="rounded-lg border border-white/8 bg-white/[0.03] p-4">
-              <div className="text-sm font-semibold text-secondary">0{index + 1}</div>
-              <div className="mt-3 text-base font-medium text-white">{step}</div>
-            </div>
+            <ScrollReveal key={step} delay={index * 0.1} direction="up">
+              <GlowingCard className="h-full p-5">
+                <div className="text-sm font-semibold text-secondary">0{index + 1}</div>
+                <div className="mt-3 text-base font-medium text-white">{step}</div>
+              </GlowingCard>
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-secondary">Gói học nổi bật</p>
-            <h2 className="mt-2 text-3xl font-semibold text-white">
-              Lộ trình 1-1 cho mục tiêu học thật
-            </h2>
+        <ScrollReveal direction="none">
+          <div className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-secondary">Gói học nổi bật</p>
+              <h2 className="mt-2 text-3xl font-semibold text-white">
+                Lộ trình 1-1 cho mục tiêu học thật
+              </h2>
+            </div>
+            <Link href="/packages" className="hidden text-sm text-secondary md:block hover:text-white transition-colors">
+              Xem tất cả gói học &rarr;
+            </Link>
           </div>
-          <Link href="/packages" className="hidden text-sm text-secondary md:block">
-            Xem tất cả gói học
-          </Link>
-        </div>
-        <PackageBrowser compact />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.2} direction="up">
+          <PackageBrowser compact />
+        </ScrollReveal>
       </section>
     </PageShell>
   );
