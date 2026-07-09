@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Bot, LogIn, Rocket } from 'lucide-react';
+import { LogIn, Rocket } from 'lucide-react';
+import { BrandMark } from '@/components/brand/brand-mark';
 import { Button } from '../ui/button';
 
 const publicLinks: Array<[string, string]> = [
@@ -16,10 +17,8 @@ export function SiteNav() {
     <header className="sticky top-0 z-40 border-b border-white/8 bg-background/[0.82] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-white">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#57b846,#00d4ff)] text-white shadow-[0_10px_24px_rgba(87,184,70,0.22)]">
-            <Bot className="h-5 w-5" />
-          </span>
-          <span className="hidden min-[420px]:inline">MentorMind AI</span>
+          <BrandMark className="h-9 w-9" priority />
+          <span className="hidden min-[420px]:inline">MentorMind</span>
         </Link>
         <nav className="hidden items-center gap-6 lg:flex">
           {publicLinks.map(([label, href]) => (

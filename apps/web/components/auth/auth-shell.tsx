@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
-import { Bot, CheckCircle2, LucideIcon } from 'lucide-react';
+import { CheckCircle2, LucideIcon } from 'lucide-react';
+import { BrandMark } from '@/components/brand/brand-mark';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 
@@ -27,10 +28,8 @@ export function AuthShell({
       <section className="auth-card-shadow grid w-full max-w-5xl overflow-hidden rounded-lg bg-white lg:grid-cols-[1.05fr_0.95fr]">
         <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden bg-[#f8fbff] px-12 py-12 lg:flex">
           <Link href="/" className="flex w-fit items-center gap-3 text-sm font-semibold text-slate-700">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#57b846,#00c6a9)] text-white shadow-[0_14px_30px_rgba(87,184,70,0.28)]">
-              <Bot className="h-5 w-5" />
-            </span>
-            MentorMind AI
+            <BrandMark className="h-10 w-10" priority />
+            MentorMind
           </Link>
 
           <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
@@ -62,10 +61,8 @@ export function AuthShell({
 
         <div className="flex min-h-[620px] flex-col justify-center px-6 py-10 sm:px-10 lg:px-14">
           <Link href="/" className="mb-10 flex w-fit items-center gap-3 text-sm font-semibold text-slate-700 lg:hidden">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#57b846,#00c6a9)] text-white">
-              <Bot className="h-5 w-5" />
-            </span>
-            MentorMind AI
+            <BrandMark className="h-10 w-10" priority />
+            MentorMind
           </Link>
           {children}
           <p className="mt-10 text-center text-sm text-slate-500">

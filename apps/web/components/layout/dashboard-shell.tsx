@@ -15,6 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { BrandMark } from '@/components/brand/brand-mark';
 import { PageTransition } from '../ui/motion';
 
 type NavItem = [label: string, href: string, icon: LucideIcon];
@@ -78,10 +79,8 @@ export function DashboardShell({
       <div className="fixed inset-x-0 top-0 z-30 border-b border-white/8 bg-background/90 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/20 text-secondary">
-              <Bot className="h-4 w-4" />
-            </span>
-            MentorMind AI
+            <BrandMark className="h-8 w-8 rounded-md" priority />
+            MentorMind
           </Link>
           <div className="text-xs text-mutedText">Sẵn sàng vận hành</div>
         </div>
