@@ -35,11 +35,11 @@ const consultationSchema = z.object({
 export class PackagesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: Record<string, string | undefined>) {
+  async list(query: Record<string, string | undefined>, includeDrafts = false) {
     const page = Math.max(Number(query.page ?? 1), 1);
     const limit = Math.min(Math.max(Number(query.limit ?? 12), 1), 50);
     const where: Prisma.TutoringPackageWhereInput = {
-      status: query.includeDrafts === 'true' ? undefined : PackageStatus.PUBLISHED,
+      status: includeDrafts && query.includeDrafts === 'true' ? undefined : PackageStatus.PUBLISHED,
       category: query.category ? (query.category as PackageCategory) : undefined,
       level: query.level ? (query.level as PackageLevel) : undefined,
       featured: query.featured === 'true' ? true : undefined,
@@ -79,6 +79,14 @@ export class PackagesService {
       orderBy: { featured: 'desc' },
     });
     return { ...item, related };
+  }
+
+  async detailById(id: string) {
+    const item = await this.prisma.tutoringPackage.findUnique({ where: { id } });
+    if (!item) {
+      throw new NotFoundException('Package not found');
+    }
+    return item;
   }
 
   async requestConsultation(studentId: string, packageId: string, input: unknown) {

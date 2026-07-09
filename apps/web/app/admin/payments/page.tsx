@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminPaymentsPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminPaymentsPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Thanh toán"
       subtitle="Log thanh toán PayOS, trạng thái giao dịch và đối soát doanh thu."
-      highlights={['Mã tham chiếu PayOS', 'Trạng thái thanh toán', 'Chỉ số doanh thu']}
-    />
+    >
+      <AdminPaymentsPanel />
+    </DashboardShell>
   );
 }

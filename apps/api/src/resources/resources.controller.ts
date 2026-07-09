@@ -34,6 +34,13 @@ export class ResourcesController {
     return this.resources.create(body);
   }
 
+  @Get('admin/resources')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  adminList(@Query() query: Record<string, string | undefined>) {
+    return this.resources.adminList(query);
+  }
+
   @Patch('admin/resources/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)

@@ -68,6 +68,20 @@ export class CodeController {
     return this.code.createProblem(body);
   }
 
+  @Get('admin/code/problems')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  adminProblems(@Query() query: Record<string, string | undefined>) {
+    return this.code.adminProblems(query);
+  }
+
+  @Get('admin/code/problems/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  adminProblem(@Param('id') id: string) {
+    return this.code.adminProblem(id);
+  }
+
   @Patch('admin/code/problems/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)

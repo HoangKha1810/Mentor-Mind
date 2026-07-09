@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminAiCenterPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminAiPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Trung tâm AI"
       subtitle="Biểu đồ sử dụng, chi phí, cuộc gọi lỗi, tình trạng prompt template và trạng thái nhà cung cấp."
-      highlights={['Prompt template', 'Log sử dụng và chi phí', 'Bật/tắt từng tính năng']}
-    />
+    >
+      <AdminAiCenterPanel />
+    </DashboardShell>
   );
 }

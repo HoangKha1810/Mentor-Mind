@@ -20,6 +20,20 @@ export class PackagesController {
     return this.packagesService.detail(slug);
   }
 
+  @Get('admin/packages')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  adminList(@Query() query: Record<string, string | undefined>) {
+    return this.packagesService.list(query, true);
+  }
+
+  @Get('admin/packages/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  adminDetail(@Param('id') id: string) {
+    return this.packagesService.detailById(id);
+  }
+
   @Post('packages/:id/request-consultation')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.STUDENT)

@@ -1,16 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminCodeProblemEditorPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
-export default function EditCodeProblemPage() {
+export default function EditCodeProblemPage({ params }: { params: { id: string } }) {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Sửa bài code"
       subtitle="Cập nhật nội dung bài, tag, test case và trạng thái xuất bản."
-      highlights={[
-        'Không lộ test ẩn',
-        'Giải thích lời giải chỉ dành cho admin',
-        'Trạng thái nháp/đã xuất bản/lưu trữ',
-      ]}
-    />
+    >
+      <AdminCodeProblemEditorPanel id={params.id} />
+    </DashboardShell>
   );
 }

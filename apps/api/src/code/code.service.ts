@@ -88,6 +88,37 @@ export class CodeService {
     return { ...problem, solutionExplanation: undefined };
   }
 
+  async adminProblems(query: Record<string, string | undefined>) {
+    const where: Prisma.CodeProblemWhereInput = {
+      status: query.status as never,
+      difficulty: query.difficulty as never,
+      category: query.category,
+      OR: query.search
+        ? [
+            { title: { contains: query.search, mode: 'insensitive' } },
+            { statement: { contains: query.search, mode: 'insensitive' } },
+          ]
+        : undefined,
+    };
+    return this.prisma.codeProblem.findMany({
+      where,
+      include: { testCases: { orderBy: { order: 'asc' } } },
+      orderBy: [{ status: 'asc' }, { difficulty: 'asc' }, { createdAt: 'desc' }],
+      take: 200,
+    });
+  }
+
+  async adminProblem(id: string) {
+    const problem = await this.prisma.codeProblem.findUnique({
+      where: { id },
+      include: { testCases: { orderBy: { order: 'asc' } } },
+    });
+    if (!problem) {
+      throw new NotFoundException('Problem not found');
+    }
+    return problem;
+  }
+
   async run(problemId: string, input: unknown, includeHidden: boolean) {
     const body = codeRunSchema.parse(input);
     const problem = await this.prisma.codeProblem.findUnique({

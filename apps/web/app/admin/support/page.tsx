@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminSupportPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminSupportPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Hỗ trợ"
       subtitle="Phản hồi yêu cầu của học viên và cập nhật trạng thái/độ ưu tiên."
-      highlights={['Yêu cầu đang mở', 'Admin phụ trách', 'Quy trình trạng thái']}
-    />
+    >
+      <AdminSupportPanel />
+    </DashboardShell>
   );
 }

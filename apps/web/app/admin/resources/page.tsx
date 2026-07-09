@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminResourcesPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminResourcesPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Tài nguyên"
       subtitle="Curate sách, docs, bài viết, video, dự án, bài code và gói học."
-      highlights={['Lưu kết quả tìm kiếm bên ngoài', 'Độ khó và tag', 'Lý do được đề xuất']}
-    />
+    >
+      <AdminResourcesPanel />
+    </DashboardShell>
   );
 }

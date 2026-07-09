@@ -1,16 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminPackageEditorPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function NewPackagePage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Tạo gói học"
       subtitle="Editor cho outcome, kỹ năng, loại mentor, giá và trạng thái publish."
-      highlights={[
-        'Tiêu đề và slug',
-        'Đối tượng và vai trò mục tiêu',
-        'Cấu hình hero và cờ nổi bật',
-      ]}
-    />
+    >
+      <AdminPackageEditorPanel />
+    </DashboardShell>
   );
 }

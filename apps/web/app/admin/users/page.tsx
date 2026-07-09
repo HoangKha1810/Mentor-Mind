@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminUsersPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminUsersPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Người dùng"
       subtitle="Quản lý học viên, mentor và admin với bộ lọc role/trạng thái."
-      highlights={['Bảng người dùng', 'Bộ lọc role và trạng thái', 'Khóa hoặc kích hoạt tài khoản']}
-    />
+    >
+      <AdminUsersPanel />
+    </DashboardShell>
   );
 }

@@ -1,16 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminAiUsagePanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminAiUsagePage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Log sử dụng AI"
       subtitle="Theo dõi mức sử dụng AI, chi phí, độ trễ và chất lượng phản hồi theo từng tính năng."
-      highlights={[
-        'Chi phí theo tính năng',
-        'Cảnh báo lỗi hoặc phản hồi không đúng định dạng',
-        'Kiểm soát ngân sách theo người dùng mỗi ngày',
-      ]}
-    />
+    >
+      <AdminAiUsagePanel />
+    </DashboardShell>
   );
 }

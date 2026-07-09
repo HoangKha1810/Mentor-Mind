@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminPackagesPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminPackagesPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Gói học"
       subtitle="Tạo, sửa, publish, archive và xóa gói học 1-1."
-      highlights={['Bảng quản lý gói học', 'Cờ nổi bật và giá', 'Outcome theo tuần và công cụ AI']}
-    />
+    >
+      <AdminPackagesPanel />
+    </DashboardShell>
   );
 }

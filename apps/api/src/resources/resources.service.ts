@@ -47,6 +47,23 @@ export class ResourcesService {
     return this.prisma.resource.findMany({ where, orderBy: { createdAt: 'desc' }, take: 100 });
   }
 
+  adminList(query: Record<string, string | undefined>) {
+    const where: Prisma.ResourceWhereInput = {
+      status: query.status as never,
+      type: query.type as never,
+      difficulty: query.difficulty as never,
+      category: query.category,
+      OR: query.search
+        ? [
+            { title: { contains: query.search, mode: 'insensitive' } },
+            { description: { contains: query.search, mode: 'insensitive' } },
+            { category: { contains: query.search, mode: 'insensitive' } },
+          ]
+        : undefined,
+    };
+    return this.prisma.resource.findMany({ where, orderBy: { createdAt: 'desc' }, take: 200 });
+  }
+
   async search(studentId: string | undefined, body: { query: string; level?: string; goal?: string }) {
     const query = body.query?.trim();
     const internal = await this.prisma.resource.findMany({

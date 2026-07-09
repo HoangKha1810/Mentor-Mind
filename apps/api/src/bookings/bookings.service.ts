@@ -100,6 +100,82 @@ export class BookingsService {
     return this.withPeople(bookings);
   }
 
+  async mentorBookingDetail(mentorId: string, id: string) {
+    const booking = await this.prisma.booking.findUnique({ where: { id } });
+    if (!booking || booking.mentorId !== mentorId) {
+      throw new NotFoundException('Booking not found');
+    }
+    const [withPeople] = await this.withPeople([booking]);
+    const [notes, homework] = await this.prisma.$transaction([
+      this.prisma.sessionNote.findMany({ where: { bookingId: id }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.homework.findMany({
+        where: { bookingId: id },
+        include: { submissions: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+    return { booking: withPeople, notes, homework };
+  }
+
+  async mentorStudents(mentorId: string) {
+    const bookings = await this.prisma.booking.findMany({ where: { mentorId }, orderBy: { startTime: 'desc' } });
+    const studentIds = [...new Set(bookings.map((booking) => booking.studentId))];
+    const students = await this.prisma.user.findMany({
+      where: { id: { in: studentIds } },
+      select: { id: true, email: true, fullName: true, avatarUrl: true, studentProfile: true, lastLoginAt: true },
+      orderBy: { fullName: 'asc' },
+    });
+    return students.map((student) => ({
+      ...student,
+      bookingCount: bookings.filter((booking) => booking.studentId === student.id).length,
+      latestBooking: bookings.find((booking) => booking.studentId === student.id) ?? null,
+    }));
+  }
+
+  async mentorStudentDetail(mentorId: string, studentId: string) {
+    const allowed = await this.prisma.booking.findFirst({ where: { mentorId, studentId } });
+    if (!allowed) {
+      throw new NotFoundException('Student not found');
+    }
+    const [student, bookings, roadmaps, homework] = await this.prisma.$transaction([
+      this.prisma.user.findUnique({
+        where: { id: studentId },
+        select: { id: true, email: true, fullName: true, avatarUrl: true, studentProfile: true, lastLoginAt: true },
+      }),
+      this.prisma.booking.findMany({ where: { mentorId, studentId }, orderBy: { startTime: 'desc' } }),
+      this.prisma.roadmap.findMany({
+        where: { studentId, mentorId },
+        include: { weeks: { orderBy: { weekNumber: 'asc' } }, items: { orderBy: { order: 'asc' } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.homework.findMany({
+        where: { mentorId, studentId },
+        include: { submissions: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    return { student, bookings: await this.withPeople(bookings), roadmaps, homework };
+  }
+
+  async mentorHomework(mentorId: string) {
+    const homework = await this.prisma.homework.findMany({
+      where: { mentorId },
+      include: { submissions: { orderBy: { createdAt: 'desc' } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    const studentIds = [...new Set(homework.map((item) => item.studentId))];
+    const students = await this.prisma.user.findMany({
+      where: { id: { in: studentIds } },
+      select: { id: true, email: true, fullName: true, avatarUrl: true },
+    });
+    const studentsById = new Map(students.map((student) => [student.id, student]));
+    return homework.map((item) => ({ ...item, student: studentsById.get(item.studentId) ?? null }));
+  }
+
   async adminBookings() {
     const bookings = await this.prisma.booking.findMany({ orderBy: { startTime: 'desc' }, take: 200 });
     return this.withPeople(bookings);

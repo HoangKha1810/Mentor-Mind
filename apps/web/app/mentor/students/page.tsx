@@ -1,16 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { MentorStudentsPanel } from '@/components/mentor/mentor-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function MentorStudentsPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="mentor"
       title="Học viên phụ trách"
       subtitle="Xem mục tiêu, trình độ, lộ trình, điểm yếu và hoạt động gần đây của học viên."
-      highlights={[
-        'Tóm tắt hồ sơ học viên',
-        'Lộ trình và bài tập đang hoạt động',
-        'Insight rủi ro do AI gợi ý',
-      ]}
-    />
+    >
+      <MentorStudentsPanel />
+    </DashboardShell>
   );
 }

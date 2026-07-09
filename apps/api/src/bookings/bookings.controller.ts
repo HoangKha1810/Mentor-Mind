@@ -15,6 +15,13 @@ export class BookingsController {
     return this.bookings.mentors();
   }
 
+  @Get('mentors/me/availability')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MENTOR)
+  myAvailability(@CurrentUser() user: AuthUser) {
+    return this.bookings.availability(user.id);
+  }
+
   @Get('mentors/:id/availability')
   mentorAvailability(@Param('id') id: string) {
     return this.bookings.availability(id);
@@ -45,6 +52,34 @@ export class BookingsController {
   @Roles(Role.MENTOR)
   mentorBookings(@CurrentUser() user: AuthUser) {
     return this.bookings.mentorBookings(user.id);
+  }
+
+  @Get('mentor/bookings/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MENTOR)
+  mentorBookingDetail(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.bookings.mentorBookingDetail(user.id, id);
+  }
+
+  @Get('mentor/students')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MENTOR)
+  mentorStudents(@CurrentUser() user: AuthUser) {
+    return this.bookings.mentorStudents(user.id);
+  }
+
+  @Get('mentor/students/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MENTOR)
+  mentorStudentDetail(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.bookings.mentorStudentDetail(user.id, id);
+  }
+
+  @Get('mentor/homework')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MENTOR)
+  mentorHomework(@CurrentUser() user: AuthUser) {
+    return this.bookings.mentorHomework(user.id);
   }
 
   @Get('admin/bookings')

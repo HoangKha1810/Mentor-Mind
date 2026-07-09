@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminPackageEditorPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
-export default function EditPackagePage() {
+export default function EditPackagePage({ params }: { params: { id: string } }) {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Sửa gói học"
       subtitle="Cập nhật chi tiết gói, trạng thái và thông điệp tư vấn."
-      highlights={['Nháp/publish/archive', 'Giá và số buổi', 'Công cụ AI đi kèm']}
-    />
+    >
+      <AdminPackageEditorPanel id={params.id} />
+    </DashboardShell>
   );
 }

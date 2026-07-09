@@ -1,12 +1,14 @@
-import { WorkspacePage } from '@/components/layout/workspace-page';
+import { AdminRoadmapRequestsPanel } from '@/components/admin/admin-panels';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
 
 export default function AdminRoadmapRequestsPage() {
   return (
-    <WorkspacePage
+    <DashboardShell
       role="admin"
       title="Yêu cầu lộ trình"
       subtitle="Duyệt bản nháp AI, phân mentor, lên lịch tư vấn và duyệt kế hoạch cuối."
-      highlights={['Bộ lọc trạng thái', 'Bộ lọc admin/mentor phụ trách', 'Hàng chờ duyệt']}
-    />
+    >
+      <AdminRoadmapRequestsPanel />
+    </DashboardShell>
   );
 }
