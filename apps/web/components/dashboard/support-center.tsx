@@ -19,7 +19,8 @@ export function SupportCenter() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await apiFetch('/support/tickets', {
         method: 'POST',
@@ -30,7 +31,7 @@ export function SupportCenter() {
           priority: form.get('priority') || 'MEDIUM',
         }),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       setMessage('Đã gửi yêu cầu hỗ trợ. Admin sẽ xử lý trên hệ thống.');
       query.reload();
     } catch (error) {

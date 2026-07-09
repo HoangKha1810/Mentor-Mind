@@ -204,8 +204,20 @@ export type ResourceItem = {
 export type CvReview = {
   id: string;
   targetRole?: string;
+  cvAssetId?: string | null;
+  jdAssetId?: string | null;
   overallScore: number;
   result: unknown;
+  createdAt: string;
+};
+
+export type FileAsset = {
+  id: string;
+  ownerId: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
   createdAt: string;
 };
 

@@ -31,7 +31,8 @@ export function NewBookingForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await apiFetch('/bookings', {
         method: 'POST',
@@ -45,7 +46,7 @@ export function NewBookingForm() {
         }),
       });
       setMessage('Đã tạo yêu cầu đặt lịch. Trạng thái sẽ cập nhật trong lịch học.');
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Không đặt được buổi học');
     }

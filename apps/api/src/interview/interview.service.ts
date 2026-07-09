@@ -93,7 +93,7 @@ export class InterviewService {
       data: {
         overallScore,
         feedback: {
-          summary: 'Review your lowest-scoring answers first, then practice one stronger example story.',
+          summary: 'Hãy xem lại các câu có điểm thấp trước, sau đó luyện một câu chuyện ví dụ mạnh hơn.',
           weakAreas: session.answers.filter((answer) => answer.score < 7).map((answer) => answer.question),
         },
         completedAt: new Date(),

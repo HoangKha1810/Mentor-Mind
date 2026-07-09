@@ -14,7 +14,7 @@ export const builtinPromptTemplates = [
     name: 'Interview Answer Evaluation',
     description: 'Evaluate interview answer by rubric.',
     template:
-      'Evaluate this {{mode}} interview answer for {{targetRole}} at {{level}} level. Question: {{question}}. Answer: {{answer}}. Score 1-10 for correctness, clarity, structure, depth, relevance, confidence, examples, communication, role fit. Output JSON only.',
+      'Đánh giá câu trả lời phỏng vấn {{mode}} cho vị trí {{targetRole}}, level {{level}}. Câu hỏi: {{question}}. Câu trả lời: {{answer}}. Chấm 1-10 cho correctness, clarity, structure, depth, relevance, confidence, examples, communication, roleFit. Trả về JSON only, toàn bộ nội dung chuỗi bằng Tiếng Việt.',
   },
   {
     key: 'INTERVIEW_QUESTION_GENERATION',
@@ -49,7 +49,7 @@ export const builtinPromptTemplates = [
     name: 'CV Review',
     description: 'Review CV/portfolio against target role/JD.',
     template:
-      'Review this CV/portfolio for role {{targetRole}}. CV: {{cvText}}. JD: {{jdText}}. Portfolio: {{portfolioUrl}}. GitHub: {{githubUrl}}. Score, missing keywords, better bullets, project improvements, interview risks and roadmap/package recommendation. Output JSON only.',
+      'Phân tích CV/portfolio cho vị trí {{targetRole}}. CV: {{cvText}}. JD: {{jdText}}. Portfolio: {{portfolioUrl}}. GitHub: {{githubUrl}}. Chấm điểm, chỉ ra keyword thiếu, bullet nên viết lại, cải thiện dự án, rủi ro khi phỏng vấn và đề xuất lộ trình/gói học. Trả về JSON only, toàn bộ nội dung chuỗi bằng Tiếng Việt.',
   },
   {
     key: 'LEARNING_ASSISTANT',
@@ -81,6 +81,9 @@ export class PromptTemplateService {
 
   render(template: string, variables: Record<string, unknown>) {
     return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
+      if (key === 'input') {
+        return JSON.stringify(variables);
+      }
       const value = variables[key];
       if (value === undefined || value === null) {
         return '';

@@ -706,14 +706,15 @@ function AdminJsonCrudPanel<T extends { id?: string; title?: string; name?: stri
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
+    const formElement = event.currentTarget;
     try {
       await apiFetch(createPath, {
         method: 'POST',
         headers: authHeaders(),
-        body: String(new FormData(event.currentTarget).get('json')),
+        body: String(new FormData(formElement).get('json')),
       });
       setMessage('Đã tạo bản ghi.');
-      event.currentTarget.reset();
+      formElement.reset();
       query.reload();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Không tạo được bản ghi');

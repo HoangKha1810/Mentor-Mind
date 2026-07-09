@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 type ApiResponse<T> = {
   success: boolean;
@@ -19,6 +19,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const json = (await response.json()) as ApiResponse<T>;
   if (!response.ok || !json.success) {
     throw new Error(json.error?.message ?? 'Yêu cầu thất bại');
+  }
+  return json.data as T;
+}
+
+export async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: authHeaders(),
+    credentials: 'include',
+    cache: 'no-store',
+    body: form,
+  });
+  const json = (await response.json()) as ApiResponse<T>;
+  if (!response.ok || !json.success) {
+    throw new Error(json.error?.message ?? 'Tải file thất bại');
   }
   return json.data as T;
 }

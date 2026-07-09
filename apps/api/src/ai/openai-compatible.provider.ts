@@ -89,7 +89,7 @@ export class OpenAICompatibleProvider implements AIProvider {
           {
             role: 'system',
             content:
-              'You are MentorMind AI, a careful senior learning consultant. Be accurate, practical, and structured.',
+              'You are MentorMind AI, a careful senior learning consultant. Be accurate, practical, structured, and answer in Vietnamese unless the user explicitly requests another language.',
           },
           { role: 'user', content: prompt },
         ],

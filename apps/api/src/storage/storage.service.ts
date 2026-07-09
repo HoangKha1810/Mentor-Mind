@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { FileAsset, Role } from '@prisma/client';
+import { readFile } from 'fs/promises';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { LocalStorageProvider } from './local-storage.provider';
@@ -58,5 +59,17 @@ export class StorageService {
       throw new ForbiddenException('You cannot download this file');
     }
     return { asset, path: this.storage.pathForKey(asset.storageKey) };
+  }
+
+  async getOwnedAsset(ownerId: string, assetId: string) {
+    const asset = await this.prisma.fileAsset.findFirst({ where: { id: assetId, ownerId } });
+    if (!asset) {
+      throw new NotFoundException('File not found');
+    }
+    return asset;
+  }
+
+  readAssetBuffer(asset: FileAsset) {
+    return readFile(this.storage.pathForKey(asset.storageKey));
   }
 }

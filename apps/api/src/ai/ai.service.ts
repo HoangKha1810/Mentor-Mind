@@ -46,11 +46,11 @@ export class AiService {
       interviewEvaluationSchema,
       {
         score: 7,
-        strengths: ['Clear intent', 'Relevant technical vocabulary'],
-        weaknesses: ['Add a concrete example', 'State trade-offs more explicitly'],
+        strengths: ['Mục tiêu trả lời rõ ràng', 'Có dùng từ vựng kỹ thuật liên quan'],
+        weaknesses: ['Cần bổ sung ví dụ cụ thể', 'Nên nêu rõ các đánh đổi kỹ thuật hơn'],
         betterAnswer:
-          'A stronger answer would define the concept, explain why it matters, then connect it to a project example and trade-offs.',
-        nextPracticeSuggestion: 'Practice answering with Situation, Action, Result and one technical detail.',
+          'Câu trả lời tốt hơn nên định nghĩa ý chính, giải thích vì sao nó quan trọng, rồi liên hệ với một dự án cụ thể và các đánh đổi đã cân nhắc.',
+        nextPracticeSuggestion: 'Luyện trả lời theo cấu trúc Tình huống, Hành động, Kết quả và thêm một chi tiết kỹ thuật.',
         rubric: {
           correctness: 7,
           clarity: 7,
@@ -167,16 +167,16 @@ export class AiService {
       cvReviewSchema,
       {
         overallScore: 72,
-        strengths: ['Clear project ownership', 'Relevant technical stack'],
-        weaknesses: ['Impact metrics are vague', 'Missing role-specific keywords'],
+        strengths: ['Thể hiện được vai trò trong dự án', 'Tech stack liên quan đến vị trí mục tiêu'],
+        weaknesses: ['Chỉ số tác động còn mơ hồ', 'Thiếu keyword đúng với JD/vai trò mục tiêu'],
         missingKeywords: ['testing', 'performance', 'accessibility', 'deployment'],
-        projectSuggestions: ['Add one production-style project with auth, database, and tests'],
+        projectSuggestions: ['Bổ sung một dự án gần production có xác thực, database, test và deployment'],
         betterBulletPoints: [
-          'Built a React dashboard with role-based views, reducing manual tracking time by 30%.',
+          'Xây dựng dashboard React có phân quyền theo vai trò, giúp giảm 30% thời gian theo dõi thủ công.',
         ],
-        interviewRiskAreas: ['System design trade-offs', 'Explaining business impact'],
-        recommendedTutoringPackage: 'CV + Portfolio Career Coaching',
-        recommendedRoadmapItems: ['Rewrite project bullets', 'Add deployment notes', 'Mock interview'],
+        interviewRiskAreas: ['Giải thích trade-off thiết kế hệ thống', 'Trình bày tác động sản phẩm/kinh doanh'],
+        recommendedTutoringPackage: 'Coaching CV và Portfolio',
+        recommendedRoadmapItems: ['Viết lại bullet dự án', 'Bổ sung ghi chú deployment', 'Luyện phỏng vấn thử'],
       },
       userId,
     );
@@ -281,7 +281,9 @@ export class AiService {
   ): Promise<T> {
     await this.ensureFeatureAllowed(feature, userId);
     const template = await this.prompts.getActiveTemplate(promptKey);
-    const prompt = this.prompts.render(template, variables);
+    const prompt = `${this.prompts.render(template, variables)}
+
+Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu output là JSON, mọi chuỗi trong JSON phải là Tiếng Việt, giữ nguyên key theo schema.`;
 
     try {
       const result = await this.provider.generateJson({ prompt, schema, fallback });
@@ -297,7 +299,7 @@ export class AiService {
     } catch (error) {
       try {
         const retry = await this.provider.generateJson({
-          prompt: `${prompt}\n\nYour previous response was invalid. Return JSON matching the schema exactly.`,
+          prompt: `${prompt}\n\nPhản hồi trước không đúng định dạng. Chỉ trả về JSON hợp lệ đúng schema, không thêm markdown.`,
           schema,
           fallback,
         });

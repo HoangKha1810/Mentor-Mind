@@ -28,7 +28,8 @@ export function PackageDetail({ slug }: { slug: string }) {
       setMessage('Vui lòng đăng nhập để gửi yêu cầu tư vấn.');
       return;
     }
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await apiFetch(`/packages/${query.data.id}/request-consultation`, {
         method: 'POST',
@@ -36,7 +37,7 @@ export function PackageDetail({ slug }: { slug: string }) {
         body: JSON.stringify({ message: form.get('message') }),
       });
       setMessage('Đã gửi yêu cầu tư vấn. Trạng thái sẽ được theo dõi trong hệ thống.');
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Không gửi được yêu cầu tư vấn');
     }

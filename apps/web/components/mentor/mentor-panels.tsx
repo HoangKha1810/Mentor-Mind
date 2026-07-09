@@ -294,7 +294,8 @@ export function MentorSessionDetailPanel({ id }: { id: string }) {
   async function addNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await apiFetch(`/sessions/${id}/notes`, {
         method: 'POST',
@@ -307,7 +308,7 @@ export function MentorSessionDetailPanel({ id }: { id: string }) {
           privateNote: optional(form.get('privateNote')),
         }),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       setMessage('Đã lưu ghi chú buổi học.');
       query.reload();
     } catch (error) {
@@ -318,7 +319,8 @@ export function MentorSessionDetailPanel({ id }: { id: string }) {
   async function addHomework(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await apiFetch(`/sessions/${id}/homework`, {
         method: 'POST',
@@ -329,7 +331,7 @@ export function MentorSessionDetailPanel({ id }: { id: string }) {
           dueDate: new Date(String(form.get('dueDate'))).toISOString(),
         }),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       setMessage('Đã giao bài tập.');
       query.reload();
     } catch (error) {
