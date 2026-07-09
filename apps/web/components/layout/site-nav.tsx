@@ -13,10 +13,10 @@ const publicLinks: Array<[string, string]> = [
 
 export function SiteNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/8 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-white/8 bg-background/[0.82] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-white">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/20 text-secondary">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#57b846,#00d4ff)] text-white shadow-[0_10px_24px_rgba(87,184,70,0.22)]">
             <Bot className="h-5 w-5" />
           </span>
           <span className="hidden min-[420px]:inline">MentorMind AI</span>
@@ -26,7 +26,7 @@ export function SiteNav() {
             <Link
               key={href}
               href={href}
-              className="text-sm text-slate-300 transition hover:text-white"
+              className="rounded-full px-3 py-2 text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
             >
               {label}
             </Link>

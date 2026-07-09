@@ -2,6 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/poppins/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/poppins/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/poppins/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/poppins/Poppins-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/montserrat/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
 }
@@ -18,10 +58,11 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 10%, rgba(0, 212, 255, 0.14), transparent 28rem),
-    radial-gradient(circle at 75% 0%, rgba(109, 93, 254, 0.18), transparent 30rem), #07111f;
+    radial-gradient(circle at 12% 8%, rgba(0, 212, 255, 0.16), transparent 26rem),
+    radial-gradient(circle at 88% 4%, rgba(87, 184, 70, 0.1), transparent 22rem),
+    radial-gradient(circle at 72% 38%, rgba(109, 93, 254, 0.16), transparent 28rem), #07111f;
   color: #f8fafc;
-  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  font-family: 'Poppins', var(--font-geist-sans), Inter, system-ui, sans-serif;
 }
 
 button,
@@ -37,8 +78,11 @@ select {
 
 .glass {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(135deg, rgba(17, 30, 51, 0.84), rgba(11, 22, 40, 0.72));
-  backdrop-filter: blur(18px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    linear-gradient(135deg, rgba(17, 30, 51, 0.9), rgba(11, 22, 40, 0.76));
+  backdrop-filter: blur(20px);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.22);
 }
 
 .grid-fade {
@@ -47,4 +91,21 @@ select {
     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 42px 42px;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent 75%);
+}
+
+.auth-gradient {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.28), transparent 18rem),
+    radial-gradient(circle at 80% 18%, rgba(87, 184, 70, 0.18), transparent 20rem),
+    linear-gradient(135deg, #c850c0 0%, #6d5dfe 46%, #4158d0 100%);
+}
+
+.auth-card-shadow {
+  box-shadow:
+    0 24px 90px rgba(27, 35, 82, 0.26),
+    0 12px 30px rgba(65, 88, 208, 0.18);
+}
+
+.font-display {
+  font-family: 'Montserrat', 'Poppins', var(--font-geist-sans), system-ui, sans-serif;
 }

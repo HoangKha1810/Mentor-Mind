@@ -13,22 +13,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', ...props }, ref) => (
     <motion.button
       ref={ref}
-      whileHover={{ y: -2, scale: 1.015 }}
+      whileHover={{ y: -2, scale: 1.012 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md border font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-secondary/40 disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-semibold tracking-normal transition duration-200 focus:outline-none focus:ring-2 focus:ring-success/30 disabled:cursor-not-allowed disabled:opacity-60',
         variant === 'primary' &&
-          'border-primary/60 bg-primary px-5 text-white shadow-glow hover:bg-primary/90 hover:shadow-[0_0_38px_rgba(109,93,254,0.34)]',
+          'border-transparent bg-[linear-gradient(135deg,#57b846,#18c6a6)] text-white shadow-[0_14px_30px_rgba(87,184,70,0.26)] hover:shadow-[0_18px_42px_rgba(87,184,70,0.34)]',
         variant === 'secondary' &&
-          'border-secondary/50 bg-secondary/12 px-5 text-secondary hover:bg-secondary/18',
+          'border-secondary/40 bg-secondary/12 text-secondary shadow-[0_10px_28px_rgba(0,212,255,0.12)] hover:bg-secondary/18',
         variant === 'ghost' &&
-          'border-transparent bg-transparent px-4 text-slate-200 hover:bg-white/8',
+          'border-transparent bg-transparent text-slate-200 hover:bg-white/8',
         variant === 'outline' &&
-          'border-white/12 bg-white/[0.03] px-5 text-slate-100 hover:bg-white/[0.07]',
-        size === 'sm' && 'h-9 text-sm',
-        size === 'md' && 'h-11 text-sm',
-        size === 'lg' && 'h-12 text-base',
+          'border-white/12 bg-white/[0.04] text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20 hover:bg-white/[0.08]',
+        size === 'sm' && 'h-9 px-4 text-xs',
+        size === 'md' && 'h-11 px-5 text-sm',
+        size === 'lg' && 'h-12 px-7 text-base',
         size === 'icon' && 'h-10 w-10 p-0',
         className,
       )}

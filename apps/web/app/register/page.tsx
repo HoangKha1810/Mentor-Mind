@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { LockKeyhole, Mail, Target, UserRound } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
-import { PageShell } from '@/components/layout/page-shell';
+import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,31 +34,32 @@ export default function RegisterPage() {
   }
 
   return (
-    <PageShell>
-      <section className="mx-auto flex max-w-md px-4 py-16">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Tạo tài khoản học viên</CardTitle>
-            <CardDescription>
-              Bắt đầu bằng bản nháp AI, sau đó admin hoặc mentor sẽ duyệt thành kế hoạch học thật.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={submit} className="space-y-4">
-            <Input name="fullName" placeholder="Họ và tên" required />
-            <Input name="email" type="email" placeholder="you@example.com" required />
-            <Input name="targetRole" placeholder="Ví dụ: Frontend Intern" />
-            <Input name="password" type="password" placeholder="Tối thiểu 8 ký tự" required />
-            {error ? <p className="text-sm text-warning">{error}</p> : null}
-            <Button className="w-full">Tạo tài khoản</Button>
-            <p className="text-center text-sm text-mutedText">
-              Đã có tài khoản?{' '}
-              <Link className="text-secondary" href="/login">
-                Đăng nhập
-              </Link>
-            </p>
-          </form>
-        </Card>
-      </section>
-    </PageShell>
+    <AuthShell
+      eyebrow="Bắt đầu với lộ trình AI"
+      title="Tạo tài khoản học viên"
+      subtitle="Cho MentorMind biết mục tiêu nghề nghiệp của bạn, sau đó AI và mentor sẽ giúp biến nó thành kế hoạch học thật."
+      switchText="Đã có tài khoản?"
+      switchLabel="Đăng nhập"
+      switchHref="/login"
+    >
+      <form onSubmit={submit} className="mx-auto w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <h2 className="font-display text-2xl text-[#333]">Đăng ký</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            Tạo hồ sơ học viên và tiếp tục sang bước tạo lộ trình.
+          </p>
+        </div>
+        <div className="space-y-3">
+          <AuthInput icon={UserRound} name="fullName" placeholder="Họ và tên" required />
+          <AuthInput icon={Mail} name="email" type="email" placeholder="Email" required />
+          <AuthInput icon={Target} name="targetRole" placeholder="Vai trò mục tiêu" />
+          <AuthInput icon={LockKeyhole} name="password" type="password" placeholder="Mật khẩu tối thiểu 8 ký tự" required />
+        </div>
+        {error ? (
+          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        ) : null}
+        <Button className="mt-6 h-[50px] w-full">Tạo tài khoản</Button>
+      </form>
+    </AuthShell>
   );
 }

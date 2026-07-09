@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { LockKeyhole, Mail } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
-import { PageShell } from '@/components/layout/page-shell';
+import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,29 +41,36 @@ export default function LoginPage() {
   }
 
   return (
-    <PageShell>
-      <section className="mx-auto flex max-w-md px-4 py-16">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Chào mừng bạn quay lại</CardTitle>
-            <CardDescription>
-              Truy cập không gian học tập, lịch học, lộ trình và các công cụ AI của bạn.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={submit} className="space-y-4">
-            <Input name="email" type="email" placeholder="student@mentormind.ai" required />
-            <Input name="password" type="password" placeholder="Mật khẩu" required />
-            {error ? <p className="text-sm text-warning">{error}</p> : null}
-            <Button className="w-full">Đăng nhập</Button>
-            <p className="text-center text-sm text-mutedText">
-              Chưa có tài khoản?{' '}
-              <Link className="text-secondary" href="/register">
-                Tạo tài khoản
-              </Link>
-            </p>
-          </form>
-        </Card>
-      </section>
-    </PageShell>
+    <AuthShell
+      eyebrow="Không gian học tập cá nhân"
+      title="Chào mừng bạn quay lại"
+      subtitle="Truy cập lộ trình, lịch học, bài code, phỏng vấn AI và hồ sơ học tập được đồng bộ theo tài khoản của bạn."
+      switchText="Chưa có tài khoản?"
+      switchLabel="Tạo tài khoản"
+      switchHref="/register"
+    >
+      <form onSubmit={submit} className="mx-auto w-full max-w-sm">
+        <div className="mb-9 text-center">
+          <h2 className="font-display text-2xl text-[#333]">Đăng nhập</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            Tiếp tục hành trình học 1-1 cùng MentorMind.
+          </p>
+        </div>
+        <div className="space-y-3">
+          <AuthInput icon={Mail} name="email" type="email" placeholder="Email" required />
+          <AuthInput icon={LockKeyhole} name="password" type="password" placeholder="Mật khẩu" required />
+        </div>
+        {error ? (
+          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        ) : null}
+        <Button className="mt-6 h-[50px] w-full">Đăng nhập</Button>
+        <p className="mt-5 text-center text-xs leading-6 text-slate-400">
+          Quên mật khẩu?{' '}
+          <Link href="mailto:support@mentormind.center" className="font-medium text-slate-600 transition hover:text-[#57b846]">
+            Liên hệ hỗ trợ
+          </Link>
+        </p>
+      </form>
+    </AuthShell>
   );
 }
