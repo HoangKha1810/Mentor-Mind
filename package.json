@@ -1,0 +1,22 @@
+{
+  "name": "mentormind-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MentorMind AI monorepo: AI-powered 1-on-1 tutoring platform.",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css,prisma}\"",
+    "db:migrate": "pnpm --filter @mentormind/api prisma:migrate",
+    "db:seed": "pnpm --filter @mentormind/api prisma:seed",
+    "prisma:generate": "pnpm --filter @mentormind/api prisma:generate"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.0.14",
+    "typescript": "^5.5.4"
+  }
+}

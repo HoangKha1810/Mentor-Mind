@@ -1,0 +1,13 @@
+node_modules
+.next
+dist
+coverage
+.turbo
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+*.log
+uploads
+apps/api/prisma/migrations
+!.env.example
