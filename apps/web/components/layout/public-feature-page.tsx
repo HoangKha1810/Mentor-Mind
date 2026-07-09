@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { StaggerContainer, StaggerItem } from '../ui/motion';
 
 export function PublicFeaturePage({
   eyebrow,
@@ -19,17 +20,21 @@ export function PublicFeaturePage({
         <h1 className="mt-2 text-4xl font-semibold text-white">{title}</h1>
         <p className="mt-4 text-lg leading-8 text-slate-300">{subtitle}</p>
       </div>
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
+      <StaggerContainer className="mt-8 grid gap-4 md:grid-cols-3">
         {highlights.map((item) => (
-          <Card key={item}>
-            <CheckCircle2 className="h-5 w-5 text-success" />
-            <CardHeader className="mb-0 mt-4">
-              <CardTitle className="text-base">{item}</CardTitle>
-              <CardDescription>Designed for a serious mentor-led learning workflow.</CardDescription>
-            </CardHeader>
-          </Card>
+          <StaggerItem key={item}>
+            <Card>
+              <CheckCircle2 className="h-5 w-5 text-success" />
+              <CardHeader className="mb-0 mt-4">
+                <CardTitle className="text-base">{item}</CardTitle>
+                <CardDescription>
+                  Thiết kế cho quy trình học nghiêm túc có mentor đồng hành.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </section>
   );
 }

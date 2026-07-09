@@ -9,7 +9,9 @@ import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function AiAssistantPage() {
-  const [answer, setAnswer] = useState('Ask about your roadmap, package, coding problem, interview prep, quiz, flashcards or this week study plan.');
+  const [answer, setAnswer] = useState(
+    'Hỏi về lộ trình, gói học, bài code, luyện phỏng vấn, quiz, flashcard hoặc kế hoạch học tuần này.',
+  );
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,22 +24,29 @@ export default function AiAssistantPage() {
       });
       setAnswer(result.message);
     } catch (err) {
-      setAnswer(err instanceof Error ? err.message : 'Assistant request failed');
+      setAnswer(err instanceof Error ? err.message : 'Không thể gửi yêu cầu tới trợ lý AI');
     }
   }
 
   return (
-    <DashboardShell title="AI Learning Assistant" subtitle="Context-aware help using your profile, roadmap, submissions and interview sessions.">
+    <DashboardShell
+      title="Trợ lý học tập AI"
+      subtitle="Hỗ trợ theo ngữ cảnh từ hồ sơ, lộ trình, bài nộp và lịch sử phỏng vấn của bạn."
+    >
       <Card>
         <div className="mb-4 flex items-center gap-3">
           <Bot className="h-5 w-5 text-secondary" />
           <p className="text-sm text-slate-200">{answer}</p>
         </div>
         <form onSubmit={submit} className="space-y-3">
-          <Textarea name="message" placeholder="What should I improve next this week?" required />
+          <Textarea
+            name="message"
+            placeholder="Tuần này tôi nên cải thiện điều gì tiếp theo?"
+            required
+          />
           <Button>
             <Send className="h-4 w-4" />
-            Send
+            Gửi
           </Button>
         </form>
       </Card>

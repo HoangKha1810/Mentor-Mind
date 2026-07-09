@@ -6,18 +6,23 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 
 export default function InterviewDashboard() {
   return (
-    <DashboardShell title="AI Interview" subtitle="Start mock interviews, track score trends and review weak areas.">
+    <DashboardShell
+      title="Phỏng vấn AI"
+      subtitle="Bắt đầu phỏng vấn thử, theo dõi xu hướng điểm và xem các điểm yếu lặp lại."
+    >
       <div className="grid gap-4 lg:grid-cols-3">
-        {['Technical interview', 'Project defense', 'English interview'].map((mode) => (
+        {['Phỏng vấn kỹ thuật', 'Bảo vệ dự án', 'Phỏng vấn tiếng Anh'].map((mode) => (
           <Card key={mode}>
             <CardHeader>
               <CardTitle>{mode}</CardTitle>
-              <CardDescription>Role-specific questions with rubric feedback and better-answer suggestions.</CardDescription>
+              <CardDescription>
+                Câu hỏi theo vai trò, phản hồi theo rubric và gợi ý câu trả lời tốt hơn.
+              </CardDescription>
             </CardHeader>
             <Link href="/dashboard/interview/new">
               <Button>
                 <MessageSquarePlus className="h-4 w-4" />
-                Start
+                Bắt đầu
               </Button>
             </Link>
           </Card>

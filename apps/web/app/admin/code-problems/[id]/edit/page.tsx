@@ -1,5 +1,16 @@
 import { WorkspacePage } from '@/components/layout/workspace-page';
 
 export default function EditCodeProblemPage() {
-  return <WorkspacePage role="admin" title="Edit Code Problem" subtitle="Update problem text, tags, test cases and publication status." highlights={['Do not leak hidden tests', 'Solution explanation admin-only', 'Status draft/published/archive']} />;
+  return (
+    <WorkspacePage
+      role="admin"
+      title="Sửa bài code"
+      subtitle="Cập nhật nội dung bài, tag, test case và trạng thái xuất bản."
+      highlights={[
+        'Không lộ test ẩn',
+        'Giải thích lời giải chỉ dành cho admin',
+        'Trạng thái nháp/đã xuất bản/lưu trữ',
+      ]}
+    />
+  );
 }

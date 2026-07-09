@@ -1,5 +1,12 @@
 import { WorkspacePage } from '@/components/layout/workspace-page';
 
 export default function AdminUsersPage() {
-  return <WorkspacePage role="admin" title="Users" subtitle="Manage students, mentors and admins with role/status filters." highlights={['User table', 'Role and status filters', 'Suspend or activate account']} />;
+  return (
+    <WorkspacePage
+      role="admin"
+      title="Người dùng"
+      subtitle="Quản lý học viên, mentor và admin với bộ lọc role/trạng thái."
+      highlights={['Bảng người dùng', 'Bộ lọc role và trạng thái', 'Khóa hoặc kích hoạt tài khoản']}
+    />
+  );
 }

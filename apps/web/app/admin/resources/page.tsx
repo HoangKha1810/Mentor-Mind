@@ -1,5 +1,12 @@
 import { WorkspacePage } from '@/components/layout/workspace-page';
 
 export default function AdminResourcesPage() {
-  return <WorkspacePage role="admin" title="Resources" subtitle="Curate books, docs, articles, videos, projects, coding problems and packages." highlights={['Save external search results', 'Difficulty and tags', 'Why recommended']} />;
+  return (
+    <WorkspacePage
+      role="admin"
+      title="Tài nguyên"
+      subtitle="Curate sách, docs, bài viết, video, dự án, bài code và gói học."
+      highlights={['Lưu kết quả tìm kiếm bên ngoài', 'Độ khó và tag', 'Lý do được đề xuất']}
+    />
+  );
 }

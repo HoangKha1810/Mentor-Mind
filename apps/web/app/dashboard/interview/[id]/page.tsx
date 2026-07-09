@@ -4,9 +4,13 @@ export default function InterviewSessionPage() {
   return (
     <WorkspacePage
       role="student"
-      title="Interview Session"
-      subtitle="Chat-like answer interface with score feedback, better answers and finish session action."
-      highlights={['Question prompt', 'Answer input', 'Rubric score and better-answer feedback']}
+      title="Buổi phỏng vấn"
+      subtitle="Giao diện trả lời dạng chat, có điểm đánh giá, câu trả lời tốt hơn và thao tác kết thúc buổi."
+      highlights={[
+        'Câu hỏi phỏng vấn',
+        'Ô nhập câu trả lời',
+        'Điểm rubric và phản hồi cải thiện câu trả lời',
+      ]}
     />
   );
 }

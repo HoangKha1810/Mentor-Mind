@@ -13,6 +13,7 @@ const config: Config = {
         secondary: '#00D4FF',
         success: '#22C55E',
         warning: '#F59E0B',
+        danger: '#EF4444',
         mutedText: '#94A3B8',
       },
       boxShadow: {

@@ -5,10 +5,14 @@ export default function AiInterviewLanding() {
   return (
     <PageShell>
       <PublicFeaturePage
-        eyebrow="AI Interview"
-        title="AI Interview Practice"
-        subtitle="Practice technical, behavioral, HR, English and project-defense interviews with rubric feedback."
-        highlights={['Upload a JD to tailor questions', 'Score answers by correctness, clarity and role fit', 'Save history and weak areas']}
+        eyebrow="Phỏng vấn AI"
+        title="Luyện phỏng vấn như buổi thật"
+        subtitle="Luyện kỹ thuật, hành vi, HR, tiếng Anh và bảo vệ dự án với phản hồi theo rubric."
+        highlights={[
+          'Tùy biến câu hỏi theo JD',
+          'Chấm câu trả lời theo độ đúng, rõ ràng và fit vai trò',
+          'Lưu lịch sử và nhóm điểm yếu cần cải thiện',
+        ]}
       />
     </PageShell>
   );

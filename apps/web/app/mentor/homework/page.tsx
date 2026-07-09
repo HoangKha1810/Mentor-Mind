@@ -4,9 +4,13 @@ export default function MentorHomeworkPage() {
   return (
     <WorkspacePage
       role="mentor"
-      title="Homework Reviews"
-      subtitle="Queue of submitted homework that needs mentor feedback and scoring."
-      highlights={['Submission content', 'Feedback and score', 'Student notification on review']}
+      title="Chấm bài tập"
+      subtitle="Danh sách bài tập đã nộp đang cần mentor phản hồi và chấm điểm."
+      highlights={[
+        'Nội dung bài nộp',
+        'Nhận xét và điểm số',
+        'Thông báo cho học viên sau khi review',
+      ]}
     />
   );
 }

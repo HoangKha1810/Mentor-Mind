@@ -18,7 +18,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
   const json = (await response.json()) as ApiResponse<T>;
   if (!response.ok || !json.success) {
-    throw new Error(json.error?.message ?? 'Request failed');
+    throw new Error(json.error?.message ?? 'Yêu cầu thất bại');
   }
   return json.data as T;
 }

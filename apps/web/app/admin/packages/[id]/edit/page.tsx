@@ -1,5 +1,12 @@
 import { WorkspacePage } from '@/components/layout/workspace-page';
 
 export default function EditPackagePage() {
-  return <WorkspacePage role="admin" title="Edit Package" subtitle="Update package details, status and consultation positioning." highlights={['Draft/publish/archive', 'Price and sessions', 'Included AI tools']} />;
+  return (
+    <WorkspacePage
+      role="admin"
+      title="Sửa gói học"
+      subtitle="Cập nhật chi tiết gói, trạng thái và thông điệp tư vấn."
+      highlights={['Nháp/publish/archive', 'Giá và số buổi', 'Công cụ AI đi kèm']}
+    />
+  );
 }

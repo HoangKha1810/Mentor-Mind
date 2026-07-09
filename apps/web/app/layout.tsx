@@ -6,12 +6,12 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-geist-sans' });
 
 export const metadata: Metadata = {
   title: 'MentorMind AI',
-  description: 'Personalized 1-on-1 learning powered by AI.',
+  description: 'Nền tảng học 1-1 cá nhân hóa với AI và mentor.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="vi" className="dark">
       <body className={inter.variable}>{children}</body>
     </html>
   );

@@ -4,9 +4,13 @@ export default function MentorStudentsPage() {
   return (
     <WorkspacePage
       role="mentor"
-      title="Assigned Students"
-      subtitle="View goals, levels, roadmaps, weaknesses and recent activity."
-      highlights={['Student profile summary', 'Active roadmap and homework', 'AI-generated risk insights']}
+      title="Học viên phụ trách"
+      subtitle="Xem mục tiêu, trình độ, lộ trình, điểm yếu và hoạt động gần đây của học viên."
+      highlights={[
+        'Tóm tắt hồ sơ học viên',
+        'Lộ trình và bài tập đang hoạt động',
+        'Insight rủi ro do AI gợi ý',
+      ]}
     />
   );
 }

@@ -18,17 +18,26 @@ export default function LoginPage() {
     setError('');
     const form = new FormData(event.currentTarget);
     try {
-      const result = await apiFetch<{ accessToken: string; user: { role: string } }>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: form.get('email'),
-          password: form.get('password'),
-        }),
-      });
+      const result = await apiFetch<{ accessToken: string; user: { role: string } }>(
+        '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            email: form.get('email'),
+            password: form.get('password'),
+          }),
+        },
+      );
       window.localStorage.setItem('mentormind.accessToken', result.accessToken);
-      router.push(result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN' ? '/admin' : result.user.role === 'MENTOR' ? '/mentor' : '/dashboard');
+      router.push(
+        result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN'
+          ? '/admin'
+          : result.user.role === 'MENTOR'
+            ? '/mentor'
+            : '/dashboard',
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
     }
   }
 
@@ -37,16 +46,21 @@ export default function LoginPage() {
       <section className="mx-auto flex max-w-md px-4 py-16">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Use one of the seeded accounts or your registered student account.</CardDescription>
+            <CardTitle>Chào mừng bạn quay lại</CardTitle>
+            <CardDescription>
+              Truy cập không gian học tập, lịch học, lộ trình và các công cụ AI của bạn.
+            </CardDescription>
           </CardHeader>
           <form onSubmit={submit} className="space-y-4">
             <Input name="email" type="email" placeholder="student@mentormind.ai" required />
-            <Input name="password" type="password" placeholder="Password123!" required />
+            <Input name="password" type="password" placeholder="Mật khẩu" required />
             {error ? <p className="text-sm text-warning">{error}</p> : null}
-            <Button className="w-full">Login</Button>
+            <Button className="w-full">Đăng nhập</Button>
             <p className="text-center text-sm text-mutedText">
-              New here? <Link className="text-secondary" href="/register">Create an account</Link>
+              Chưa có tài khoản?{' '}
+              <Link className="text-secondary" href="/register">
+                Tạo tài khoản
+              </Link>
             </p>
           </form>
         </Card>

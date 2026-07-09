@@ -1,5 +1,12 @@
 import { WorkspacePage } from '@/components/layout/workspace-page';
 
 export default function AdminMentorsPage() {
-  return <WorkspacePage role="admin" title="Mentors" subtitle="Mentor list, assignments and availability overview." highlights={['Availability snapshot', 'Skill/category filters', 'Assigned students']} />;
+  return (
+    <WorkspacePage
+      role="admin"
+      title="Mentor"
+      subtitle="Danh sách mentor, phân công và tổng quan lịch rảnh."
+      highlights={['Tóm tắt lịch rảnh', 'Bộ lọc kỹ năng/chuyên mục', 'Học viên được phân công']}
+    />
+  );
 }

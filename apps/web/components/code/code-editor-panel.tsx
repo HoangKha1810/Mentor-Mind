@@ -7,9 +7,9 @@ import { authHeaders, apiFetch } from '@/lib/api';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
-export function CodeEditorPanel({ problemId = 'mock-problem' }: { problemId?: string }) {
+export function CodeEditorPanel({ problemId = 'current-problem' }: { problemId?: string }) {
   const [code, setCode] = useState('function solve(input) {\n  return input;\n}');
-  const [output, setOutput] = useState('Run code to see public test results.');
+  const [output, setOutput] = useState('Chạy code để xem kết quả bộ test mẫu.');
 
   async function call(path: string) {
     try {
@@ -20,7 +20,11 @@ export function CodeEditorPanel({ problemId = 'mock-problem' }: { problemId?: st
       });
       setOutput(JSON.stringify(result, null, 2));
     } catch (err) {
-      setOutput(err instanceof Error ? err.message : 'Request failed. Seed data uses real problem ids from API.');
+      setOutput(
+        err instanceof Error
+          ? err.message
+          : 'Không thể chạy bài hiện tại. Vui lòng mở bài từ danh sách luyện tập đã đồng bộ.',
+      );
     }
   }
 
@@ -40,15 +44,15 @@ export function CodeEditorPanel({ problemId = 'mock-problem' }: { problemId?: st
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => call(`/code/problems/${problemId}/run`)}>
             <Play className="h-4 w-4" />
-            Run
+            Chạy thử
           </Button>
           <Button variant="secondary" onClick={() => call(`/code/problems/${problemId}/submit`)}>
             <Send className="h-4 w-4" />
-            Submit
+            Nộp bài
           </Button>
           <Button variant="outline" onClick={() => call(`/code/problems/${problemId}/ai-hint`)}>
             <Sparkles className="h-4 w-4" />
-            AI Hint
+            Gợi ý AI
           </Button>
         </div>
         <pre className="mt-4 max-h-[520px] overflow-auto rounded-md border border-white/8 bg-black/30 p-4 text-xs leading-6 text-slate-200">

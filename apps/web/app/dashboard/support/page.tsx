@@ -4,9 +4,9 @@ export default function SupportPage() {
   return (
     <WorkspacePage
       role="student"
-      title="Support Tickets"
-      subtitle="Submit issues and track admin responses/status."
-      highlights={['Create ticket', 'View own tickets', 'Admin status workflow']}
+      title="Yêu cầu hỗ trợ"
+      subtitle="Gửi vấn đề cần hỗ trợ và theo dõi phản hồi/trạng thái từ admin."
+      highlights={['Tạo ticket', 'Xem ticket của tôi', 'Quy trình cập nhật trạng thái của admin']}
     />
   );
 }

@@ -5,10 +5,14 @@ export default function CodePracticeLanding() {
   return (
     <PageShell>
       <PublicFeaturePage
-        eyebrow="Coding Practice"
-        title="AI Coding Practice"
-        subtitle="Solve problems with Monaco, public and hidden tests, safe judge provider, AI hints and review."
-        highlights={['Mock judge for local development', 'Judge0-compatible production adapter', 'Progressive hints without early solution leaks']}
+        eyebrow="Luyện code"
+        title="Luyện thuật toán với AI"
+        subtitle="Giải bài bằng Monaco, chấm tự động bằng Judge0, nhận gợi ý thông minh và đánh giá code sau mỗi lần nộp."
+        highlights={[
+          'Chạy code trong môi trường sandbox an toàn',
+          'Gợi ý từng mức để học viên vẫn tự tư duy lời giải',
+          'Đánh giá code theo độ đúng, trường hợp biên và độ rõ ràng',
+        ]}
       />
     </PageShell>
   );

@@ -4,9 +4,13 @@ export default function RoadmapsPage() {
   return (
     <WorkspacePage
       role="student"
-      title="My Roadmaps"
-      subtitle="View AI drafts, admin-approved roadmaps and active 1-on-1 learning journeys."
-      highlights={['Status badges for DRAFT_AI, APPROVED and ACTIVE', 'Timeline by week with mentor notes', 'CTA to create a new roadmap']}
+      title="Lộ trình của tôi"
+      subtitle="Theo dõi lộ trình từ lúc gửi yêu cầu, được duyệt, bắt đầu học đến khi hoàn thành mục tiêu."
+      highlights={[
+        'Trạng thái rõ ràng cho từng lộ trình',
+        'Timeline theo tuần kèm ghi chú mentor và tài nguyên đề xuất',
+        'Tạo lộ trình mới khi mục tiêu học tập thay đổi',
+      ]}
     />
   );
 }

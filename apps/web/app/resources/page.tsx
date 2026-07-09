@@ -5,10 +5,14 @@ export default function PublicResourcesPage() {
   return (
     <PageShell>
       <PublicFeaturePage
-        eyebrow="Resources"
-        title="AI Resource Search"
-        subtitle="Find books, docs, articles, projects, coding problems and platform packages matched to your goals."
-        highlights={['Curated internal resources first', 'External results clearly labeled', 'AI explains why each result is useful']}
+        eyebrow="Tài nguyên"
+        title="Tìm tài nguyên học bằng AI"
+        subtitle="Tìm sách, docs, bài viết, dự án, bài code và gói học phù hợp với mục tiêu của bạn."
+        highlights={[
+          'Ưu tiên tài nguyên đã curate trong hệ thống',
+          'Kết quả bên ngoài được gắn nhãn rõ ràng',
+          'AI giải thích vì sao mỗi tài nguyên hữu ích',
+        ]}
       />
     </PageShell>
   );

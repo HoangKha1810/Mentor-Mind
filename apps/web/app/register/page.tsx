@@ -30,7 +30,7 @@ export default function RegisterPage() {
       window.localStorage.setItem('mentormind.accessToken', result.accessToken);
       router.push('/create-roadmap');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : 'Đăng ký thất bại');
     }
   }
 
@@ -39,18 +39,23 @@ export default function RegisterPage() {
       <section className="mx-auto flex max-w-md px-4 py-16">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Create your student account</CardTitle>
-            <CardDescription>Start with an AI draft, then let admin or mentor review it into a real plan.</CardDescription>
+            <CardTitle>Tạo tài khoản học viên</CardTitle>
+            <CardDescription>
+              Bắt đầu bằng bản nháp AI, sau đó admin hoặc mentor sẽ duyệt thành kế hoạch học thật.
+            </CardDescription>
           </CardHeader>
           <form onSubmit={submit} className="space-y-4">
-            <Input name="fullName" placeholder="Your name" required />
+            <Input name="fullName" placeholder="Họ và tên" required />
             <Input name="email" type="email" placeholder="you@example.com" required />
-            <Input name="targetRole" placeholder="Frontend Intern" />
-            <Input name="password" type="password" placeholder="At least 8 characters" required />
+            <Input name="targetRole" placeholder="Ví dụ: Frontend Intern" />
+            <Input name="password" type="password" placeholder="Tối thiểu 8 ký tự" required />
             {error ? <p className="text-sm text-warning">{error}</p> : null}
-            <Button className="w-full">Create account</Button>
+            <Button className="w-full">Tạo tài khoản</Button>
             <p className="text-center text-sm text-mutedText">
-              Already have an account? <Link className="text-secondary" href="/login">Login</Link>
+              Đã có tài khoản?{' '}
+              <Link className="text-secondary" href="/login">
+                Đăng nhập
+              </Link>
             </p>
           </form>
         </Card>

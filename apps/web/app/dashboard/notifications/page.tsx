@@ -4,9 +4,13 @@ export default function NotificationsPage() {
   return (
     <WorkspacePage
       role="student"
-      title="Notifications"
-      subtitle="Roadmap approvals, consultation schedules, booking confirmations, homework feedback and payment status."
-      highlights={['Bell dropdown compatible model', 'Mark as read endpoint', 'Metadata for deep links']}
+      title="Thông báo"
+      subtitle="Duyệt lộ trình, lịch tư vấn, xác nhận buổi học, phản hồi bài tập và trạng thái thanh toán."
+      highlights={[
+        'Nhận cập nhật quan trọng theo đúng thời điểm',
+        'Đánh dấu đã đọc để giữ dashboard gọn gàng',
+        'Mở nhanh đến lộ trình, buổi học, bài tập hoặc thanh toán liên quan',
+      ]}
     />
   );
 }

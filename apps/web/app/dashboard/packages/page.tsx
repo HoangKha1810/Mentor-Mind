@@ -4,9 +4,13 @@ export default function DashboardPackagesPage() {
   return (
     <WorkspacePage
       role="student"
-      title="My Packages"
-      subtitle="View enrolled or consultation-requested 1-on-1 tutoring packages."
-      highlights={['Consultation status', 'Package outcomes', 'Booking and roadmap CTAs']}
+      title="Gói học của tôi"
+      subtitle="Xem các gói học 1-1 đã đăng ký hoặc đã gửi yêu cầu tư vấn."
+      highlights={[
+        'Trạng thái tư vấn',
+        'Kết quả đầu ra của gói học',
+        'Nút đặt lịch và mở lộ trình',
+      ]}
     />
   );
 }

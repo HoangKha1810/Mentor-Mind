@@ -4,9 +4,9 @@ export default function MentorSessionDetailPage() {
   return (
     <WorkspacePage
       role="mentor"
-      title="Session Detail"
-      subtitle="Add notes, assign homework and review previous session context."
-      highlights={['Session notes', 'Strengths and weaknesses', 'Next steps and private note']}
+      title="Chi tiết buổi học"
+      subtitle="Thêm ghi chú, giao bài tập và xem lại bối cảnh buổi học trước."
+      highlights={['Ghi chú buổi học', 'Điểm mạnh và điểm yếu', 'Bước tiếp theo và ghi chú riêng']}
     />
   );
 }

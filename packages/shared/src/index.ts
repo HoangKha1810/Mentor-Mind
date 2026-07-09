@@ -93,12 +93,12 @@ export type PublicTutoringPackage = {
   includedAiTools: string[];
 };
 
-export const featuredPackageSeeds: PublicTutoringPackage[] = [
+export const featuredPackages: PublicTutoringPackage[] = [
   {
     id: 'frontend-intern',
-    title: 'Frontend Intern 1-on-1 Roadmap',
+    title: 'Lộ trình Frontend Intern 1-1',
     slug: 'frontend-intern-1-on-1-roadmap',
-    shortDescription: 'From HTML/CSS/JS basics to React portfolio and internship interview readiness.',
+    shortDescription: 'Từ nền tảng HTML/CSS/JS đến portfolio React và sẵn sàng phỏng vấn thực tập.',
     category: 'FRONTEND',
     targetRole: 'Frontend Intern',
     level: 'FOUNDATION',
@@ -108,13 +108,13 @@ export const featuredPackageSeeds: PublicTutoringPackage[] = [
     currency: 'USD',
     featured: true,
     skills: ['JavaScript', 'React', 'CSS', 'Git', 'Portfolio'],
-    includedAiTools: ['AI Roadmap', 'Coding Practice', 'AI Interview', 'CV Review'],
+    includedAiTools: ['Lộ trình AI', 'Luyện code', 'Phỏng vấn AI', 'Sửa CV'],
   },
   {
     id: 'backend-foundation',
-    title: 'Backend Foundation 1-on-1 Roadmap',
+    title: 'Lộ trình Backend nền tảng 1-1',
     slug: 'backend-foundation-1-on-1-roadmap',
-    shortDescription: 'Build production API foundations with Node.js, SQL, auth, testing and deployment.',
+    shortDescription: 'Xây nền tảng API thực chiến với Node.js, SQL, auth, testing và triển khai.',
     category: 'BACKEND',
     targetRole: 'Backend Developer',
     level: 'FOUNDATION',
@@ -124,13 +124,14 @@ export const featuredPackageSeeds: PublicTutoringPackage[] = [
     currency: 'USD',
     featured: true,
     skills: ['Node.js', 'PostgreSQL', 'REST', 'Auth', 'Testing'],
-    includedAiTools: ['AI Roadmap', 'Code Review', 'Resource Search'],
+    includedAiTools: ['Lộ trình AI', 'Đánh giá code', 'Tìm tài nguyên'],
   },
   {
     id: 'coding-interview',
-    title: 'Coding Interview Bootcamp',
+    title: 'Bootcamp phỏng vấn thuật toán',
     slug: 'coding-interview-bootcamp',
-    shortDescription: 'Structured practice, mock interviews, feedback loops and job-ready problem solving.',
+    shortDescription:
+      'Luyện tập có cấu trúc, phỏng vấn thử, vòng phản hồi và tư duy giải bài sẵn sàng đi làm.',
     category: 'CAREER',
     targetRole: 'Software Engineer',
     level: 'JOB_READY',
@@ -139,8 +140,8 @@ export const featuredPackageSeeds: PublicTutoringPackage[] = [
     price: 899,
     currency: 'USD',
     featured: true,
-    skills: ['Algorithms', 'Data Structures', 'Communication', 'Debugging'],
-    includedAiTools: ['AI Interview', 'Coding Practice', 'AI Hints', 'AI Code Review'],
+    skills: ['Thuật toán', 'Cấu trúc dữ liệu', 'Giao tiếp', 'Debugging'],
+    includedAiTools: ['Phỏng vấn AI', 'Luyện code', 'Gợi ý AI', 'Đánh giá code AI'],
   },
 ];
 
@@ -153,7 +154,7 @@ export const codingLanguageOptions = [
 ] as const;
 
 export const formatCurrency = (amount: number, currency = 'USD') =>
-  new Intl.NumberFormat('en-US', {
+  new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
