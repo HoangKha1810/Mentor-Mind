@@ -24,6 +24,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { PageTransition } from '../ui/motion';
+import { logoutSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type NavItem = [label: string, href: string, icon: LucideIcon];
@@ -99,7 +100,7 @@ export function DashboardShell({
   }, [pathname]);
 
   function logout() {
-    window.localStorage.removeItem('mentormind.accessToken');
+    void logoutSession();
     setMobileMenuOpen(false);
     router.replace('/login');
   }

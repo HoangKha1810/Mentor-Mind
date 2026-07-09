@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { formatCurrency } from '@mentormind/shared';
 import { Send } from 'lucide-react';
-import { apiFetch, authHeaders, getAccessToken } from '@/lib/api';
+import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import { PackageItem } from '@/lib/domain-types';
 import { packageCategoryLabel, packageLevelLabel } from '@/lib/labels';
 import { useLiveQuery } from '@/lib/live-query';
@@ -24,7 +24,7 @@ export function PackageDetail({ slug }: { slug: string }) {
   async function requestConsultation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!query.data) return;
-    if (!getAccessToken()) {
+    if (!(await ensureAccessToken())) {
       setMessage('Vui lòng đăng nhập để gửi yêu cầu tư vấn.');
       return;
     }

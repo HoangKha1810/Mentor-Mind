@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { ExternalLink, Search } from 'lucide-react';
-import { apiFetch, authHeaders, getAccessToken } from '@/lib/api';
+import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import { ResourceItem } from '@/lib/domain-types';
 import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
@@ -59,11 +59,12 @@ export function ResourceSearchPanel() {
     setLoading(true);
     setMessage('');
     const form = new FormData(event.currentTarget);
-    const path = getAccessToken() ? '/dashboard/resources/search' : '/resources/search';
+    const accessToken = await ensureAccessToken();
+    const path = accessToken ? '/dashboard/resources/search' : '/resources/search';
     try {
       const response = await apiFetch<SearchResponse>(path, {
         method: 'POST',
-        headers: getAccessToken() ? authHeaders() : undefined,
+        headers: accessToken ? authHeaders() : undefined,
         body: JSON.stringify({
           query: form.get('query'),
           level: form.get('level'),

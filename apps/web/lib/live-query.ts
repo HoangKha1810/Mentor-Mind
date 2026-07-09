@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiFetch, authHeaders, getAccessToken } from './api';
+import { apiFetch, authHeaders, ensureAccessToken } from './api';
 
 type LiveQueryState<T> = {
   data: T | null;
@@ -32,9 +32,12 @@ export function useLiveQuery<T>(
         return;
       }
 
-      if (options.auth && !getAccessToken()) {
-        setState({ data: null, loading: false, error: '', unauthenticated: true });
-        return;
+      if (options.auth) {
+        const token = await ensureAccessToken();
+        if (!token) {
+          setState({ data: null, loading: false, error: '', unauthenticated: true });
+          return;
+        }
       }
 
       setState((current) => ({ ...current, loading: true, error: '', unauthenticated: false }));

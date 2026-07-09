@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { LockKeyhole, Mail } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, setAccessToken } from '@/lib/api';
 import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
           }),
         },
       );
-      window.localStorage.setItem('mentormind.accessToken', result.accessToken);
+      setAccessToken(result.accessToken);
       router.push(
         result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN'
           ? '/admin'

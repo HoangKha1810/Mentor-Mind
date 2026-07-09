@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useState } from 'react';
 import { BrainCircuit, Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { sampleRoadmapTemplates } from '@mentormind/shared';
-import { authHeaders, apiFetch, getAccessToken } from '@/lib/api';
+import { authHeaders, apiFetch, ensureAccessToken } from '@/lib/api';
 import { PageShell } from '@/components/layout/page-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,7 +80,7 @@ function CreateRoadmapContent() {
     };
 
     try {
-      if (!getAccessToken()) {
+      if (!(await ensureAccessToken())) {
         setResult({
           title: `Lộ trình 1-1 cá nhân hóa cho ${payload.targetRole}`,
           summary:

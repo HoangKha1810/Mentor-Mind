@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
-import { apiFetch, authHeaders, getAccessToken } from '@/lib/api';
+import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import {
   Account,
   Booking,
@@ -138,7 +138,7 @@ export function LiveDashboardOverview() {
   const [unauthenticated, setUnauthenticated] = useState(false);
 
   const reloadAll = useCallback(async () => {
-    if (!getAccessToken()) {
+    if (!(await ensureAccessToken())) {
       setPayload(null);
       setLoading(false);
       setError('');

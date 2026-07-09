@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { LockKeyhole, Mail, Target, UserRound } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, setAccessToken } from '@/lib/api';
 import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 
@@ -26,7 +26,7 @@ export default function RegisterPage() {
           targetRole: form.get('targetRole'),
         }),
       });
-      window.localStorage.setItem('mentormind.accessToken', result.accessToken);
+      setAccessToken(result.accessToken);
       router.push('/create-roadmap');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng ký thất bại');
