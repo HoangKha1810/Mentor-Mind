@@ -72,6 +72,11 @@ select {
   font: inherit;
 }
 
+button:not(:disabled):active,
+a[role='button']:not([aria-disabled='true']):active {
+  filter: brightness(0.72);
+}
+
 ::selection {
   background: rgba(0, 212, 255, 0.35);
 }

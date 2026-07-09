@@ -1,7 +1,9 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import { BrainCircuit, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { sampleRoadmapTemplates } from '@mentormind/shared';
 import { authHeaders, apiFetch, getAccessToken } from '@/lib/api';
 import { PageShell } from '@/components/layout/page-shell';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +22,31 @@ const steps = [
 ];
 
 export default function CreateRoadmapPage() {
+  return (
+    <Suspense fallback={<CreateRoadmapFallback />}>
+      <CreateRoadmapContent />
+    </Suspense>
+  );
+}
+
+function CreateRoadmapFallback() {
+  return (
+    <PageShell>
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Đang tải form lộ trình...</CardTitle>
+            <CardDescription>MentorMind đang chuẩn bị dữ liệu mẫu phù hợp.</CardDescription>
+          </CardHeader>
+        </Card>
+      </section>
+    </PageShell>
+  );
+}
+
+function CreateRoadmapContent() {
+  const searchParams = useSearchParams();
+  const selectedTemplate = sampleRoadmapTemplates.find((template) => template.slug === searchParams.get('template'));
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<unknown>(null);
@@ -93,6 +120,13 @@ export default function CreateRoadmapPage() {
             Cho MentorMind biết mục tiêu, giới hạn thời gian và điểm yếu của bạn. AI phác thảo bản
             đầu tiên, sau đó admin hoặc mentor chuyển thành kế hoạch học 1-1 thật.
           </p>
+          {selectedTemplate ? (
+            <div className="mt-6 rounded-lg border border-secondary/25 bg-secondary/8 p-4">
+              <p className="text-sm font-semibold text-secondary">Đang dùng mẫu</p>
+              <p className="mt-2 text-sm font-medium text-white">{selectedTemplate.title}</p>
+              <p className="mt-2 text-sm leading-6 text-mutedText">{selectedTemplate.summary}</p>
+            </div>
+          ) : null}
           <div className="mt-8 space-y-2">
             {steps.map((label, index) => (
               <button
@@ -127,29 +161,61 @@ export default function CreateRoadmapPage() {
               <Textarea
                 name="goal"
                 placeholder="Mục tiêu: trở thành Frontend Intern trong 4 tháng..."
+                defaultValue={
+                  selectedTemplate
+                    ? `${selectedTemplate.summary}\n\nKết quả mong muốn: ${selectedTemplate.outcomes.join('; ')}`
+                    : undefined
+                }
                 required
               />
               <div className="grid gap-4 md:grid-cols-2">
-                <Input name="targetRole" placeholder="Vai trò mục tiêu" required />
-                <Input name="currentLevel" placeholder="Trình độ hiện tại" required />
+                <Input name="targetRole" placeholder="Vai trò mục tiêu" defaultValue={selectedTemplate?.targetRole} required />
+                <Input name="currentLevel" placeholder="Trình độ hiện tại" defaultValue={selectedTemplate?.level} required />
                 <Input
                   name="currentSkills"
                   placeholder="Kỹ năng hiện có, cách nhau bằng dấu phẩy"
+                  defaultValue={selectedTemplate ? 'Python cơ bản, tư duy sản phẩm, tự học AI' : undefined}
                 />
-                <Input name="weakAreas" placeholder="Điểm yếu, cách nhau bằng dấu phẩy" />
+                <Input
+                  name="weakAreas"
+                  placeholder="Điểm yếu, cách nhau bằng dấu phẩy"
+                  defaultValue={selectedTemplate ? 'Triển khai thực tế, đánh giá mô hình, trình bày dự án' : undefined}
+                />
                 <Input
                   name="weeklyHours"
                   type="number"
-                  defaultValue={8}
+                  defaultValue={selectedTemplate?.weeklyHours ?? 8}
                   placeholder="Số giờ mỗi tuần"
                 />
-                <Input name="preferredSchedule" placeholder="Buổi tối, cuối tuần..." required />
-                <Input name="budgetRange" placeholder="$300-$800" required />
-                <Input name="learningStyle" placeholder="Học qua dự án, trực quan..." required />
+                <Input
+                  name="preferredSchedule"
+                  placeholder="Buổi tối, cuối tuần..."
+                  defaultValue={selectedTemplate ? '2-3 buổi mỗi tuần, ưu tiên buổi tối hoặc cuối tuần' : undefined}
+                  required
+                />
+                <Input
+                  name="budgetRange"
+                  placeholder="$300-$800"
+                  defaultValue={selectedTemplate ? 'Trao đổi theo gói học phù hợp' : undefined}
+                  required
+                />
+                <Input
+                  name="learningStyle"
+                  placeholder="Học qua dự án, trực quan..."
+                  defaultValue={selectedTemplate ? 'Học theo dự án, mentor review và demo sau mỗi chặng' : undefined}
+                  required
+                />
               </div>
               <Textarea
                 name="mentorPreference"
                 placeholder="Phong cách mentor mong muốn, ghi chú CV/JD, bối cảnh portfolio..."
+                defaultValue={
+                  selectedTemplate
+                    ? `Bám theo mẫu "${selectedTemplate.title}" từ ${selectedTemplate.sourceFile}. Các buổi chính: ${selectedTemplate.lessons
+                        .map((lesson) => lesson.title)
+                        .join('; ')}.`
+                    : undefined
+                }
               />
               <div className="flex flex-wrap gap-4 text-sm text-slate-300">
                 <label className="flex items-center gap-2">

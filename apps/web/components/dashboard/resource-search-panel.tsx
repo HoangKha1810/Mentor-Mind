@@ -17,6 +17,31 @@ type SearchResponse = {
   results: ResourceItem[];
 };
 
+const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+
+function extractMarkdownLinks(value: string) {
+  return Array.from(value.matchAll(markdownLinkPattern)).map((match) => ({
+    label: match[1] ?? match[2] ?? 'Tài nguyên',
+    url: match[2] ?? '',
+  }));
+}
+
+function stripMarkdownLinks(value: string) {
+  return value
+    .replace(markdownLinkPattern, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatResourceUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return `${url.hostname}${url.pathname === '/' ? '' : url.pathname}`;
+  } catch {
+    return value;
+  }
+}
+
 export function ResourceSearchPanel() {
   const curated = useLiveQuery<ResourceItem[]>('/resources');
   const [results, setResults] = useState<ResourceItem[]>([]);
@@ -95,41 +120,76 @@ export function ResourceSearchPanel() {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {results.map((resource, index) => (
-          <Card key={`${resource.url ?? resource.title}-${index}`}>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <StatusBadge value={resource.difficulty} />
-              <Badge>{resource.type}</Badge>
-              {resource.isExternal ? <Badge>Nguồn ngoài</Badge> : <Badge>Nội bộ</Badge>}
-            </div>
-            <CardHeader>
-              <CardTitle>{resource.title}</CardTitle>
-              <CardDescription>{resource.description}</CardDescription>
-            </CardHeader>
-            <p className="text-sm text-mutedText">
-              Nguồn: {resource.source}
-              {resource.author ? ` · ${resource.author}` : ''}
-            </p>
-            {resource.whyRecommended ? (
-              <p className="mt-3 text-sm leading-6 text-slate-200">{resource.whyRecommended}</p>
-            ) : null}
-            {resource.tags?.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {resource.tags.slice(0, 6).map((tag) => (
-                  <Badge key={tag}>{tag}</Badge>
-                ))}
+        {results.map((resource, index) => {
+          const descriptionLinks = extractMarkdownLinks(resource.description);
+          const cleanDescription = stripMarkdownLinks(resource.description);
+          return (
+            <Card key={`${resource.url ?? resource.title}-${index}`}>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <StatusBadge value={resource.difficulty} />
+                <Badge>{resource.type}</Badge>
+                {resource.isExternal ? <Badge>Nguồn ngoài</Badge> : <Badge>Nội bộ</Badge>}
               </div>
-            ) : null}
-            {resource.url ? (
-              <Link href={resource.url} target="_blank" className="mt-4 inline-flex">
-                <Button variant="outline">
-                  Mở tài nguyên
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              </Link>
-            ) : null}
-          </Card>
-        ))}
+              <CardHeader>
+                <CardTitle>{resource.title}</CardTitle>
+                <CardDescription>{cleanDescription}</CardDescription>
+              </CardHeader>
+              <p className="text-sm text-mutedText">
+                Nguồn: {resource.source}
+                {resource.author ? ` · ${resource.author}` : ''}
+              </p>
+              {resource.url ? (
+                <div className="mt-4 rounded-lg border border-secondary/20 bg-secondary/8 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-normal text-secondary">Link tài nguyên</p>
+                  <Link
+                    href={resource.url}
+                    target="_blank"
+                    className="mt-2 flex items-start gap-2 break-all text-sm font-medium leading-6 text-slate-100 transition hover:text-secondary"
+                  >
+                    <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                    {formatResourceUrl(resource.url)}
+                  </Link>
+                </div>
+              ) : null}
+              {descriptionLinks.length ? (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold uppercase tracking-normal text-mutedText">Link trong mô tả</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {descriptionLinks.slice(0, 5).map((link) => (
+                      <Link
+                        key={`${link.url}-${link.label}`}
+                        href={link.url}
+                        target="_blank"
+                        className="inline-flex max-w-full items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-200 transition hover:border-secondary/40 hover:text-secondary"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{link.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {resource.whyRecommended ? (
+                <p className="mt-3 text-sm leading-6 text-slate-200">{resource.whyRecommended}</p>
+              ) : null}
+              {resource.tags?.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {resource.tags.slice(0, 6).map((tag) => (
+                    <Badge key={tag}>{tag}</Badge>
+                  ))}
+                </div>
+              ) : null}
+              {resource.url ? (
+                <Link href={resource.url} target="_blank" className="mt-4 inline-flex">
+                  <Button variant="outline">
+                    Mở tài nguyên
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : null}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

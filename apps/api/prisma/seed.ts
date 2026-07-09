@@ -1,5 +1,6 @@
 import * as argon2 from 'argon2';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { catalogCodeProblems } from './catalog/code-problems';
 
 const prisma = new PrismaClient();
 
@@ -250,49 +251,15 @@ async function main() {
     },
   });
 
-  const problems = [
-    ['Two Sum', 'two-sum', 'EASY', 'Arrays'],
-    ['Valid Parentheses', 'valid-parentheses', 'EASY', 'Stack'],
-    ['Palindrome String', 'palindrome-string', 'EASY', 'String'],
-    ['FizzBuzz Advanced', 'fizzbuzz-advanced', 'EASY', 'Loops'],
-    ['Merge Sorted Arrays', 'merge-sorted-arrays', 'EASY', 'Arrays'],
-    ['SQL-like Data Filtering in JS', 'sql-like-data-filtering-in-js', 'MEDIUM', 'Data'],
-    ['REST API Response Transformer', 'rest-api-response-transformer', 'MEDIUM', 'Backend'],
-    ['Debounce Function', 'debounce-function', 'MEDIUM', 'Frontend'],
-    ['Binary Search', 'binary-search', 'EASY', 'Search'],
-    ['Simple LRU Cache', 'simple-lru-cache', 'HARD', 'Design'],
-  ] as const;
-
   await Promise.all(
-    problems.map(([title, slug, difficulty, category], index) =>
+    catalogCodeProblems.map(({ testCases, ...problem }) =>
       prisma.codeProblem.create({
         data: {
-          title,
-          slug,
-          difficulty,
-          category,
-          tags: [category.toLowerCase(), difficulty.toLowerCase()],
-          statement: `Solve ${title}. Return the expected output for each input according to the examples.`,
-          inputFormat: 'A JSON-compatible input string.',
-          outputFormat: 'A string or JSON-compatible output.',
-          constraintsText: 'Use an efficient algorithm and avoid mutating input unless documented.',
-          examples: [{ input: 'sample', output: 'sample' }],
-          starterCode: {
-            JAVASCRIPT: 'function solve(input) {\n  return input;\n}',
-            PYTHON: 'def solve(input):\n    return input',
-            JAVA: 'class Solution { String solve(String input) { return input; } }',
-            CPP: '#include <string>\nstd::string solve(std::string input) { return input; }',
-          },
-          solutionExplanation: 'Admin-only canonical explanation for mentor review.',
-          timeLimitMs: 1000 + index * 50,
-          memoryLimitMb: 128,
-          status: 'PUBLISHED',
-          testCases: {
-            create: [
-              { input: 'sample', expectedOutput: 'sample', isHidden: false, order: 1 },
-              { input: 'edge', expectedOutput: 'edge', isHidden: true, order: 2 },
-            ],
-          },
+          ...problem,
+          tags: problem.tags as Prisma.InputJsonValue,
+          examples: problem.examples as Prisma.InputJsonValue,
+          starterCode: problem.starterCode as Prisma.InputJsonValue,
+          testCases: { create: testCases },
         },
       }),
     ),

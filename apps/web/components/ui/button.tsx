@@ -14,7 +14,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <motion.button
       ref={ref}
       whileHover={{ y: -2, scale: 1.018, filter: 'brightness(1.06)' }}
-      whileTap={{ scale: 0.97, y: 0, filter: 'brightness(0.96)' }}
+      whileTap={{ scale: 0.97, y: 0, filter: 'brightness(0.72)' }}
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       className={cn(
         'relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full border font-semibold tracking-normal transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-success/30 disabled:cursor-not-allowed disabled:opacity-60',

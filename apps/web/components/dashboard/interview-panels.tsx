@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, MessageSquarePlus, Send, SquareCheckBig } from 'lucide-react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, CheckCircle2, MessageSquarePlus, Mic, MicOff, Send, SquareCheckBig } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, authHeaders } from '@/lib/api';
 import { InterviewQuestion, InterviewSession } from '@/lib/domain-types';
@@ -18,6 +18,43 @@ type CreateSessionResponse = {
   session: InterviewSession;
   suggestedQuestions: InterviewQuestion[];
 };
+
+type SpeechRecognitionAlternativeLike = {
+  transcript: string;
+};
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  [index: number]: SpeechRecognitionAlternativeLike;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
 
 export function InterviewOverviewPanel() {
   const query = useLiveQuery<InterviewSession[]>('/ai/interview/sessions/me', { auth: true });
@@ -158,6 +195,12 @@ export function InterviewSessionPanel({ id }: { id: string }) {
   const query = useLiveQuery<InterviewSession>(`/ai/interview/sessions/${id}`, { auth: true, deps: [id] });
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [message, setMessage] = useState('');
+  const [voiceMessage, setVoiceMessage] = useState('');
+  const [voiceLang, setVoiceLang] = useState<'vi-VN' | 'en-US'>('vi-VN');
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const answerRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
     async function loadQuestions() {
@@ -175,6 +218,74 @@ export function InterviewSessionPanel({ id }: { id: string }) {
     void loadQuestions();
   }, [query.data]);
 
+  useEffect(() => {
+    setVoiceSupported(typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
+  function appendTranscript(value: string) {
+    const text = value.trim();
+    if (!text || !answerRef.current) return;
+    const current = answerRef.current.value.trim();
+    answerRef.current.value = current ? `${current} ${text}` : text;
+    answerRef.current.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function toggleVoiceInput() {
+    if (!voiceSupported) {
+      setVoiceMessage('Trình duyệt hiện tại chưa hỗ trợ nhập giọng nói.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      setVoiceMessage('Đã dừng nghe.');
+      return;
+    }
+
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) return;
+
+    const recognition = new Recognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = voiceLang;
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript ?? '';
+        if (result?.isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        appendTranscript(finalTranscript);
+      }
+      setVoiceMessage(interimTranscript ? `Đang nghe: ${interimTranscript.trim()}` : 'Đang nghe...');
+    };
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      setVoiceMessage(event.error ? `Không nhận được giọng nói: ${event.error}` : 'Không nhận được giọng nói.');
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+    setVoiceMessage('Đang nghe...');
+  }
+
   async function answer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
@@ -190,6 +301,10 @@ export function InterviewSessionPanel({ id }: { id: string }) {
         }),
       });
       formElement.reset();
+      answerRef.current?.blur();
+      if (answerRef.current) answerRef.current.value = '';
+      recognitionRef.current?.stop();
+      setVoiceMessage('');
       setMessage('Đã lưu câu trả lời và điểm đánh giá AI.');
       query.reload();
     } catch (error) {
@@ -243,13 +358,32 @@ export function InterviewSessionPanel({ id }: { id: string }) {
               <Textarea name="question" defaultValue={defaultQuestion} required className="min-h-40 text-base leading-7" />
             </label>
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">Câu trả lời của bạn</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-medium text-slate-200">Câu trả lời của bạn</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={voiceLang}
+                    onChange={(event) => setVoiceLang(event.target.value as 'vi-VN' | 'en-US')}
+                    className="h-9 rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-white outline-none"
+                    disabled={isListening}
+                  >
+                    <option value="vi-VN">Tiếng Việt</option>
+                    <option value="en-US">English</option>
+                  </select>
+                  <Button type="button" variant={isListening ? 'secondary' : 'outline'} size="sm" onClick={toggleVoiceInput}>
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {isListening ? 'Dừng nghe' : 'Nhập bằng giọng nói'}
+                  </Button>
+                </div>
+              </div>
               <Textarea
+                ref={answerRef}
                 name="answer"
                 placeholder="Nhập câu trả lời có bối cảnh, hành động, kết quả và chi tiết kỹ thuật..."
                 required
                 className="min-h-40 text-base leading-7"
               />
+              {voiceMessage ? <span className="block text-xs text-secondary">{voiceMessage}</span> : null}
             </label>
           </div>
           {message ? <p className="text-sm text-secondary">{message}</p> : null}
