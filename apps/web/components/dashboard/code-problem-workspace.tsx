@@ -68,6 +68,18 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
       </Card>
       <CodeEditorPanel
         problemId={query.data.id}
+        problemContext={{
+          id: query.data.id,
+          slug: query.data.slug,
+          title: query.data.title,
+          difficulty: query.data.difficulty,
+          category: query.data.category,
+          statement: query.data.statement,
+          inputFormat: query.data.inputFormat,
+          outputFormat: query.data.outputFormat,
+          constraintsText: query.data.constraintsText,
+          examples: query.data.testCases,
+        }}
         starterCode={starter}
         isPremium={query.data.isPremium}
         unlockPrice={Number(query.data.unlockPrice ?? 20_000)}

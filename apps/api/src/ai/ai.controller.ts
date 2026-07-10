@@ -18,8 +18,11 @@ export class AiController {
 
   @Post('ai/chat')
   @UseGuards(JwtAuthGuard)
-  chat(@CurrentUser() user: AuthUser, @Body() body: { message: string; conversationId?: string }) {
-    return this.ai.chat(user.id, body.message, body.conversationId);
+  chat(
+    @CurrentUser() user: AuthUser,
+    @Body() body: { message: string; conversationId?: string; clientContext?: unknown },
+  ) {
+    return this.ai.chat(user.id, body.message, body.conversationId, body.clientContext);
   }
 
   @Get('ai/chat/conversations')
@@ -51,7 +54,11 @@ export class AiController {
   @Patch('admin/ai/prompt-templates/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  updatePrompt(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+  updatePrompt(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
     return this.ai.updatePromptTemplate(user.id, id, body);
   }
 

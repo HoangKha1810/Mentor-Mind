@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import {
   BarChart3,
   Bell,
@@ -19,11 +19,13 @@ import {
   Menu,
   MessagesSquare,
   Settings,
+  Search,
   X,
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
+import { LearningAssistantWidget } from '@/components/dashboard/learning-assistant-widget';
 import { WalletWidget } from '@/components/payments/wallet-widget';
 import { PageTransition } from '../ui/motion';
 import { logoutSession } from '@/lib/api';
@@ -97,6 +99,7 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [quickSearch, setQuickSearch] = useState('');
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -106,6 +109,14 @@ export function DashboardShell({
     void logoutSession();
     setMobileMenuOpen(false);
     router.replace('/login');
+  }
+
+  function submitQuickSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = quickSearch.trim();
+    if (!query) return;
+    setQuickSearch('');
+    router.push(`/dashboard/resources?query=${encodeURIComponent(query)}`);
   }
 
   return (
@@ -124,7 +135,19 @@ export function DashboardShell({
               </span>
             </span>
           </Link>
-          <div className="ml-auto flex items-center gap-2">
+          <form
+            onSubmit={submitQuickSearch}
+            className="ml-auto hidden w-[min(34vw,26rem)] items-center rounded-full border border-white/[0.10] bg-white/[0.05] px-4 py-2 transition focus-within:border-secondary/35 focus-within:bg-white/[0.075] xl:flex"
+          >
+            <Search className="h-4 w-4 shrink-0 text-mutedText" />
+            <input
+              value={quickSearch}
+              onChange={(event) => setQuickSearch(event.target.value)}
+              className="min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-white outline-none placeholder:text-mutedText"
+              placeholder="Tìm tài liệu, chủ đề, tag..."
+            />
+          </form>
+          <div className="flex items-center gap-2">
             {role === 'student' ? <WalletWidget /> : null}
             <button
               type="button"
@@ -271,6 +294,7 @@ export function DashboardShell({
           </PageTransition>
         </div>
       </main>
+      {role === 'student' ? <LearningAssistantWidget /> : null}
     </div>
   );
 }

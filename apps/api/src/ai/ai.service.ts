@@ -21,6 +21,7 @@ export const AI_PROVIDER = Symbol('AI_PROVIDER');
 const chatInputSchema = z.object({
   message: z.string().trim().min(1).max(8000),
   conversationId: z.string().optional(),
+  clientContext: z.unknown().optional(),
 });
 
 const memoryExtractionSchema = z.object({
@@ -251,9 +252,18 @@ export class AiService {
     );
   }
 
-  async chat(userId: string, rawMessage: string, conversationId?: string) {
+  async chat(
+    userId: string,
+    rawMessage: string,
+    conversationId?: string,
+    rawClientContext?: unknown,
+  ) {
     await this.ensureFeatureAllowed('LEARNING_ASSISTANT', userId);
-    const body = chatInputSchema.parse({ message: rawMessage, conversationId });
+    const body = chatInputSchema.parse({
+      message: rawMessage,
+      conversationId,
+      clientContext: rawClientContext,
+    });
     const conversation = body.conversationId
       ? await this.prisma.aIConversation.findFirst({ where: { id: body.conversationId, userId } })
       : null;
@@ -273,21 +283,27 @@ export class AiService {
     );
     const context = await this.loadStudentContext(userId);
     const template = await this.prompts.getActiveTemplate('LEARNING_ASSISTANT');
+    const clientContextForPrompt = this.stringifyForPrompt(body.clientContext);
     const prompt = `${this.prompts.render(template, {
       message: body.message,
       context,
       history: this.formatConversationHistory(previousMessages),
       contextUpdates,
+      clientContext: body.clientContext,
     })}
 
 Bạn là trợ lý học tập AI của MentorMind. Hãy trả lời bằng Tiếng Việt tự nhiên, giống một cuộc chat với mentor kỹ thuật.
 Ngữ cảnh tài khoản hiện tại: ${JSON.stringify(context)}
+Ngữ cảnh quan sát từ giao diện hiện tại: ${clientContextForPrompt}
 Lịch sử hội thoại gần nhất: ${this.formatConversationHistory(previousMessages)}
 Thông tin vừa ghi nhớ từ tin nhắn mới: ${JSON.stringify(contextUpdates.rememberedFacts)}
 Tin nhắn mới của học viên: ${body.message}
 
 Quy tắc:
 - Trả lời trực tiếp, hữu ích, có bước tiếp theo rõ ràng.
+- Nếu ngữ cảnh giao diện có code, câu hỏi phỏng vấn, CV/JD hoặc điểm gần nhất, hãy dùng nó để cá nhân hóa câu trả lời.
+- Khi học viên xin hint code hoặc phỏng vấn, chỉ gợi ý nhẹ và tránh đưa lời giải đầy đủ trừ khi học viên yêu cầu rõ.
+- Nếu ngữ cảnh cho thấy học viên vừa hoàn thành code/phỏng vấn/CV, hãy gợi ý tài liệu và bước học tiếp theo.
 - Nếu vừa ghi nhớ thông tin mới như lương, địa điểm, lịch học, mục tiêu, hãy xác nhận ngắn gọn.
 - Không bịa dữ liệu nền tảng nếu context chưa có.`;
     const result = await this.provider.generateText({
@@ -317,13 +333,20 @@ Quy tắc:
             conversationId: thread.id,
             role: 'USER',
             content: body.message,
-            metadata: { contextUpdates } as Prisma.InputJsonValue,
+            metadata: {
+              contextUpdates,
+              clientContext: this.toJsonValue(body.clientContext ?? {}),
+            } as Prisma.InputJsonValue,
           },
           {
             conversationId: thread.id,
             role: 'ASSISTANT',
             content: result.data,
-            metadata: { context, contextUpdates } as Prisma.InputJsonValue,
+            metadata: {
+              context,
+              contextUpdates,
+              clientContext: this.toJsonValue(body.clientContext ?? {}),
+            } as Prisma.InputJsonValue,
           },
         ],
       }),
@@ -798,6 +821,23 @@ Trả về JSON đúng dạng:
 
   private isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  private stringifyForPrompt(value: unknown, maxLength = 14_000) {
+    try {
+      const json = JSON.stringify(value ?? {});
+      return json.length > maxLength ? `${json.slice(0, maxLength)}...` : json;
+    } catch {
+      return '{}';
+    }
+  }
+
+  private toJsonValue(value: unknown): Prisma.InputJsonValue {
+    try {
+      return JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue;
+    } catch {
+      return { unavailable: true } as Prisma.InputJsonValue;
+    }
   }
 
   private async runJson<T>(

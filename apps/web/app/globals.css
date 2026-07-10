@@ -87,6 +87,70 @@ a[role='button']:not([aria-disabled='true']):active {
   filter: brightness(0.72);
 }
 
+.landing-start-button {
+  align-items: center;
+  background: #a370f0;
+  border: 0;
+  border-radius: 0.9em;
+  box-shadow: inset 0 0 1.6em -0.6em #714da6, 0 14px 34px rgba(123, 82, 185, 0.22);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 2.8em;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  padding: 0.35em 3.3em 0.35em 1.2em;
+  position: relative;
+  transition: transform 180ms ease, box-shadow 220ms ease, filter 180ms ease;
+  white-space: nowrap;
+}
+
+.landing-start-button:hover {
+  box-shadow: inset 0 0 1.6em -0.55em #714da6, 0 18px 42px rgba(123, 82, 185, 0.32);
+  transform: translateY(-1px);
+}
+
+.landing-start-button .icon {
+  align-items: center;
+  background: #ffffff;
+  border-radius: 0.7em;
+  box-shadow: 0.1em 0.1em 0.6em 0.2em #7b52b9;
+  color: #7b52b9;
+  display: flex;
+  height: 2.2em;
+  justify-content: center;
+  margin-left: 1em;
+  position: absolute;
+  right: 0.3em;
+  transition: all 0.3s ease;
+  width: 2.2em;
+}
+
+.landing-start-button:hover .icon {
+  width: calc(100% - 0.6em);
+}
+
+.landing-start-button .icon svg {
+  color: #7b52b9;
+  transition: transform 0.3s ease;
+  width: 1.1em;
+}
+
+.landing-start-button:hover .icon svg {
+  transform: translateX(0.1em);
+}
+
+.landing-start-button:active {
+  filter: brightness(0.72);
+}
+
+.landing-start-button:active .icon {
+  transform: scale(0.95);
+}
+
 ::selection {
   background: rgba(0, 212, 255, 0.35);
 }

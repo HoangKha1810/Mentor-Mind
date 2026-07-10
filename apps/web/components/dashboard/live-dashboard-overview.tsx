@@ -5,10 +5,14 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
+  BookOpenCheck,
   CalendarCheck,
   Code2,
+  FileText,
   GraduationCap,
   Map,
+  MessagesSquare,
+  Sparkles,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -199,25 +203,96 @@ export function LiveDashboardOverview() {
       tone: 'amber' as const,
     },
   ];
+  const actionTiles = [
+    {
+      title: 'Tạo lộ trình',
+      description: 'AI phác thảo mục tiêu, admin/mentor duyệt và theo sát tiến độ.',
+      href: '/create-roadmap',
+      icon: Map,
+      accent: 'from-sky-500/35 via-cyan-500/20 to-emerald-500/20',
+    },
+    {
+      title: 'Luyện code',
+      description: 'Mở 100 bài từ dễ đến khó, nộp bài và lưu lịch sử theo tài khoản.',
+      href: '/dashboard/code-practice',
+      icon: Code2,
+      accent: 'from-emerald-500/32 via-teal-500/20 to-sky-500/18',
+    },
+    {
+      title: 'Phỏng vấn AI',
+      description: 'Tạo phiên kỹ thuật, HR, tiếng Anh hoặc bảo vệ dự án và nhận điểm ngay.',
+      href: '/dashboard/interview',
+      icon: MessagesSquare,
+      accent: 'from-violet-500/35 via-fuchsia-500/20 to-cyan-500/16',
+    },
+    {
+      title: 'Sửa CV',
+      description: 'Upload CV/JD để AI phân tích ATS, keyword thiếu và rủi ro phỏng vấn.',
+      href: '/dashboard/cv-review',
+      icon: FileText,
+      accent: 'from-amber-500/30 via-orange-500/18 to-rose-500/18',
+    },
+  ];
 
   return (
     <>
-      <div className="dashboard-surface mb-5 flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-soft md:flex-row md:items-center md:justify-between">
-        <div className="relative z-10">
-          <p className="text-sm font-medium text-mutedText">Tài khoản đang xem</p>
-          <p className="mt-1 text-lg font-semibold text-white">
-            {payload.account.fullName} · {payload.account.email}
-          </p>
+      <div className="dashboard-surface mb-5 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-soft">
+        <div className="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Dữ liệu thật theo tài khoản
+            </div>
+            <p className="mt-4 text-sm font-medium text-mutedText">Xin chào</p>
+            <p className="mt-1 text-2xl font-semibold text-white">{payload.account.fullName}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+              {payload.account.email}. Dashboard này chỉ hiển thị lộ trình, lịch học, bài nộp,
+              phỏng vấn và thông báo lấy từ tài khoản hiện tại.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            <Button className="relative z-10 w-full" variant="outline" onClick={reloadAll}>
+              Cập nhật dữ liệu
+            </Button>
+            <Link href="/dashboard/resources">
+              <Button className="relative z-10 w-full" variant="secondary">
+                <BookOpenCheck className="h-4 w-4" />
+                Mở tài nguyên gợi ý
+              </Button>
+            </Link>
+          </div>
         </div>
-        <Button className="relative z-10" variant="outline" onClick={reloadAll}>
-          Cập nhật dữ liệu
-        </Button>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
+      </div>
+
+      <div className="mt-6 grid gap-4 xl:grid-cols-4">
+        {actionTiles.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} className="group block">
+              <div
+                className={`relative min-h-[13rem] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.accent} p-5 shadow-soft transition duration-300 group-hover:-translate-y-1 group-hover:border-white/20`}
+              >
+                <div className="relative z-10 flex h-full flex-col">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/14 bg-white/12 text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-5 text-lg font-semibold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">{item.description}</p>
+                  <span className="mt-auto inline-flex items-center gap-2 pt-4 text-sm font-semibold text-white">
+                    Mở ngay
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">

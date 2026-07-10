@@ -3,19 +3,28 @@
 import Editor from '@monaco-editor/react';
 import { Crown, Play, Send, Sparkles } from 'lucide-react';
 import { formatCurrency } from '@mentormind/shared';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { authHeaders, apiFetch } from '@/lib/api';
 import { WalletSummary } from '@/lib/domain-types';
+import {
+  excerpt,
+  LearningAssistantContextSnapshot,
+  publishLearningAssistantContext,
+} from '@/lib/learning-assistant-context';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
+type CodeProblemAssistantContext = NonNullable<LearningAssistantContextSnapshot['problem']>;
+
 export function CodeEditorPanel({
   problemId,
+  problemContext,
   starterCode = 'function solve(input) {\n  return input;\n}',
   isPremium = false,
   unlockPrice = 20_000,
 }: {
   problemId: string;
+  problemContext?: CodeProblemAssistantContext;
   starterCode?: string;
   isPremium?: boolean;
   unlockPrice?: number;
@@ -23,11 +32,56 @@ export function CodeEditorPanel({
   const [code, setCode] = useState(starterCode);
   const [output, setOutput] = useState('Chạy code để xem kết quả bộ test mẫu.');
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      publishCodeContext('editing', output);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [code]);
+
+  function publishCodeContext(
+    lastAction: NonNullable<LearningAssistantContextSnapshot['code']>['lastAction'],
+    outputExcerpt?: string,
+    result?: unknown,
+  ) {
+    const verdict = extractVerdict(result);
+    const completed = lastAction === 'submit' && isAcceptedVerdict(verdict);
+    publishLearningAssistantContext({
+      surface: 'code',
+      source: 'code-editor',
+      title: problemContext?.title ?? 'Luyện code',
+      summary: problemContext?.statement
+        ? excerpt(problemContext.statement, 220)
+        : 'Trợ lý đang theo dõi bài code và nội dung editor hiện tại.',
+      problem: problemContext,
+      code: {
+        language: 'JAVASCRIPT',
+        content: code,
+        chars: code.length,
+        lastAction,
+        outputExcerpt: excerpt(outputExcerpt, 1800),
+        verdict,
+        completed,
+      },
+      completion: completed
+        ? {
+            kind: 'code',
+            label: `Bài ${problemContext?.title ?? 'code'} đã accepted`,
+            query: [problemContext?.title, problemContext?.category, 'javascript algorithm']
+              .filter(Boolean)
+              .join(' '),
+            occurredAt: new Date().toISOString(),
+          }
+        : undefined,
+    });
+  }
+
   async function call(path: string) {
     if (!problemId) {
       setOutput('Không tìm thấy ID bài code. Vui lòng mở bài từ danh sách luyện tập.');
       return;
     }
+    const action = path.endsWith('/submit') ? 'submit' : path.endsWith('/ai-hint') ? 'hint' : 'run';
     try {
       const result = await apiFetch(path, {
         method: 'POST',
@@ -38,13 +92,16 @@ export function CodeEditorPanel({
       if (wallet) {
         window.dispatchEvent(new CustomEvent('mentormind:wallet-updated', { detail: { wallet } }));
       }
-      setOutput(JSON.stringify(result, null, 2));
+      const nextOutput = JSON.stringify(result, null, 2);
+      setOutput(nextOutput);
+      publishCodeContext(action, nextOutput, result);
     } catch (err) {
-      setOutput(
+      const nextOutput =
         err instanceof Error
           ? err.message
-          : 'Không thể chạy bài hiện tại. Vui lòng mở bài từ danh sách luyện tập đã đồng bộ.',
-      );
+          : 'Không thể chạy bài hiện tại. Vui lòng mở bài từ danh sách luyện tập đã đồng bộ.';
+      setOutput(nextOutput);
+      publishCodeContext(action, nextOutput);
     }
   }
 
@@ -110,4 +167,24 @@ function extractWallet(value: unknown): WalletSummary | null {
 
 function isWallet(value: unknown): value is WalletSummary {
   return value !== null && typeof value === 'object' && 'balance' in value && 'currency' in value;
+}
+
+function extractVerdict(value: unknown) {
+  const direct = readVerdict(value);
+  if (direct) return direct;
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return readVerdict(record.result) ?? readVerdict(record.submission);
+  }
+  return undefined;
+}
+
+function readVerdict(value: unknown) {
+  if (!value || typeof value !== 'object') return undefined;
+  const verdict = (value as Record<string, unknown>).verdict;
+  return typeof verdict === 'string' ? verdict : undefined;
+}
+
+function isAcceptedVerdict(value?: string) {
+  return Boolean(value && /accepted|correct|pass/i.test(value));
 }

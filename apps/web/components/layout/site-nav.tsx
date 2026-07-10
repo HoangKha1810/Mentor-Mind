@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { UserRound } from 'lucide-react';
+import { ArrowRight, UserRound } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { Account } from '@/lib/domain-types';
 import { assetUrl } from '@/lib/api';
@@ -64,9 +64,12 @@ export function SiteNav() {
               </Button>
             </Link>
             <Link href="/register">
-              <Button size="sm" aria-label="Bắt đầu">
-                <span className="hidden sm:inline">Bắt đầu</span>
-              </Button>
+              <span className="landing-start-button" aria-label="Bắt đầu">
+                <span>Bắt đầu</span>
+                <span className="icon">
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </span>
             </Link>
           </div>
         )}

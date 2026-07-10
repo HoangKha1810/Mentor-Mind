@@ -1,10 +1,19 @@
 'use client';
 
-import { FormEvent, ReactNode, useState } from 'react';
-import { AlertTriangle, CheckCircle2, FileText, Sparkles, UploadCloud } from 'lucide-react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import {
+  AlertTriangle,
+  Brain,
+  CheckCircle2,
+  ClipboardCheck,
+  FileText,
+  Sparkles,
+  UploadCloud,
+} from 'lucide-react';
 import { apiFetch, authHeaders, uploadFile } from '@/lib/api';
 import { CvReview, FileAsset } from '@/lib/domain-types';
 import { formatDateTime } from '@/lib/format';
+import { excerpt, publishLearningAssistantContext } from '@/lib/learning-assistant-context';
 import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +24,77 @@ import { AuthRequiredCard, EmptyState, ErrorCard, LoadingCard } from './live-com
 export function CvReviewPanel() {
   const query = useLiveQuery<CvReview[]>('/ai/cv-review/me', { auth: true });
   const [message, setMessage] = useState('');
+  const [draftContext, setDraftContext] = useState({
+    targetRole: '',
+    cvText: '',
+    jdText: '',
+    githubUrl: '',
+    portfolioUrl: '',
+    completed: false,
+    latestScore: undefined as number | undefined,
+  });
+  const latestReview = query.data?.[0];
+
+  useEffect(() => {
+    const hasDraft =
+      draftContext.targetRole ||
+      draftContext.cvText ||
+      draftContext.jdText ||
+      draftContext.githubUrl ||
+      draftContext.portfolioUrl;
+    if (!hasDraft && !latestReview) return;
+
+    const timer = window.setTimeout(() => {
+      publishLearningAssistantContext({
+        surface: 'cv',
+        source: 'cv-review',
+        title: draftContext.targetRole || latestReview?.targetRole || 'Sửa CV',
+        summary:
+          draftContext.cvText || draftContext.jdText
+            ? excerpt(`${draftContext.cvText} ${draftContext.jdText}`, 220)
+            : 'Trợ lý đang theo dõi CV, JD và kết quả phân tích gần nhất.',
+        cv: {
+          targetRole: draftContext.targetRole || latestReview?.targetRole,
+          cvExcerpt: draftContext.cvText,
+          jdExcerpt: draftContext.jdText,
+          githubUrl: draftContext.githubUrl,
+          portfolioUrl: draftContext.portfolioUrl,
+          latestScore: draftContext.latestScore ?? latestReview?.overallScore,
+          completed: draftContext.completed,
+        },
+        completion: draftContext.completed
+          ? {
+              kind: 'cv',
+              label:
+                `Phân tích CV ${draftContext.targetRole || latestReview?.targetRole || ''}`.trim(),
+              query: [
+                draftContext.targetRole || latestReview?.targetRole,
+                'cv improvement interview preparation',
+              ]
+                .filter(Boolean)
+                .join(' '),
+              score: draftContext.latestScore ?? latestReview?.overallScore,
+              occurredAt: new Date().toISOString(),
+            }
+          : undefined,
+      });
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [draftContext, latestReview]);
+
+  function updateDraftContext(event: FormEvent<HTMLFormElement>) {
+    const form = new FormData(event.currentTarget);
+    setDraftContext((current) => ({
+      ...current,
+      completed: false,
+      targetRole: String(form.get('targetRole') ?? ''),
+      cvText: String(form.get('cvText') ?? ''),
+      jdText: String(form.get('jdText') ?? ''),
+      githubUrl: String(form.get('githubUrl') ?? ''),
+      portfolioUrl: String(form.get('portfolioUrl') ?? ''),
+    }));
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +108,7 @@ export function CvReviewPanel() {
         cvFile ? uploadFile<FileAsset>('/files', cvFile) : Promise.resolve(undefined),
         jdFile ? uploadFile<FileAsset>('/files', jdFile) : Promise.resolve(undefined),
       ]);
-      await apiFetch('/ai/cv-review', {
+      const review = await apiFetch<CvReview>('/ai/cv-review', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -41,6 +121,11 @@ export function CvReviewPanel() {
           githubUrl: empty(form.get('githubUrl')),
         }),
       });
+      setDraftContext((current) => ({
+        ...current,
+        completed: true,
+        latestScore: review.overallScore,
+      }));
       setMessage('Đã tạo phân tích CV mới.');
       formElement.reset();
       query.reload();
@@ -53,14 +138,30 @@ export function CvReviewPanel() {
 
   return (
     <div className="space-y-5">
+      <section className="dashboard-surface overflow-hidden rounded-2xl border border-white/10 bg-white/[0.045] p-5 shadow-soft">
+        <div className="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-success/25 bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              ATS + JD + context học viên
+            </div>
+            <CardHeader className="mb-0 mt-4">
+              <CardTitle className="text-2xl">Sửa CV bằng AI theo mục tiêu ứng tuyển</CardTitle>
+              <CardDescription>
+                Upload PDF/DOC/DOCX hoặc dán nội dung. Kết quả phân tích sẽ được lưu vào context riêng để trợ lý AI tư vấn chính xác hơn.
+              </CardDescription>
+            </CardHeader>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <WorkflowStep icon={<UploadCloud className="h-4 w-4" />} title="1. Tải CV/JD" text="File hoặc nội dung dán tay." />
+            <WorkflowStep icon={<Brain className="h-4 w-4" />} title="2. AI phân tích" text="ATS, keyword, rủi ro phỏng vấn." />
+            <WorkflowStep icon={<Sparkles className="h-4 w-4" />} title="3. Kế hoạch sửa" text="Bullet, dự án, lộ trình tiếp." />
+          </div>
+        </div>
+      </section>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Phân tích CV theo JD</CardTitle>
-          <CardDescription>
-            Tải lên CV dạng PDF/DOC/DOCX hoặc dán nội dung CV để AI đánh giá độ phù hợp, keyword còn thiếu và các điểm nên sửa.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} onChange={updateDraftContext} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Input name="targetRole" placeholder="Vai trò mục tiêu" required />
             <Input name="githubUrl" placeholder="GitHub URL" />
@@ -78,25 +179,40 @@ export function CvReviewPanel() {
             />
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
-            <Textarea name="cvText" placeholder="Hoặc dán nội dung CV của bạn tại đây" className="min-h-44" />
-            <Textarea name="jdText" placeholder="Dán JD hoặc mô tả công việc" className="min-h-44" />
+            <Textarea
+              name="cvText"
+              placeholder="Hoặc dán nội dung CV của bạn tại đây"
+              className="min-h-44"
+            />
+            <Textarea
+              name="jdText"
+              placeholder="Dán JD hoặc mô tả công việc"
+              className="min-h-44"
+            />
           </div>
           <Input name="portfolioUrl" placeholder="Portfolio URL" />
           <p className="text-xs leading-5 text-mutedText">
             Nếu bạn vừa upload file vừa dán text, hệ thống sẽ gộp cả hai để AI phân tích đầy đủ hơn.
           </p>
           {message ? <p className="text-sm text-secondary">{message}</p> : null}
-          <Button>
-            <Sparkles className="h-4 w-4" />
-            Phân tích CV
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button>
+              <Sparkles className="h-4 w-4" />
+              Phân tích CV
+            </Button>
+            <span className="text-xs leading-5 text-mutedText">
+              Sau khi phân tích, trợ lý AI có thể dùng kết quả này khi bạn chat về lộ trình, phỏng vấn và mức lương.
+            </span>
+          </div>
         </form>
       </Card>
 
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-white">Lịch sử phân tích</h2>
-          <p className="mt-1 text-sm text-mutedText">Kết quả được lưu theo tài khoản để bạn theo dõi tiến bộ CV.</p>
+          <p className="mt-1 text-sm text-mutedText">
+            Kết quả được lưu theo tài khoản để bạn theo dõi tiến bộ CV.
+          </p>
         </div>
         {query.loading ? <LoadingCard label="Đang tải lịch sử phân tích CV..." /> : null}
         {query.error ? <ErrorCard message={query.error} onRetry={query.reload} /> : null}
@@ -116,11 +232,19 @@ export function CvReviewPanel() {
   );
 }
 
-function FilePicker({ name, label, description }: { name: string; label: string; description: string }) {
+function FilePicker({
+  name,
+  label,
+  description,
+}: {
+  name: string;
+  label: string;
+  description: string;
+}) {
   return (
-    <label className="block rounded-lg border border-dashed border-white/14 bg-white/[0.035] p-4 transition hover:border-success/50 hover:bg-white/[0.055]">
+    <label className="block rounded-xl border border-dashed border-white/14 bg-white/[0.035] p-4 transition hover:border-success/50 hover:bg-white/[0.055]">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
           <UploadCloud className="h-5 w-5" />
         </span>
         <div>
@@ -140,6 +264,7 @@ function FilePicker({ name, label, description }: { name: string; label: string;
 
 function CvReviewCard({ review }: { review: CvReview }) {
   const result = normalizeCvResult(review.result);
+  const score = Math.max(0, Math.min(Number(review.overallScore ?? 0), 100));
   return (
     <Card>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -156,20 +281,46 @@ function CvReviewCard({ review }: { review: CvReview }) {
           </span>
         ) : null}
       </div>
+      <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.035] p-4">
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="font-semibold text-white">Độ phù hợp tổng quan</span>
+          <span className="font-semibold text-secondary">{score}/100</span>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-[linear-gradient(90deg,#f59e0b,#57b846,#00d4ff)] transition-all"
+            style={{ width: `${score}%` }}
+          />
+        </div>
+      </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <ResultList title="Điểm mạnh" icon={<CheckCircle2 className="h-4 w-4 text-success" />} items={result.strengths} />
-        <ResultList title="Cần sửa" icon={<AlertTriangle className="h-4 w-4 text-warning" />} items={result.weaknesses} />
+        <ResultList
+          title="Điểm mạnh"
+          icon={<CheckCircle2 className="h-4 w-4 text-success" />}
+          items={result.strengths}
+        />
+        <ResultList
+          title="Cần sửa"
+          icon={<AlertTriangle className="h-4 w-4 text-warning" />}
+          items={result.weaknesses}
+        />
       </div>
 
       <ResultList title="Keyword còn thiếu" items={result.missingKeywords} className="mt-4" />
-      <ResultList title="Gợi ý cải thiện dự án" items={result.projectSuggestions} className="mt-4" />
+      <ResultList
+        title="Gợi ý cải thiện dự án"
+        items={result.projectSuggestions}
+        className="mt-4"
+      />
       <ResultList title="Bullet nên viết lại" items={result.betterBulletPoints} className="mt-4" />
       <ResultList title="Rủi ro khi phỏng vấn" items={result.interviewRiskAreas} className="mt-4" />
 
       <div className="mt-4 rounded-lg border border-white/8 bg-secondary/8 p-4">
         <p className="text-sm font-semibold text-white">Đề xuất tiếp theo</p>
-        <p className="mt-2 text-sm leading-6 text-slate-300">Gói phù hợp: {result.recommendedTutoringPackage}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          Gói phù hợp: {result.recommendedTutoringPackage}
+        </p>
         <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-300">
           {result.recommendedRoadmapItems.map((item) => (
             <li key={item}>• {item}</li>
@@ -177,6 +328,20 @@ function CvReviewCard({ review }: { review: CvReview }) {
         </ul>
       </div>
     </Card>
+  );
+}
+
+function WorkflowStep({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-white">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary">
+          {icon}
+        </span>
+        {title}
+      </div>
+      <p className="mt-2 text-xs leading-5 text-mutedText">{text}</p>
+    </div>
   );
 }
 
