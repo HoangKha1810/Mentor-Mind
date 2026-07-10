@@ -5,7 +5,10 @@ import { PrismaService } from '../prisma/prisma.service';
 
 const updateMeSchema = z.object({
   fullName: z.string().min(2).optional(),
-  avatarUrl: z.string().url().optional().nullable(),
+  avatarUrl: z
+    .union([z.string().url(), z.string().startsWith('/')])
+    .optional()
+    .nullable(),
   targetRole: z.string().optional(),
   currentLevel: z.string().optional(),
   goals: z.string().optional(),

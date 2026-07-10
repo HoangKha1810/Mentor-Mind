@@ -23,22 +23,44 @@ type UploadedLocalFile = {
 };
 
 @Controller('files')
-@UseGuards(JwtAuthGuard)
 export class StorageController {
   constructor(private readonly storage: StorageService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   upload(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedLocalFile) {
     return this.storage.upload(user.id, file);
   }
 
+  @Post('avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedLocalFile) {
+    return this.storage.uploadAvatar(user.id, file);
+  }
+
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   mine(@CurrentUser() user: AuthUser) {
     return this.storage.list(user.id);
   }
 
+  @Get('public/:ownerId/:filename')
+  @Header('Cache-Control', 'public, max-age=86400')
+  async publicAvatar(
+    @Param('ownerId') ownerId: string,
+    @Param('filename') filename: string,
+    @Res() response: Response,
+  ) {
+    const key = `${ownerId}/${filename}`;
+    const { asset, path } = await this.storage.getPublicAvatar(key);
+    response.setHeader('Content-Type', asset.mimeType);
+    return response.sendFile(path);
+  }
+
   @Get(':ownerId/:filename/download')
+  @UseGuards(JwtAuthGuard)
   @Header('Cache-Control', 'private, max-age=300')
   async download(
     @CurrentUser() user: AuthUser,

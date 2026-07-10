@@ -13,7 +13,10 @@ type ApiFetchInit = RequestInit & {
 
 let refreshPromise: Promise<string | undefined> | null = null;
 
-function mergeHeaders(headers: HeadersInit | undefined, values: Record<string, string | undefined>) {
+function mergeHeaders(
+  headers: HeadersInit | undefined,
+  values: Record<string, string | undefined>,
+) {
   const merged = new Headers(headers);
   Object.entries(values).forEach(([key, value]) => {
     if (value) merged.set(key, value);
@@ -100,6 +103,35 @@ export async function uploadFile<T>(path: string, file: File): Promise<T> {
   return json.data as T;
 }
 
+export async function uploadAvatar<T>(file: File): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+
+  async function send(token?: string) {
+    return fetch(`${API_URL}/files/avatar`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : authHeaders(),
+      credentials: 'include',
+      cache: 'no-store',
+      body: form,
+    });
+  }
+
+  let response = await send();
+  if (response.status === 401) {
+    const token = await refreshSession();
+    if (token) {
+      response = await send(token);
+    }
+  }
+
+  const json = await readApiResponse<T>(response);
+  if (!response.ok || !json.success) {
+    throw new Error(json.error?.message ?? 'Tải ảnh đại diện thất bại');
+  }
+  return json.data as T;
+}
+
 export async function refreshSession() {
   if (typeof window === 'undefined') return undefined;
   if (!refreshPromise) {
@@ -163,4 +195,10 @@ export function clearAccessToken() {
 export function authHeaders(): Record<string, string> {
   const token = getAccessToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export function assetUrl(value?: string | null) {
+  if (!value) return undefined;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_URL}${value.startsWith('/') ? value : `/${value}`}`;
 }
