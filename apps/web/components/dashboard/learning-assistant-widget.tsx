@@ -5,13 +5,9 @@ import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from '
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
-  Bot,
-  Code2,
   ExternalLink,
-  FileText,
   Lightbulb,
   Loader2,
-  MessagesSquare,
   Route,
   Send,
   Sparkles,
@@ -41,6 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 const IDLE_TRIGGER_SECONDS = 40;
 const NUDGE_COOLDOWN_MS = 5 * 60 * 1000;
 const NUDGE_STORAGE_KEY = 'mentormind.learningAssistantLastNudgeAt';
+const ASSISTANT_ICON_SRC = '/assistant/ai-assistant-bot.webp';
 
 type SearchResponse = {
   query: string;
@@ -314,44 +311,48 @@ export function LearningAssistantWidget() {
   return (
     <>
       {nudge && !open ? (
-        <div className="fixed bottom-24 right-4 z-50 w-[min(calc(100vw-2rem),22rem)] overflow-hidden rounded-2xl border border-secondary/25 bg-[#0b1728]/95 shadow-[0_24px_80px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:right-6">
-          <div className="flex items-start gap-3 p-4">
-            <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary/12 text-secondary">
-              <Lightbulb className="h-4 w-4" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white">{nudge.title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-300">{nudge.body}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => handleNudgeAction(nudge)}>
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {nudge.actionLabel}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={dismissNudge}>
-                  Để sau
-                </Button>
+        <div className="fixed bottom-[6.75rem] right-4 z-[2147483647] w-[min(calc(100vw-2rem),21rem)] sm:right-6">
+          <div className="relative overflow-hidden rounded-2xl border border-secondary/30 bg-[#07111f]/95 p-3.5 shadow-[0_24px_90px_rgba(0,0,0,0.55),0_0_44px_rgba(0,212,255,0.18)] backdrop-blur-2xl">
+            <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-secondary/70 to-transparent" />
+            <div className="flex items-start gap-3">
+              <AssistantAvatar className="mt-0.5 h-10 w-10 border-secondary/30 shadow-[0_0_30px_rgba(0,133,255,0.28)]" />
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Gợi ý nhanh
+                </div>
+                <p className="text-sm font-semibold text-white">{nudge.title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-300">{nudge.body}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => handleNudgeAction(nudge)}>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {nudge.actionLabel}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={dismissNudge}>
+                    Để sau
+                  </Button>
+                </div>
               </div>
+              <button
+                type="button"
+                aria-label="Ẩn gợi ý"
+                onClick={dismissNudge}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label="Ẩn gợi ý"
-              onClick={dismissNudge}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <span className="absolute -bottom-2 right-8 h-5 w-5 rotate-45 border-b border-r border-secondary/30 bg-[#07111f]/95" />
           </div>
         </div>
       ) : null}
 
       {open ? (
-        <section className="fixed bottom-24 right-4 z-50 flex h-[min(76vh,44rem)] w-[min(calc(100vw-2rem),29rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#081321]/95 shadow-[0_28px_110px_rgba(0,0,0,0.48)] backdrop-blur-2xl sm:right-6">
+        <section className="fixed bottom-24 right-4 z-[2147483647] flex h-[min(76vh,44rem)] w-[min(calc(100vw-2rem),29rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#081321]/95 shadow-[0_28px_110px_rgba(0,0,0,0.48)] backdrop-blur-2xl sm:right-6">
           <header className="border-b border-white/10 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/12 text-secondary shadow-[0_0_30px_rgba(0,212,255,0.14)]">
-                  <Bot className="h-5 w-5" />
-                </span>
+                <AssistantAvatar className="h-10 w-10 border-secondary/30 shadow-[0_0_30px_rgba(0,212,255,0.22)]" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-white">Trợ lý ngữ cảnh</p>
                   <p className="truncate text-xs text-mutedText">{contextLabel(activeContext)}</p>
@@ -467,12 +468,12 @@ export function LearningAssistantWidget() {
           setNudge(null);
         }}
         className={cn(
-          'fixed bottom-6 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full border border-secondary/35 bg-[#0d1b2d]/95 text-secondary shadow-[0_18px_60px_rgba(0,212,255,0.22)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-secondary/60 hover:text-white sm:right-6',
+          'fixed bottom-6 right-4 z-[2147483647] flex h-16 w-16 items-center justify-center rounded-[1.35rem] border border-secondary/35 bg-[#0d1b2d]/95 p-1.5 text-secondary shadow-[0_18px_60px_rgba(0,212,255,0.28)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-secondary/60 hover:shadow-[0_24px_80px_rgba(0,212,255,0.36)] sm:right-6',
           nudge && !open ? 'ring-4 ring-secondary/15' : '',
         )}
       >
-        <span className="absolute inset-2 rounded-full bg-secondary/12" />
-        <Bot className="relative h-7 w-7" />
+        <span className="absolute -inset-1 rounded-[1.65rem] bg-secondary/15 blur-md" />
+        <AssistantAvatar className="relative h-full w-full border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]" />
         {nudge && !open ? (
           <span className="absolute right-1 top-1 h-3.5 w-3.5 rounded-full border-2 border-[#0d1b2d] bg-success" />
         ) : null}
@@ -481,13 +482,30 @@ export function LearningAssistantWidget() {
   );
 }
 
+function AssistantAvatar({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-full border bg-blue-500',
+        className,
+      )}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={ASSISTANT_ICON_SRC}
+        alt=""
+        aria-hidden="true"
+        className="h-full w-full rounded-full object-cover"
+      />
+    </span>
+  );
+}
+
 function WelcomeState({ context }: { context: LearningAssistantContextSnapshot }) {
   return (
     <div className="rounded-xl border border-secondary/20 bg-secondary/[0.08] p-4">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary/12 text-secondary">
-          {surfaceIcon(context.surface)}
-        </span>
+        <AssistantAvatar className="h-9 w-9 border-secondary/25" />
         <div>
           <p className="text-sm font-semibold text-white">Mình đang theo sát màn hình này.</p>
           <p className="mt-1 text-xs leading-5 text-slate-300">
@@ -851,14 +869,6 @@ function contextLabel(context: LearningAssistantContextSnapshot) {
   }
   if (context.surface === 'cv') return context.cv?.targetRole ?? context.title ?? 'Sửa CV';
   return context.title ?? 'MentorMind';
-}
-
-function surfaceIcon(surface: LearningAssistantContextSnapshot['surface']) {
-  if (surface === 'code') return <Code2 className="h-4 w-4" />;
-  if (surface === 'interview') return <MessagesSquare className="h-4 w-4" />;
-  if (surface === 'cv') return <FileText className="h-4 w-4" />;
-  if (surface === 'resources') return <BookOpen className="h-4 w-4" />;
-  return <Sparkles className="h-4 w-4" />;
 }
 
 function recordFromUnknown(value: unknown) {
