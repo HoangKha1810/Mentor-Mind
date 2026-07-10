@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -7,9 +8,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AccountStatus, Prisma, Role } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { randomInt } from 'crypto';
 import { Response } from 'express';
 import { z } from 'zod';
+import { EmailProvider } from '../email/email-provider.interface';
 import { PrismaService } from '../prisma/prisma.service';
+import { EMAIL_PROVIDER } from './auth.tokens';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -21,6 +25,11 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+});
+
+const adminTwoFactorSchema = z.object({
+  challengeId: z.string().min(1),
+  code: z.string().regex(/^\d{6}$/),
 });
 
 type TokenPayload = {
@@ -36,6 +45,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    @Inject(EMAIL_PROVIDER) private readonly emailProvider: EmailProvider,
   ) {}
 
   async register(input: unknown, response: Response) {
@@ -80,12 +90,68 @@ export class AuthService {
       throw new UnauthorizedException('Account is not active');
     }
 
+    if (user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN) {
+      const challenge = await this.createAdminLoginChallenge(user);
+      await this.audit(user.id, 'AUTH_ADMIN_2FA_REQUIRED', 'User', user.id, {
+        challengeId: challenge.challengeId,
+        emailProvider: challenge.emailProvider,
+      });
+      return {
+        requiresTwoFactor: true,
+        challengeId: challenge.challengeId,
+        email: maskEmail(user.email),
+        expiresAt: challenge.expiresAt.toISOString(),
+      };
+    }
+
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
     await this.audit(user.id, 'AUTH_LOGIN', 'User', user.id, {});
     return this.issueTokens(user, response);
+  }
+
+  async verifyAdminTwoFactor(input: unknown, response: Response) {
+    const body = adminTwoFactorSchema.parse(input);
+    const challenge = await this.prisma.adminLoginChallenge.findUnique({
+      where: { id: body.challengeId },
+      include: { user: true },
+    });
+
+    if (
+      !challenge ||
+      challenge.consumedAt ||
+      challenge.expiresAt.getTime() < Date.now() ||
+      challenge.attempts >= 5 ||
+      challenge.user.status !== AccountStatus.ACTIVE ||
+      (challenge.user.role !== Role.ADMIN && challenge.user.role !== Role.SUPER_ADMIN)
+    ) {
+      throw new UnauthorizedException('Mã xác thực đã hết hạn hoặc không hợp lệ');
+    }
+
+    const valid = await argon2.verify(challenge.codeHash, body.code);
+    if (!valid) {
+      await this.prisma.adminLoginChallenge.update({
+        where: { id: challenge.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new UnauthorizedException('Mã xác thực không đúng');
+    }
+
+    await this.prisma.adminLoginChallenge.update({
+      where: { id: challenge.id },
+      data: { consumedAt: new Date() },
+    });
+    await this.prisma.user.update({
+      where: { id: challenge.userId },
+      data: { lastLoginAt: new Date() },
+    });
+    await this.audit(challenge.userId, 'AUTH_ADMIN_2FA_VERIFY', 'User', challenge.userId, {
+      challengeId: challenge.id,
+    });
+
+    return this.issueTokens(challenge.user, response);
   }
 
   async refresh(refreshToken: string | undefined, response: Response) {
@@ -205,6 +271,49 @@ export class AuthService {
     };
   }
 
+  private async createAdminLoginChallenge(user: { id: string; email: string; fullName: string }) {
+    const code = String(randomInt(100000, 1000000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.prisma.adminLoginChallenge.deleteMany({
+      where: {
+        userId: user.id,
+        OR: [{ consumedAt: { not: null } }, { expiresAt: { lt: new Date() } }],
+      },
+    });
+
+    const challenge = await this.prisma.adminLoginChallenge.create({
+      data: {
+        userId: user.id,
+        codeHash: await argon2.hash(code),
+        expiresAt,
+      },
+    });
+
+    const to = this.config.get<string>('ADMIN_2FA_TO') || user.email;
+    const appName = this.config.get<string>('APP_NAME') ?? 'MentorMind';
+    const email = await this.emailProvider.send({
+      to,
+      subject: `${appName} admin login code: ${code}`,
+      text: `Mã xác thực đăng nhập admin của bạn là ${code}. Mã hết hạn sau 10 phút. Nếu bạn không yêu cầu đăng nhập, hãy đổi mật khẩu ngay.`,
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+          <h2>${appName} admin login verification</h2>
+          <p>Xin chào ${escapeHtml(user.fullName)},</p>
+          <p>Mã xác thực đăng nhập admin của bạn là:</p>
+          <p style="font-size:28px;font-weight:700;letter-spacing:6px">${code}</p>
+          <p>Mã này hết hạn sau <strong>10 phút</strong>. Nếu bạn không yêu cầu đăng nhập, hãy đổi mật khẩu ngay.</p>
+        </div>
+      `,
+    });
+
+    return {
+      challengeId: challenge.id,
+      expiresAt,
+      emailProvider: email.provider,
+    };
+  }
+
   private async audit(
     actorId: string | null,
     action: string,
@@ -216,4 +325,19 @@ export class AuthService {
       data: { actorId, action, entityType, entityId, metadata: metadata as Prisma.InputJsonValue },
     });
   }
+}
+
+function maskEmail(email: string) {
+  const [name = '', domain = ''] = email.split('@');
+  const visible = name.slice(0, 2);
+  return `${visible}${'*'.repeat(Math.max(name.length - 2, 2))}@${domain}`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }

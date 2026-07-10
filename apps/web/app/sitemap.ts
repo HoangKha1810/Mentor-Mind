@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next';
-
-const siteUrl = 'https://mentormind.center';
+import { seoLandingPages, siteUrl } from '@/lib/seo-content';
 
 const routes: Array<{ path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'] }> = [
   { path: '/', priority: 1, changeFrequency: 'weekly' },
@@ -10,8 +9,11 @@ const routes: Array<{ path: string; priority: number; changeFrequency: MetadataR
   { path: '/code-practice', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/ai-interview', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/resources', priority: 0.8, changeFrequency: 'daily' },
-  { path: '/login', priority: 0.3, changeFrequency: 'monthly' },
-  { path: '/register', priority: 0.6, changeFrequency: 'monthly' },
+  ...seoLandingPages.map((page) => ({
+    path: `/${page.slug}`,
+    priority: 0.78,
+    changeFrequency: 'monthly' as const,
+  })),
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

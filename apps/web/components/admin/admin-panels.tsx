@@ -663,16 +663,169 @@ export function AdminAiPromptsPanel() {
 }
 
 export function AdminPackagesPanel() {
+  const query = useLiveQuery<Paginated<PackageItem>>('/admin/packages?includeDrafts=true&limit=100', {
+    auth: true,
+  });
+  const [message, setMessage] = useState('');
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  async function updateQuick(id: string, form: FormData) {
+    setMessage('');
+    setSavingId(id);
+    try {
+      await apiFetch(`/admin/packages/${id}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          price: Number(form.get('price') ?? 0),
+          currency: String(form.get('currency') || 'VND').trim().toUpperCase(),
+          status: form.get('status'),
+          featured: form.get('featured') === 'on',
+        }),
+      });
+      setMessage('Đã cập nhật gói học.');
+      query.reload();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Không cập nhật được gói học');
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function remove(id: string) {
+    setMessage('');
+    setSavingId(id);
+    try {
+      await apiFetch(`/admin/packages/${id}`, { method: 'DELETE', headers: authHeaders() });
+      setMessage('Đã xóa gói học.');
+      query.reload();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Không xóa được gói học');
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
-    <AdminJsonCrudPanel<PackageItem>
-      title="Gói học"
-      listPath="/admin/packages?includeDrafts=true&limit=50"
-      createPath="/admin/packages"
-      deleteBase="/admin/packages"
-      editBase="/admin/packages"
-      newHref="/admin/packages/new"
-      template={packageTemplate}
-    />
+    <div className="space-y-4">
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardHeader>
+            <CardTitle>Quản lý gói học và giá</CardTitle>
+            <CardDescription>
+              Xem toàn bộ khóa/gói học, chỉnh nhanh giá, tiền tệ, trạng thái publish và gói nổi bật.
+            </CardDescription>
+          </CardHeader>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={query.reload}>
+              <RefreshCcw className="h-4 w-4" />
+              Tải lại
+            </Button>
+            <Link href="/admin/packages/new">
+              <Button>
+                <Plus className="h-4 w-4" />
+                Tạo gói học
+              </Button>
+            </Link>
+          </div>
+        </div>
+        {message ? <p className="mt-3 text-sm text-secondary">{message}</p> : null}
+      </Card>
+
+      <DataGate query={query}>
+        {(data) => (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {data.items.map((item) => (
+              <Card key={item.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <CardHeader>
+                    <CardTitle>{item.title}</CardTitle>
+                    <CardDescription>
+                      /packages/{item.slug} · {item.targetRole} · {item.durationWeeks} tuần ·{' '}
+                      {item.recommendedSessions} buổi
+                    </CardDescription>
+                  </CardHeader>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusBadge value={item.status ?? 'DRAFT'} />
+                    {item.featured ? <Badge>Nổi bật</Badge> : null}
+                  </div>
+                </div>
+
+                <p className="mb-4 text-sm leading-6 text-mutedText">{item.shortDescription}</p>
+
+                <form
+                  className="grid gap-3 md:grid-cols-[minmax(0,1fr)_7rem_9rem]"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void updateQuick(item.id, new FormData(event.currentTarget));
+                  }}
+                >
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-mutedText">Giá</span>
+                    <Input
+                      name="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={Number(item.price)}
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-mutedText">Tiền tệ</span>
+                    <Input name="currency" defaultValue={item.currency ?? 'VND'} />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs font-semibold text-mutedText">Trạng thái</span>
+                    <select
+                      name="status"
+                      defaultValue={item.status ?? 'DRAFT'}
+                      className="h-12 w-full rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white outline-none"
+                    >
+                      {['DRAFT', 'PUBLISHED', 'ARCHIVED'].map((status) => (
+                        <option key={status} value={status}>
+                          {formatStatus(status)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-slate-200 md:col-span-3">
+                    <input name="featured" type="checkbox" defaultChecked={Boolean(item.featured)} />
+                    Hiển thị nổi bật trên trang gói học
+                  </label>
+                  <div className="flex flex-wrap gap-2 md:col-span-3">
+                    <Button type="submit" size="sm" disabled={savingId === item.id}>
+                      <Save className="h-4 w-4" />
+                      {savingId === item.id ? 'Đang lưu...' : 'Lưu giá/trạng thái'}
+                    </Button>
+                    <Link href={`/admin/packages/${item.id}/edit`}>
+                      <Button type="button" variant="secondary" size="sm">
+                        <FilePenLine className="h-4 w-4" />
+                        Sửa chi tiết
+                      </Button>
+                    </Link>
+                    <Link href={`/packages/${item.slug}`}>
+                      <Button type="button" variant="outline" size="sm">
+                        Xem trang công khai
+                      </Button>
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={savingId === item.id}
+                      onClick={() => void remove(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Xóa
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            ))}
+          </div>
+        )}
+      </DataGate>
+    </div>
   );
 }
 

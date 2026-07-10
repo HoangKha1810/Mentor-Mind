@@ -18,6 +18,11 @@ export class AuthController {
     return this.authService.login(body, response);
   }
 
+  @Post('login/verify-admin-2fa')
+  verifyAdminTwoFactor(@Body() body: unknown, @Res({ passthrough: true }) response: Response) {
+    return this.authService.verifyAdminTwoFactor(body, response);
+  }
+
   @Post('refresh')
   refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     return this.authService.refresh(request.cookies?.refreshToken, response);

@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import { PageShell } from '@/components/layout/page-shell';
 import { PackageBrowser } from '@/components/packages/package-browser';
+
+export const metadata: Metadata = {
+  title: 'Gói học mentor 1-1 theo mục tiêu nghề nghiệp',
+  description:
+    'Xem các gói học MentorMind: mentor lập trình 1-1, frontend, backend, fullstack, AI/Data, luyện phỏng vấn, sửa CV và chuẩn bị đi làm.',
+  keywords: ['gói học lập trình', 'mentor 1-1', 'học lập trình 1 kèm 1', 'khóa học lập trình online'],
+  alternates: { canonical: '/packages' },
+};
 
 export default function PackagesPage() {
   return (

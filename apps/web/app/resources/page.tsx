@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import { ResourceSearchPanel } from '@/components/dashboard/resource-search-panel';
 import { PageShell } from '@/components/layout/page-shell';
+
+export const metadata: Metadata = {
+  title: 'Tài nguyên học lập trình, AI, phỏng vấn và CV',
+  description:
+    'Tìm tài nguyên học lập trình bằng AI: sách, docs, bài viết, dự án, bài code, gói học và tài liệu theo lộ trình.',
+  keywords: ['tài nguyên học lập trình', 'docs lập trình', 'bài viết lập trình', 'tài nguyên AI', 'học frontend'],
+  alternates: { canonical: '/resources' },
+};
 
 export default function PublicResourcesPage() {
   return (

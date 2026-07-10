@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { History, MessageSquarePlus, Sparkles } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,14 @@ const modes = [
   { label: 'Bảo vệ dự án', mode: 'PROJECT_DEFENSE', description: 'Luyện cách trình bày kiến trúc, trade-off và kết quả.' },
   { label: 'Tiếng Anh', mode: 'ENGLISH', description: 'Rèn phản xạ trả lời phỏng vấn bằng tiếng Anh.' },
 ];
+
+export const metadata: Metadata = {
+  title: 'Luyện phỏng vấn AI cho IT, HR, tiếng Anh và dự án',
+  description:
+    'Luyện phỏng vấn AI theo vai trò, level và mode. Nhận điểm, feedback, câu trả lời tốt hơn và lưu lịch sử theo tài khoản.',
+  keywords: ['luyện phỏng vấn AI', 'mock interview IT', 'phỏng vấn frontend', 'phỏng vấn tiếng Anh IT'],
+  alternates: { canonical: '/ai-interview' },
+};
 
 export default function AiInterviewLanding() {
   return (

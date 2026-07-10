@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
 import { EmailInput, EmailProvider } from './email-provider.interface';
 
 @Injectable()
@@ -13,7 +14,28 @@ export class SmtpEmailProvider implements EmailProvider {
     if (!host) {
       return { id: `smtp_not_configured_${Date.now()}`, provider: this.name };
     }
-    console.info(`[smtp-adapter] queued ${input.subject} to ${input.to} through ${host}`);
-    return { id: `smtp_${Date.now()}`, provider: this.name };
+
+    const port = Number(this.config.get<string>('SMTP_PORT') ?? 587);
+    const user = this.config.get<string>('SMTP_USER');
+    const pass = this.config.get<string>('SMTP_PASS');
+    const from = this.config.get<string>('SMTP_FROM') ?? user ?? 'no-reply@mentormind.center';
+    const secure = this.config.get<string>('SMTP_SECURE') === 'true' || port === 465;
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: user && pass ? { user, pass } : undefined,
+    });
+
+    const result = await transporter.sendMail({
+      from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    });
+
+    return { id: String(result.messageId ?? `smtp_${Date.now()}`), provider: this.name };
   }
 }

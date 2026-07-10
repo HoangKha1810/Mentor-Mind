@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import {
   ArrowRight,
   BookOpenCheck,
@@ -17,12 +18,91 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { StaggerContainer, StaggerItem } from '@/components/ui/motion';
 import { publicFeatures } from '@/lib/public-content';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
+import { coreSeoKeywords, seoLandingPages, siteName, siteUrl } from '@/lib/seo-content';
+
+export const metadata: Metadata = {
+  title: 'MentorMind - Học lập trình online, mentor 1-1, lộ trình AI',
+  description:
+    'Học lập trình online với lộ trình AI cá nhân hóa, mentor 1-1, luyện code, luyện phỏng vấn AI, sửa CV ATS và tài nguyên học tập cho mục tiêu đi làm.',
+  keywords: coreSeoKeywords,
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'MentorMind - Học lập trình online với mentor 1-1 và AI',
+    description:
+      'Nền tảng học lập trình cá nhân hóa: roadmap AI, mentor 1-1, luyện code, mock interview, sửa CV và tài nguyên học tập.',
+    url: '/',
+  },
+};
+
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': `${siteUrl}/#homepage`,
+      url: siteUrl,
+      name: 'MentorMind - Học lập trình online có mentor và AI',
+      description: metadata.description,
+      isPartOf: { '@id': `${siteUrl}/#website` },
+      inLanguage: 'vi-VN',
+      about: coreSeoKeywords.slice(0, 12),
+    },
+    {
+      '@type': 'EducationalOrganization',
+      '@id': `${siteUrl}/#educational-organization`,
+      name: siteName,
+      url: siteUrl,
+      description:
+        'MentorMind cung cấp lộ trình học lập trình cá nhân hóa, mentor 1-1, luyện code, luyện phỏng vấn AI và sửa CV ATS.',
+      areaServed: 'Vietnam',
+      knowsAbout: coreSeoKeywords,
+    },
+    {
+      '@type': 'ItemList',
+      '@id': `${siteUrl}/#learning-services`,
+      name: 'Dịch vụ học tập MentorMind',
+      itemListElement: seoLandingPages.map((page, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${siteUrl}/${page.slug}`,
+        name: page.title,
+        description: page.description,
+      })),
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${siteUrl}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'MentorMind giúp học lập trình online như thế nào?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'MentorMind tạo lộ trình học theo mục tiêu, kết hợp mentor 1-1, luyện code, luyện phỏng vấn AI, sửa CV và tài nguyên học tập.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Có thể học theo mục tiêu đi làm không?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Có. Học viên có thể chọn mục tiêu như frontend, backend, fullstack, AI/Data, intern, fresher hoặc junior để hệ thống đề xuất roadmap phù hợp.',
+          },
+        },
+      ],
+    },
+  ],
+};
 
 export default function HomePage() {
   return (
     <PageShell>
       <div className="home-page-background relative isolate overflow-hidden">
         <div className="home-page-ambient" aria-hidden="true" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+        />
         <HomeHero />
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

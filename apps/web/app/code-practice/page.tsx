@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import { CodePracticePanel } from '@/components/dashboard/code-practice-panel';
 import { PageShell } from '@/components/layout/page-shell';
+
+export const metadata: Metadata = {
+  title: 'Luyện code online với test tự động và gợi ý AI',
+  description:
+    'Luyện code online trên MentorMind: chọn bài, mở editor, chạy test, lưu submission và nhận gợi ý AI khi bị kẹt.',
+  keywords: ['luyện code online', 'luyện thuật toán', 'bài tập lập trình', 'AI gợi ý code'],
+  alternates: { canonical: '/code-practice' },
+};
 
 export default function CodePracticeLanding() {
   return (

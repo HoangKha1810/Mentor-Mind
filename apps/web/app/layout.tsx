@@ -2,10 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { CustomCursor } from '@/components/ui/custom-cursor';
+import { coreSeoKeywords, siteName, siteUrl } from '@/lib/seo-content';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-geist-sans' });
-const siteUrl = 'https://mentormind.center';
-const siteName = 'MentorMind';
 const siteDescription =
   'MentorMind là dịch vụ học trực tuyến cá nhân hóa với lộ trình AI, mentor 1-1, luyện code, luyện phỏng vấn và tài nguyên học tập cho người muốn sẵn sàng đi làm.';
 
@@ -56,6 +55,7 @@ export const metadata: Metadata = {
     'luyện code',
     'sửa CV',
     'học lập trình đi làm',
+    ...coreSeoKeywords,
   ],
   authors: [{ name: 'MentorMind' }],
   creator: 'MentorMind',
@@ -109,6 +109,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
       'max-video-preview': -1,
     },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
 };
 

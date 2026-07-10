@@ -312,6 +312,10 @@ export type PackageItem = {
   mentorType: string;
   price: string | number;
   currency: string;
+  status?: string;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type WalletSummary = {
