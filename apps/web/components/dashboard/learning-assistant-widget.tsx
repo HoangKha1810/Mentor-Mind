@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import {
   BookOpen,
   ExternalLink,
@@ -308,10 +309,10 @@ export function LearningAssistantWidget() {
 
   if (!mounted || accountQuery.unauthenticated) return null;
 
-  return (
+  const widget = (
     <>
       {nudge && !open ? (
-        <div className="fixed bottom-[6.75rem] right-4 z-[2147483647] w-[min(calc(100vw-2rem),21rem)] sm:right-6">
+        <div className="assistant-viewport-nudge w-[min(calc(100vw-2rem),21rem)]">
           <div className="relative overflow-hidden rounded-2xl border border-secondary/30 bg-[#07111f]/95 p-3.5 shadow-[0_24px_90px_rgba(0,0,0,0.55),0_0_44px_rgba(0,212,255,0.18)] backdrop-blur-2xl">
             <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-secondary/70 to-transparent" />
             <div className="flex items-start gap-3">
@@ -348,7 +349,7 @@ export function LearningAssistantWidget() {
       ) : null}
 
       {open ? (
-        <section className="fixed bottom-24 right-4 z-[2147483647] flex h-[min(76vh,44rem)] w-[min(calc(100vw-2rem),29rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#081321]/95 shadow-[0_28px_110px_rgba(0,0,0,0.48)] backdrop-blur-2xl sm:right-6">
+        <section className="assistant-viewport-panel flex h-[min(76vh,44rem)] w-[min(calc(100vw-2rem),29rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#081321]/95 shadow-[0_28px_110px_rgba(0,0,0,0.48)] backdrop-blur-2xl">
           <header className="border-b border-white/10 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -468,7 +469,7 @@ export function LearningAssistantWidget() {
           setNudge(null);
         }}
         className={cn(
-          'fixed bottom-6 right-4 z-[2147483647] flex h-16 w-16 items-center justify-center rounded-[1.35rem] border border-secondary/35 bg-[#0d1b2d]/95 p-1.5 text-secondary shadow-[0_18px_60px_rgba(0,212,255,0.28)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-secondary/60 hover:shadow-[0_24px_80px_rgba(0,212,255,0.36)] sm:right-6',
+          'assistant-viewport-launcher flex h-16 w-16 items-center justify-center rounded-[1.35rem] border border-secondary/35 bg-[#0d1b2d]/95 p-1.5 text-secondary shadow-[0_18px_60px_rgba(0,212,255,0.28)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-secondary/60 hover:shadow-[0_24px_80px_rgba(0,212,255,0.36)]',
           nudge && !open ? 'ring-4 ring-secondary/15' : '',
         )}
       >
@@ -480,6 +481,8 @@ export function LearningAssistantWidget() {
       </button>
     </>
   );
+
+  return createPortal(widget, document.body);
 }
 
 function AssistantAvatar({ className }: { className?: string }) {

@@ -371,6 +371,36 @@ a[role='button']:not([aria-disabled='true']):active {
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+.assistant-viewport-launcher,
+.assistant-viewport-panel,
+.assistant-viewport-nudge {
+  --assistant-edge-x: max(1rem, env(safe-area-inset-right));
+  --assistant-edge-y: max(1.5rem, env(safe-area-inset-bottom));
+  position: fixed;
+  right: var(--assistant-edge-x);
+  z-index: 2147483647;
+}
+
+.assistant-viewport-launcher {
+  bottom: var(--assistant-edge-y);
+}
+
+.assistant-viewport-panel {
+  bottom: calc(var(--assistant-edge-y) + 4.5rem);
+}
+
+.assistant-viewport-nudge {
+  bottom: calc(var(--assistant-edge-y) + 5.25rem);
+}
+
+@media (min-width: 640px) {
+  .assistant-viewport-launcher,
+  .assistant-viewport-panel,
+  .assistant-viewport-nudge {
+    --assistant-edge-x: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
 .theme-light input,
 .theme-light textarea,
 .theme-light select {
