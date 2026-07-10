@@ -29,6 +29,8 @@ async function main() {
         solutionExplanation: problem.solutionExplanation,
         timeLimitMs: problem.timeLimitMs,
         memoryLimitMb: problem.memoryLimitMb,
+        isPremium: problem.isPremium ?? false,
+        unlockPrice: problem.unlockPrice ?? 0,
         status: problem.status,
       },
     });

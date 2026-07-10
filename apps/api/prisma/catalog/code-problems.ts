@@ -995,10 +995,11 @@ function buildGeneratedProblem(index: number, theme: string): CatalogCodeProblem
       : order <= 75
         ? mediumTemplates[index % mediumTemplates.length]!
         : hardTemplates[index % hardTemplates.length]!;
+  const { name, ...problemTemplate } = template;
   const isPremium = template.difficulty === 'HARD' && order >= 76;
-  const title = `Bài ${order}: ${template.name} - ${theme}`;
+  const title = `Bài ${order}: ${name} - ${theme}`;
   return {
-    ...template,
+    ...problemTemplate,
     title,
     slug: toSlug(title),
     tags: [...template.tags, theme.replace(/\s+/g, '-')],
