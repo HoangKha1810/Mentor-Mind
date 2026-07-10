@@ -21,7 +21,9 @@ import { ScrollReveal } from '@/components/ui/scroll-reveal';
 export default function HomePage() {
   return (
     <PageShell>
-      <HomeHero />
+      <div className="home-page-background relative isolate overflow-hidden">
+        <div className="home-page-ambient" aria-hidden="true" />
+        <HomeHero />
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <ScrollReveal delay={0.2} direction="up">
@@ -202,6 +204,7 @@ export default function HomePage() {
           </ScrollReveal>
         </div>
       </section>
+      </div>
     </PageShell>
   );
 }
