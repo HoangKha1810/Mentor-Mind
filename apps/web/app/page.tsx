@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle2, Heart, Sparkles } from 'lucide-react';
 import { LearningOrbit } from '@/components/home/learning-orbit';
 import { PageShell } from '@/components/layout/page-shell';
 import { PackageBrowser } from '@/components/packages/package-browser';
@@ -105,7 +105,10 @@ export default function HomePage() {
                 Lộ trình 1-1 cho mục tiêu học thật
               </h2>
             </div>
-            <Link href="/packages" className="hidden text-sm text-secondary md:block hover:text-white transition-colors">
+            <Link
+              href="/packages"
+              className="hidden text-sm text-secondary md:block hover:text-white transition-colors"
+            >
               Xem tất cả gói học &rarr;
             </Link>
           </div>
@@ -115,6 +118,74 @@ export default function HomePage() {
           <PackageBrowser compact />
         </ScrollReveal>
       </section>
+
+      <section className="bg-[#f8fafc] text-slate-900">
+        <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8 lg:py-20">
+          <ScrollReveal direction="up">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.35rem] bg-[linear-gradient(135deg,#ef4444,#f97316)] text-white shadow-[0_18px_48px_rgba(239,68,68,0.24)]">
+              <Heart className="h-9 w-9" />
+            </div>
+            <h2 className="mt-7 text-3xl font-semibold tracking-normal text-slate-950">
+              Xây dựng bằng tâm huyết cho học viên Việt Nam
+            </h2>
+            <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-500">
+              MentorMind giúp bạn biến mục tiêu nghề nghiệp thành lộ trình học rõ ràng, luyện code,
+              hoàn thiện CV và chuẩn bị phỏng vấn trong một hệ thống có AI ghi nhớ ngữ cảnh học tập
+              của từng tài khoản.
+            </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.15} direction="up">
+            <div className="mx-auto mt-14 grid max-w-5xl grid-cols-2 gap-x-8 gap-y-8 text-slate-300 sm:grid-cols-3 lg:grid-cols-6">
+              {companySignals.map((company) => (
+                <div
+                  key={company}
+                  className="flex h-14 items-center justify-center text-lg font-semibold tracking-normal grayscale transition hover:text-slate-500"
+                >
+                  {company}
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+
+          <div className="mx-auto mt-16 h-px max-w-3xl bg-slate-200" />
+
+          <ScrollReveal delay={0.2} direction="up">
+            <div className="mx-auto mt-14 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 shadow-sm">
+                <Building2 className="h-4 w-4 text-secondary" />
+                Luyện theo tiêu chuẩn tuyển dụng thực tế
+              </div>
+              <p className="mt-6 text-base leading-8 text-slate-500">
+                Không phải đối tác tuyển dụng. Đây là các nhóm công ty và sản phẩm công nghệ mà hệ
+                thống dùng làm chuẩn tham chiếu để gợi ý bài luyện, CV keyword và câu hỏi phỏng vấn.
+              </p>
+              <Link
+                href="/dashboard/cv-review"
+                className="mt-8 inline-flex text-base font-semibold text-secondary transition hover:text-slate-900"
+              >
+                Tải CV để AI cá nhân hóa lộ trình
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
     </PageShell>
   );
 }
+
+const companySignals = [
+  'Meta',
+  'Google',
+  'Apple',
+  'Uber',
+  'Shopee',
+  'Amazon',
+  'TikTok',
+  'Cisco',
+  'Stripe',
+  'Grab',
+  'Intel',
+  'Pinterest',
+];

@@ -1,5 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, Role } from '@prisma/client';
 import { extname } from 'path';
 import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
@@ -37,11 +42,13 @@ export class CvReviewService {
     const jdText = this.compactText([body.jdText, jdTextFromFile].filter(Boolean).join('\n\n'));
 
     if (!cvText) {
-      throw new BadRequestException('Vui lòng dán nội dung CV hoặc tải lên file CV có thể đọc được.');
+      throw new BadRequestException(
+        'Vui lòng dán nội dung CV hoặc tải lên file CV có thể đọc được.',
+      );
     }
 
     const result = await this.ai.reviewCv(studentId, { ...body, cvText, jdText });
-    return this.prisma.cvReview.create({
+    const review = await this.prisma.cvReview.create({
       data: {
         studentId,
         cvAssetId: body.cvAssetId,
@@ -53,6 +60,18 @@ export class CvReviewService {
         result,
       },
     });
+    await this.storeCvContext(studentId, {
+      reviewId: review.id,
+      cvAssetId: body.cvAssetId,
+      jdAssetId: body.jdAssetId,
+      cvText,
+      jdText,
+      targetRole: body.targetRole,
+      portfolioUrl: body.portfolioUrl,
+      githubUrl: body.githubUrl,
+      result,
+    });
+    return review;
   }
 
   mine(studentId: string) {
@@ -86,10 +105,7 @@ export class CvReviewService {
       }
     }
 
-    if (
-      mimeType.includes('wordprocessingml') ||
-      extension === '.docx'
-    ) {
+    if (mimeType.includes('wordprocessingml') || extension === '.docx') {
       const result = await mammoth.extractRawText({ buffer });
       return this.compactText(result.value);
     }
@@ -105,10 +121,94 @@ export class CvReviewService {
       return this.compactText(buffer.toString('utf8').replace(/[^\t\n\r \x20-\x7EÀ-ỹ]+/g, ' '));
     }
 
-    throw new BadRequestException('Định dạng file chưa hỗ trợ. Vui lòng dùng PDF, DOCX, DOC, TXT, MD hoặc RTF.');
+    throw new BadRequestException(
+      'Định dạng file chưa hỗ trợ. Vui lòng dùng PDF, DOCX, DOC, TXT, MD hoặc RTF.',
+    );
   }
 
   private compactText(value: string) {
     return value.replace(/\s+/g, ' ').trim().slice(0, 24_000);
+  }
+
+  private async storeCvContext(
+    studentId: string,
+    input: {
+      reviewId: string;
+      cvAssetId?: string;
+      jdAssetId?: string;
+      cvText: string;
+      jdText?: string;
+      targetRole: string;
+      portfolioUrl?: string;
+      githubUrl?: string;
+      result: {
+        overallScore: number;
+        strengths: string[];
+        weaknesses: string[];
+        missingKeywords: string[];
+        projectSuggestions: string[];
+        betterBulletPoints: string[];
+        interviewRiskAreas: string[];
+        recommendedTutoringPackage: string;
+        recommendedRoadmapItems: string[];
+      };
+    },
+  ) {
+    const current = await this.prisma.studentProfile.findUnique({ where: { userId: studentId } });
+    const existingContext = this.asRecord(current?.personalContext);
+    const latestCvReview = {
+      reviewId: input.reviewId,
+      updatedAt: new Date().toISOString(),
+      targetRole: input.targetRole,
+      overallScore: input.result.overallScore,
+      strengths: input.result.strengths.slice(0, 8),
+      weaknesses: input.result.weaknesses.slice(0, 8),
+      missingKeywords: input.result.missingKeywords.slice(0, 16),
+      projectSuggestions: input.result.projectSuggestions.slice(0, 8),
+      betterBulletPoints: input.result.betterBulletPoints.slice(0, 6),
+      interviewRiskAreas: input.result.interviewRiskAreas.slice(0, 8),
+      recommendedTutoringPackage: input.result.recommendedTutoringPackage,
+      recommendedRoadmapItems: input.result.recommendedRoadmapItems.slice(0, 8),
+      portfolioUrl: input.portfolioUrl,
+      githubUrl: input.githubUrl,
+      cvAssetId: input.cvAssetId,
+      jdAssetId: input.jdAssetId,
+      cvTextExcerpt: input.cvText.slice(0, 4_000),
+      jdTextExcerpt: input.jdText?.slice(0, 2_000),
+    };
+    const nextContext = {
+      ...existingContext,
+      latestCvReview: this.cleanJsonRecord(latestCvReview),
+    };
+
+    await this.prisma.studentProfile.upsert({
+      where: { userId: studentId },
+      create: {
+        userId: studentId,
+        targetRole: input.targetRole,
+        personalContext: nextContext as Prisma.InputJsonObject,
+      },
+      update: {
+        targetRole: input.targetRole,
+        personalContext: nextContext as Prisma.InputJsonObject,
+      },
+    });
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  }
+
+  private cleanJsonRecord(input: Record<string, unknown>) {
+    return Object.fromEntries(
+      Object.entries(input).filter(([, value]) => {
+        if (value === undefined || value === null) return false;
+        if (typeof value === 'string') return value.trim().length > 0;
+        if (Array.isArray(value)) return value.length > 0;
+        return true;
+      }),
+    );
   }
 }
