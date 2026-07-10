@@ -1,0 +1,86 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="145" y1="86" x2="1496" y2="943" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="0.45" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="card" x1="357" y1="166" x2="1243" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="green" x1="284" y1="672" x2="693" y2="865" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="923" y1="625" x2="1293" y2="825" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F97316"/>
+      <stop offset="1" stop-color="#F43F5E"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(384 226) rotate(44.1386) scale(435 412)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1241 803) rotate(-145.169) scale(421 308)">
+      <stop stop-color="#22D3EE" stop-opacity="0.48"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="159" y="99" width="1282" height="861" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="28"/>
+      <feGaussianBlur stdDeviation="40"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.018 0 0 0 0 0.046 0 0 0 0 0.137 0 0 0 0.32 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="1000" rx="56" fill="url(#bg)"/>
+  <rect width="1600" height="1000" rx="56" fill="url(#glow1)"/>
+  <rect width="1600" height="1000" rx="56" fill="url(#glow2)"/>
+  <path d="M1237 107C1327 110 1394 175 1407 257C1420 339 1361 395 1324 463C1286 531 1269 612 1196 644C1118 678 1031 647 962 602C896 559 853 488 853 410C853 331 898 258 962 211C1031 160 1142 104 1237 107Z" fill="white" fill-opacity="0.08"/>
+  <path d="M204 736C294 731 348 809 407 867C454 913 513 947 507 1005C501 1074 429 1114 359 1125C276 1138 196 1115 136 1058C76 1000 43 917 70 844C94 779 133 740 204 736Z" fill="#0F172A" fill-opacity="0.14"/>
+  <g opacity="0.35">
+    <circle cx="1260" cy="185" r="42" stroke="white" stroke-width="6"/>
+    <circle cx="203" cy="234" r="22" fill="white" fill-opacity="0.45"/>
+    <rect x="1303" y="313" width="116" height="116" rx="32" stroke="white" stroke-width="5"/>
+    <path d="M232 511L309 436L386 511L309 586L232 511Z" stroke="white" stroke-width="5"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="243" y="151" width="1114" height="721" rx="44" fill="#0B1020" fill-opacity="0.38"/>
+    <rect x="243" y="151" width="1114" height="721" rx="44" fill="url(#card)"/>
+    <rect x="271" y="182" width="1058" height="74" rx="24" fill="#0F172A" fill-opacity="0.72"/>
+    <circle cx="319" cy="219" r="11" fill="#FB7185"/>
+    <circle cx="353" cy="219" r="11" fill="#FBBF24"/>
+    <circle cx="387" cy="219" r="11" fill="#34D399"/>
+    <rect x="430" y="204" width="222" height="28" rx="14" fill="white" fill-opacity="0.16"/>
+    <rect x="1012" y="199" width="220" height="38" rx="19" fill="#38BDF8" fill-opacity="0.2"/>
+    <rect x="1061" y="211" width="122" height="14" rx="7" fill="#BAE6FD"/>
+    <rect x="312" y="314" width="355" height="252" rx="34" fill="#0F172A" fill-opacity="0.72"/>
+    <rect x="350" y="357" width="178" height="16" rx="8" fill="#67E8F9"/>
+    <rect x="350" y="403" width="256" height="14" rx="7" fill="white" fill-opacity="0.28"/>
+    <rect x="350" y="439" width="214" height="14" rx="7" fill="white" fill-opacity="0.2"/>
+    <rect x="350" y="475" width="270" height="14" rx="7" fill="white" fill-opacity="0.18"/>
+    <rect x="350" y="522" width="144" height="20" rx="10" fill="#34D399" fill-opacity="0.9"/>
+    <path d="M775 341C775 322.222 790.222 307 809 307H1254C1272.78 307 1288 322.222 1288 341V507C1288 525.778 1272.78 541 1254 541H809C790.222 541 775 525.778 775 507V341Z" fill="#0F172A" fill-opacity="0.48"/>
+    <rect x="817" y="353" width="160" height="16" rx="8" fill="#F0ABFC"/>
+    <rect x="817" y="402" width="360" height="14" rx="7" fill="white" fill-opacity="0.25"/>
+    <rect x="817" y="441" width="302" height="14" rx="7" fill="white" fill-opacity="0.18"/>
+    <rect x="817" y="480" width="398" height="14" rx="7" fill="white" fill-opacity="0.16"/>
+    <path d="M1030 648C1055 602 1122 603 1146 650C1171 697 1127 754 1077 739C1036 727 1010 685 1030 648Z" fill="#FDE68A" fill-opacity="0.9"/>
+    <path d="M1113 624C1156 573 1243 596 1252 664C1261 733 1184 780 1129 738C1093 710 1084 659 1113 624Z" fill="#C084FC" fill-opacity="0.78"/>
+    <rect x="276" y="634" width="426" height="170" rx="34" fill="url(#green)"/>
+    <rect x="323" y="681" width="155" height="18" rx="9" fill="white" fill-opacity="0.92"/>
+    <rect x="323" y="724" width="276" height="12" rx="6" fill="white" fill-opacity="0.36"/>
+    <rect x="323" y="755" width="210" height="12" rx="6" fill="white" fill-opacity="0.27"/>
+    <circle cx="623" cy="719" r="42" fill="white" fill-opacity="0.2"/>
+    <path d="M608 720L620 732L641 704" stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="883" y="628" width="422" height="176" rx="34" fill="url(#orange)"/>
+    <rect x="930" y="676" width="188" height="18" rx="9" fill="white" fill-opacity="0.9"/>
+    <rect x="930" y="719" width="274" height="12" rx="6" fill="white" fill-opacity="0.35"/>
+    <rect x="930" y="750" width="226" height="12" rx="6" fill="white" fill-opacity="0.26"/>
+  </g>
+  <path d="M205 104C189 99 171 112 168 129C165 146 178 163 196 165C215 167 231 151 229 132C228 119 218 108 205 104Z" fill="#FDE68A" fill-opacity="0.8"/>
+  <path d="M1416 744C1398 736 1377 748 1371 767C1365 788 1378 810 1399 815C1420 820 1441 806 1445 785C1448 767 1434 751 1416 744Z" fill="#A7F3D0" fill-opacity="0.72"/>
+</svg>

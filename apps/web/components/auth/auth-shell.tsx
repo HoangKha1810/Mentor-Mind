@@ -5,6 +5,7 @@ import { CheckCircle2, LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export function AuthShell({
   title,
@@ -24,9 +25,12 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <main className="auth-gradient flex min-h-screen items-center justify-center px-4 py-8 text-slate-900 sm:px-6">
-      <section className="auth-card-shadow grid w-full max-w-5xl overflow-hidden rounded-lg bg-white lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden bg-[#f8fbff] px-12 py-12 lg:flex">
+    <main className="auth-gradient relative flex min-h-screen items-center justify-center px-4 py-8 text-slate-900 sm:px-6">
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
+      <section className="auth-card auth-card-shadow grid w-full max-w-5xl overflow-hidden rounded-lg bg-white lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="auth-visual-panel relative hidden min-h-[620px] flex-col justify-between overflow-hidden bg-[#f8fbff] px-12 py-12 lg:flex">
           <Link href="/" className="flex w-fit items-center gap-3 text-sm font-semibold text-slate-700">
             <BrandMark className="h-10 w-10" priority />
             MentorMind
@@ -59,7 +63,7 @@ export function AuthShell({
           </div>
         </div>
 
-        <div className="flex min-h-[620px] flex-col justify-center px-6 py-10 sm:px-10 lg:px-14">
+        <div className="auth-form-panel flex min-h-[620px] flex-col justify-center px-6 py-10 sm:px-10 lg:px-14">
           <Link href="/" className="mb-10 flex w-fit items-center gap-3 text-sm font-semibold text-slate-700 lg:hidden">
             <BrandMark className="h-10 w-10" priority />
             MentorMind
@@ -86,7 +90,7 @@ export function AuthInput({
     <label className="group relative block">
       <Input
         className={cn(
-          'h-[50px] rounded-full border-transparent bg-[#e6e6e6] pl-14 pr-5 font-medium text-[#666] placeholder:text-[#999] hover:bg-[#dedede] focus:border-transparent focus:bg-[#f2f6f2] focus:text-slate-800 focus:ring-4 focus:ring-[#57b846]/20',
+          'auth-input h-[50px] rounded-full border-transparent bg-[#e6e6e6] pl-14 pr-5 font-medium text-[#666] placeholder:text-[#999] hover:bg-[#dedede] focus:border-transparent focus:bg-[#f2f6f2] focus:text-slate-800 focus:ring-4 focus:ring-[#57b846]/20',
           className,
         )}
         {...props}

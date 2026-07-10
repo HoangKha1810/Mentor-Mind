@@ -114,13 +114,33 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#07111f',
-  colorScheme: 'dark',
+  colorScheme: 'dark light',
 };
+
+const themeBootstrapScript = `
+(() => {
+  try {
+    const storageKey = 'mentormind.theme';
+    const stored = window.localStorage.getItem(storageKey);
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const theme = stored === 'light' || stored === 'dark' ? stored : prefersLight ? 'light' : 'dark';
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.classList.toggle('theme-dark', theme === 'dark');
+    root.classList.toggle('theme-light', theme === 'light');
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+  } catch {
+    document.documentElement.classList.add('dark', 'theme-dark');
+  }
+})();
+`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className="dark">
+    <html lang="vi" className="dark theme-dark" suppressHydrationWarning>
       <body className={inter.variable}>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

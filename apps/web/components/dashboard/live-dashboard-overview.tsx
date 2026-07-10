@@ -276,7 +276,7 @@ export function LiveDashboardOverview() {
           return (
             <Link key={item.href} href={item.href} className="group block">
               <div
-                className={`relative min-h-[13rem] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.accent} p-5 shadow-soft transition duration-300 group-hover:-translate-y-1 group-hover:border-white/20`}
+                className={`theme-on-color relative min-h-[13rem] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.accent} p-5 shadow-soft transition duration-300 group-hover:-translate-y-1 group-hover:border-white/20`}
               >
                 <div className="relative z-10 flex h-full flex-col">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/14 bg-white/12 text-white">

@@ -6,7 +6,7 @@ export function PageShell({ children }: { children: ReactNode }) {
   return (
     <>
       <SiteNav />
-      <main>
+      <main className="theme-adaptive">
         <PageTransition>{children}</PageTransition>
       </main>
     </>

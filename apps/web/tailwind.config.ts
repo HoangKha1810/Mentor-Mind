@@ -6,15 +6,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#07111F',
-        surface: '#0B1628',
-        surfaceLight: '#111E33',
-        primary: '#6D5DFE',
-        secondary: '#00D4FF',
-        success: '#57B846',
-        warning: '#F59E0B',
-        danger: '#EF4444',
-        mutedText: '#94A3B8',
+        background: 'rgb(var(--color-background) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        surfaceLight: 'rgb(var(--color-surface-light) / <alpha-value>)',
+        primary: 'rgb(var(--color-primary) / <alpha-value>)',
+        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+        success: 'rgb(var(--color-success) / <alpha-value>)',
+        warning: 'rgb(var(--color-warning) / <alpha-value>)',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
+        mutedText: 'rgb(var(--color-muted-text) / <alpha-value>)',
+        foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
       },
       boxShadow: {
         glow: '0 0 60px rgba(0, 212, 255, 0.18)',

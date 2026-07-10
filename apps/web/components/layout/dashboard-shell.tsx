@@ -27,6 +27,7 @@ import type { LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { LearningAssistantWidget } from '@/components/dashboard/learning-assistant-widget';
 import { WalletWidget } from '@/components/payments/wallet-widget';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { PageTransition } from '../ui/motion';
 import { logoutSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -76,6 +77,20 @@ const workspaceLabels: Record<keyof typeof nav, string> = {
   admin: 'Không gian quản trị',
 };
 
+const dashboardHeroTones = [
+  'dashboard-hero--blue',
+  'dashboard-hero--violet',
+  'dashboard-hero--emerald',
+  'dashboard-hero--orange',
+  'dashboard-hero--indigo',
+] as const;
+
+const roleToneOffset: Record<keyof typeof nav, number> = {
+  student: 0,
+  mentor: 2,
+  admin: 4,
+};
+
 function isNavActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === '/dashboard' || href === '/mentor' || href === '/admin') {
@@ -100,6 +115,12 @@ export function DashboardShell({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickSearch, setQuickSearch] = useState('');
+  const activeItemIndex = Math.max(0, items.findIndex(([, href]) => isNavActive(pathname, href)));
+  const activeItem = items[activeItemIndex];
+  const ActiveHeroIcon = activeItem?.[2] ?? BarChart3;
+  const heroTone = dashboardHeroTones[
+    (activeItemIndex + roleToneOffset[role]) % dashboardHeroTones.length
+  ] ?? dashboardHeroTones[0];
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -122,7 +143,7 @@ export function DashboardShell({
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="dashboard-backdrop" aria-hidden="true" />
-      <div className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#07111f]/[0.82] shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
+      <div className="dashboard-topbar fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#07111f]/[0.82] shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
         <div className="flex h-20 items-center justify-between px-5 lg:px-8">
           <Link href="/" className="group flex items-center gap-3 text-base font-semibold">
             <span className="dashboard-surface flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] shadow-[0_14px_42px_rgba(0,212,255,0.12)] transition group-hover:border-secondary/30">
@@ -148,6 +169,7 @@ export function DashboardShell({
             />
           </form>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {role === 'student' ? <WalletWidget /> : null}
             <button
               type="button"
@@ -162,7 +184,7 @@ export function DashboardShell({
           </div>
         </div>
       </div>
-      <aside className="fixed bottom-0 left-0 top-20 z-30 hidden w-72 border-r border-white/10 bg-[#07111f]/[0.64] p-5 shadow-[18px_0_80px_rgba(0,0,0,0.18)] backdrop-blur-2xl lg:block">
+      <aside className="dashboard-sidebar fixed bottom-0 left-0 top-20 z-30 hidden w-72 border-r border-white/10 bg-[#07111f]/[0.64] p-5 shadow-[18px_0_80px_rgba(0,0,0,0.18)] backdrop-blur-2xl lg:block">
         <div className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.035] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
             Workspace
@@ -210,7 +232,7 @@ export function DashboardShell({
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-[min(88vw,23rem)] flex-col border-r border-white/[0.12] bg-[#07111f]/[0.98] shadow-[24px_0_80px_rgba(0,0,0,0.42)]">
+          <aside className="dashboard-sidebar absolute inset-y-0 left-0 flex w-[min(88vw,23rem)] flex-col border-r border-white/[0.12] bg-[#07111f]/[0.98] shadow-[24px_0_80px_rgba(0,0,0,0.42)]">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <Link href="/" className="flex min-w-0 items-center gap-3">
                 <BrandMark className="h-11 w-11 rounded-xl" priority />
@@ -278,16 +300,31 @@ export function DashboardShell({
           </aside>
         </div>
       )}
-      <main className="relative z-10 px-4 pb-14 pt-28 lg:ml-72 lg:px-10">
+      <main className="theme-adaptive relative z-10 px-4 pb-14 pt-28 lg:ml-72 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <PageTransition>
-            <div className="dashboard-hero mb-8 rounded-2xl px-5 py-6 sm:px-7">
-              <div className="relative z-10">
-                <p className="text-sm font-semibold text-secondary">{workspaceLabels[role]}</p>
-                <h1 className="mt-2 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-                  {title}
-                </h1>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">{subtitle}</p>
+            <div className={cn('dashboard-hero theme-on-color mb-8 rounded-2xl px-5 py-6 sm:px-7 sm:py-8', heroTone)}>
+              <div className="relative z-10 grid min-h-[9rem] items-center gap-6 sm:grid-cols-[minmax(0,1fr)_9rem]">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-white/78">
+                    <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1">
+                      {workspaceLabels[role]}
+                    </span>
+                    <span className="rounded-full border border-white/16 bg-black/10 px-3 py-1">
+                      Dữ liệu đồng bộ
+                    </span>
+                  </div>
+                  <h1 className="mt-4 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+                    {title}
+                  </h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-white/78">{subtitle}</p>
+                </div>
+                <div
+                  className="hidden h-32 w-32 items-center justify-center justify-self-end rounded-2xl border border-white/18 bg-white/12 text-white shadow-[0_22px_55px_rgba(0,0,0,0.18)] backdrop-blur-sm sm:flex"
+                  aria-hidden="true"
+                >
+                  <ActiveHeroIcon className="h-14 w-14" strokeWidth={1.6} />
+                </div>
               </div>
             </div>
             {children}
