@@ -22,6 +22,8 @@ export type CatalogCodeProblem = {
   solutionExplanation: string;
   timeLimitMs: number;
   memoryLimitMb: number;
+  isPremium?: boolean;
+  unlockPrice?: number;
   status: 'PUBLISHED';
   testCases: Array<{ input: string; expectedOutput: string; isHidden: boolean; order: number }>;
 };
@@ -30,7 +32,7 @@ const starterCode = {
   JAVASCRIPT: javascriptStarter,
 };
 
-export const catalogCodeProblems: CatalogCodeProblem[] = [
+const handWrittenCodeProblems: CatalogCodeProblem[] = [
   {
     title: 'Tổng hai số',
     slug: 'tong-hai-so',
@@ -100,11 +102,14 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'EASY',
     category: 'LOOP',
     tags: ['loop', 'condition', 'classic'],
-    statement: 'In dãy từ 1 đến n. Số chia hết cho 3 in Fizz, chia hết cho 5 in Buzz, chia hết cho cả hai in FizzBuzz.',
+    statement:
+      'In dãy từ 1 đến n. Số chia hết cho 3 in Fizz, chia hết cho 5 in Buzz, chia hết cho cả hai in FizzBuzz.',
     inputFormat: 'Một số nguyên n.',
     outputFormat: 'Một dòng gồm n token cách nhau bằng khoảng trắng.',
     constraintsText: '1 <= n <= 10^5.',
-    examples: [{ input: '15', output: '1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz' }],
+    examples: [
+      { input: '15', output: '1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz' },
+    ],
     starterCode,
     solutionExplanation: 'Duyệt i từ 1 đến n và xét điều kiện chia hết cho 15, 3, 5 theo thứ tự.',
     timeLimitMs: 1000,
@@ -126,13 +131,15 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'EASY',
     category: 'STRING',
     tags: ['string', 'two-pointers', 'normalize'],
-    statement: 'Kiểm tra chuỗi có phải palindrome sau khi bỏ ký tự không phải chữ/số và không phân biệt hoa thường.',
+    statement:
+      'Kiểm tra chuỗi có phải palindrome sau khi bỏ ký tự không phải chữ/số và không phân biệt hoa thường.',
     inputFormat: 'Một dòng văn bản.',
     outputFormat: 'In true nếu là palindrome, ngược lại in false.',
     constraintsText: 'Độ dài chuỗi không quá 10^5.',
     examples: [{ input: 'A man a plan a canal Panama', output: 'true' }],
     starterCode,
-    solutionExplanation: 'Chuẩn hóa chuỗi còn chữ/số lowercase rồi dùng hai con trỏ hoặc so với chuỗi đảo.',
+    solutionExplanation:
+      'Chuẩn hóa chuỗi còn chữ/số lowercase rồi dùng hai con trỏ hoặc so với chuỗi đảo.',
     timeLimitMs: 1000,
     memoryLimitMb: 128,
     status: 'PUBLISHED',
@@ -147,7 +154,8 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'EASY',
     category: 'HASH_MAP',
     tags: ['hash-map', 'string', 'frequency'],
-    statement: 'Đếm số lần xuất hiện của từng từ, không phân biệt hoa thường, rồi in theo thứ tự alphabet.',
+    statement:
+      'Đếm số lần xuất hiện của từng từ, không phân biệt hoa thường, rồi in theo thứ tự alphabet.',
     inputFormat: 'Một dòng gồm nhiều từ cách nhau bằng khoảng trắng.',
     outputFormat: 'Các cặp word:count cách nhau bằng khoảng trắng.',
     constraintsText: 'Tổng số từ không quá 10^5.',
@@ -158,7 +166,12 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: 'ai ai code mentor ai', expectedOutput: 'ai:3 code:1 mentor:1', isHidden: false, order: 1 },
+      {
+        input: 'ai ai code mentor ai',
+        expectedOutput: 'ai:3 code:1 mentor:1',
+        isHidden: false,
+        order: 1,
+      },
       { input: 'b a b c a b', expectedOutput: 'a:2 b:3 c:1', isHidden: true, order: 2 },
     ],
   },
@@ -168,13 +181,15 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'MEDIUM',
     category: 'HASH_MAP',
     tags: ['hash-map', 'array', 'interview'],
-    statement: 'Cho target và mảng số nguyên, tìm hai chỉ số i j sao cho nums[i] + nums[j] = target. Luôn có đúng một đáp án.',
+    statement:
+      'Cho target và mảng số nguyên, tìm hai chỉ số i j sao cho nums[i] + nums[j] = target. Luôn có đúng một đáp án.',
     inputFormat: 'Dòng 1 là target. Dòng 2 là mảng số nguyên cách nhau bằng khoảng trắng.',
     outputFormat: 'Hai chỉ số i j theo thứ tự tăng dần, index bắt đầu từ 0.',
     constraintsText: '2 <= nums.length <= 10^5.',
     examples: [{ input: '9\n2 7 11 15', output: '0 1' }],
     starterCode,
-    solutionExplanation: 'Duyệt mảng, lưu value -> index trong Map và tìm complement target - value.',
+    solutionExplanation:
+      'Duyệt mảng, lưu value -> index trong Map và tìm complement target - value.',
     timeLimitMs: 1200,
     memoryLimitMb: 128,
     status: 'PUBLISHED',
@@ -216,7 +231,8 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     constraintsText: 'Số khoảng không quá 10^5, start <= end.',
     examples: [{ input: '1 3;2 6;8 10;15 18', output: '1 6;8 10;15 18' }],
     starterCode,
-    solutionExplanation: 'Sort theo start, dùng mảng kết quả và mở rộng end khi khoảng hiện tại giao/chạm khoảng cuối.',
+    solutionExplanation:
+      'Sort theo start, dùng mảng kết quả và mở rộng end khi khoảng hiện tại giao/chạm khoảng cuối.',
     timeLimitMs: 1200,
     memoryLimitMb: 128,
     status: 'PUBLISHED',
@@ -231,7 +247,8 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'MEDIUM',
     category: 'SORTING',
     tags: ['hash-map', 'sorting', 'nlp'],
-    statement: 'Tìm K từ xuất hiện nhiều nhất. Nếu bằng tần suất, từ nào alphabet nhỏ hơn đứng trước.',
+    statement:
+      'Tìm K từ xuất hiện nhiều nhất. Nếu bằng tần suất, từ nào alphabet nhỏ hơn đứng trước.',
     inputFormat: 'Dòng 1 là K. Dòng 2 là danh sách từ cách nhau bằng khoảng trắng.',
     outputFormat: 'K từ khóa cách nhau bằng khoảng trắng.',
     constraintsText: '1 <= K <= số từ khác nhau <= 10^5.',
@@ -242,7 +259,12 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: '2\nai chatbot ai rag chatbot ai', expectedOutput: 'ai chatbot', isHidden: false, order: 1 },
+      {
+        input: '2\nai chatbot ai rag chatbot ai',
+        expectedOutput: 'ai chatbot',
+        isHidden: false,
+        order: 1,
+      },
       { input: '3\nb a c a b b d', expectedOutput: 'b a c', isHidden: true, order: 2 },
     ],
   },
@@ -256,16 +278,28 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
       'Mỗi user chỉ được phép có tối đa limit request trong cửa sổ window giây gần nhất. Với mỗi request, in ALLOW hoặc REJECT.',
     inputFormat: 'Dòng 1: limit window. Các dòng sau: timestamp userId, timestamp tăng dần.',
     outputFormat: 'Một dòng gồm kết quả của từng request, cách nhau bằng khoảng trắng.',
-    constraintsText: 'Số request không quá 10^5. Request cũ có timestamp <= current - window không còn nằm trong cửa sổ.',
+    constraintsText:
+      'Số request không quá 10^5. Request cũ có timestamp <= current - window không còn nằm trong cửa sổ.',
     examples: [{ input: '2 5\n1 a\n2 a\n3 a\n7 a\n8 a', output: 'ALLOW ALLOW REJECT ALLOW ALLOW' }],
     starterCode,
-    solutionExplanation: 'Lưu queue timestamp theo user, loại timestamp hết hạn rồi kiểm tra độ dài queue.',
+    solutionExplanation:
+      'Lưu queue timestamp theo user, loại timestamp hết hạn rồi kiểm tra độ dài queue.',
     timeLimitMs: 1500,
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: '2 5\n1 a\n2 a\n3 a\n7 a\n8 a', expectedOutput: 'ALLOW ALLOW REJECT ALLOW ALLOW', isHidden: false, order: 1 },
-      { input: '1 3\n1 u1\n2 u2\n3 u1\n4 u1', expectedOutput: 'ALLOW ALLOW REJECT ALLOW', isHidden: true, order: 2 },
+      {
+        input: '2 5\n1 a\n2 a\n3 a\n7 a\n8 a',
+        expectedOutput: 'ALLOW ALLOW REJECT ALLOW ALLOW',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: '1 3\n1 u1\n2 u2\n3 u1\n4 u1',
+        expectedOutput: 'ALLOW ALLOW REJECT ALLOW',
+        isHidden: true,
+        order: 2,
+      },
     ],
   },
   {
@@ -274,7 +308,8 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'MEDIUM',
     category: 'GRAPH',
     tags: ['bfs', 'grid', 'shortest-path'],
-    statement: 'Cho lưới có S là điểm bắt đầu, E là điểm kết thúc, # là tường. Tìm số bước ngắn nhất từ S đến E.',
+    statement:
+      'Cho lưới có S là điểm bắt đầu, E là điểm kết thúc, # là tường. Tìm số bước ngắn nhất từ S đến E.',
     inputFormat: 'Dòng 1: n m. n dòng tiếp theo là lưới.',
     outputFormat: 'Số bước ngắn nhất, hoặc -1 nếu không có đường.',
     constraintsText: '1 <= n, m <= 500.',
@@ -295,19 +330,31 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'MEDIUM',
     category: 'STRING',
     tags: ['slug', 'unicode', 'seo'],
-    statement: 'Chuyển tiêu đề tiếng Việt thành slug SEO: bỏ dấu, lowercase, thay cụm không phải chữ/số bằng dấu gạch ngang.',
+    statement:
+      'Chuyển tiêu đề tiếng Việt thành slug SEO: bỏ dấu, lowercase, thay cụm không phải chữ/số bằng dấu gạch ngang.',
     inputFormat: 'Một dòng tiêu đề.',
     outputFormat: 'Slug đã chuẩn hóa.',
     constraintsText: 'Độ dài tiêu đề không quá 10^4.',
     examples: [{ input: 'Lộ trình AI căn bản!', output: 'lo-trinh-ai-can-ban' }],
     starterCode,
-    solutionExplanation: 'Dùng normalize NFD để bỏ dấu, xử lý riêng đ/Đ, regex thay ký tự không hợp lệ bằng -.',
+    solutionExplanation:
+      'Dùng normalize NFD để bỏ dấu, xử lý riêng đ/Đ, regex thay ký tự không hợp lệ bằng -.',
     timeLimitMs: 1000,
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: 'Lộ trình AI căn bản!', expectedOutput: 'lo-trinh-ai-can-ban', isHidden: false, order: 1 },
-      { input: '  MentorMind: Học Code 101  ', expectedOutput: 'mentormind-hoc-code-101', isHidden: true, order: 2 },
+      {
+        input: 'Lộ trình AI căn bản!',
+        expectedOutput: 'lo-trinh-ai-can-ban',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: '  MentorMind: Học Code 101  ',
+        expectedOutput: 'mentormind-hoc-code-101',
+        isHidden: true,
+        order: 2,
+      },
     ],
   },
   {
@@ -316,9 +363,11 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     difficulty: 'MEDIUM',
     category: 'DATA_PROCESSING',
     tags: ['map', 'aggregation', 'formatting'],
-    statement: 'Cho nhiều dòng tên và điểm. Tính điểm trung bình mỗi học viên và in theo thứ tự alphabet.',
+    statement:
+      'Cho nhiều dòng tên và điểm. Tính điểm trung bình mỗi học viên và in theo thứ tự alphabet.',
     inputFormat: 'Mỗi dòng gồm name score. name không chứa khoảng trắng.',
-    outputFormat: 'Các cặp name:average cách nhau bằng khoảng trắng, average có đúng 2 chữ số thập phân.',
+    outputFormat:
+      'Các cặp name:average cách nhau bằng khoảng trắng, average có đúng 2 chữ số thập phân.',
     constraintsText: 'Số dòng không quá 10^5, 0 <= score <= 10.',
     examples: [{ input: 'An 8\nBinh 7\nAn 10', output: 'An:9.00 Binh:7.00' }],
     starterCode,
@@ -327,8 +376,18 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: 'An 8\nBinh 7\nAn 10', expectedOutput: 'An:9.00 Binh:7.00', isHidden: false, order: 1 },
-      { input: 'Lan 9\nLan 8\nMinh 6\nAn 10', expectedOutput: 'An:10.00 Lan:8.50 Minh:6.00', isHidden: true, order: 2 },
+      {
+        input: 'An 8\nBinh 7\nAn 10',
+        expectedOutput: 'An:9.00 Binh:7.00',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: 'Lan 9\nLan 8\nMinh 6\nAn 10',
+        expectedOutput: 'An:10.00 Lan:8.50 Minh:6.00',
+        isHidden: true,
+        order: 2,
+      },
     ],
   },
   {
@@ -344,13 +403,24 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     constraintsText: 'Số lệnh không quá 10^5. Capacity >= 1.',
     examples: [{ input: '2\nPUT a 1\nPUT b 2\nGET a\nPUT c 3\nGET b\nGET c', output: '1 -1 3' }],
     starterCode,
-    solutionExplanation: 'Dùng Map giữ thứ tự insertion; mỗi GET/PUT thành công xóa rồi set lại key để đưa về mới nhất.',
+    solutionExplanation:
+      'Dùng Map giữ thứ tự insertion; mỗi GET/PUT thành công xóa rồi set lại key để đưa về mới nhất.',
     timeLimitMs: 1500,
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: '2\nPUT a 1\nPUT b 2\nGET a\nPUT c 3\nGET b\nGET c', expectedOutput: '1 -1 3', isHidden: false, order: 1 },
-      { input: '1\nPUT x 10\nPUT y 20\nGET x\nGET y', expectedOutput: '-1 20', isHidden: true, order: 2 },
+      {
+        input: '2\nPUT a 1\nPUT b 2\nGET a\nPUT c 3\nGET b\nGET c',
+        expectedOutput: '1 -1 3',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: '1\nPUT x 10\nPUT y 20\nGET x\nGET y',
+        expectedOutput: '-1 20',
+        isHidden: true,
+        order: 2,
+      },
     ],
   },
   {
@@ -370,7 +440,12 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 256,
     status: 'PUBLISHED',
     testCases: [
-      { input: '4 4 1 4\n1 2 5\n1 3 2\n3 2 1\n2 4 3', expectedOutput: '6', isHidden: false, order: 1 },
+      {
+        input: '4 4 1 4\n1 2 5\n1 3 2\n3 2 1\n2 4 3',
+        expectedOutput: '6',
+        isHidden: false,
+        order: 1,
+      },
       { input: '3 1 1 3\n1 2 7', expectedOutput: '-1', isHidden: true, order: 2 },
     ],
   },
@@ -414,8 +489,18 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: '09:00 10:00;10:00 11:00;10:30 12:00', expectedOutput: 'CONFLICT 10:30-12:00', isHidden: false, order: 1 },
-      { input: '08:00 09:00;09:00 10:00;13:00 14:30', expectedOutput: 'OK', isHidden: true, order: 2 },
+      {
+        input: '09:00 10:00;10:00 11:00;10:30 12:00',
+        expectedOutput: 'CONFLICT 10:30-12:00',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: '08:00 09:00;09:00 10:00;13:00 14:30',
+        expectedOutput: 'OK',
+        isHidden: true,
+        order: 2,
+      },
     ],
   },
   {
@@ -436,7 +521,12 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 128,
     status: 'PUBLISHED',
     testCases: [
-      { input: '10\n4|intro\n7|deep\n3|summary\n2|faq', expectedOutput: 'intro summary faq', isHidden: false, order: 1 },
+      {
+        input: '10\n4|intro\n7|deep\n3|summary\n2|faq',
+        expectedOutput: 'intro summary faq',
+        isHidden: false,
+        order: 1,
+      },
       { input: '5\n6|too_big\n2|a\n3|b\n1|c', expectedOutput: 'a b', isHidden: true, order: 2 },
     ],
   },
@@ -453,7 +543,8 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     constraintsText: '1 <= n <= 8, 1 <= m <= 16, capacity tổng có thể nhỏ hơn m.',
     examples: [{ input: '2 3\n1 1\n9 8 1\n6 7 5', output: '16' }],
     starterCode,
-    solutionExplanation: 'Dùng DP bitmask theo mentor và tập học viên đã gán, thử chọn tổ hợp học viên trong capacity của từng mentor.',
+    solutionExplanation:
+      'Dùng DP bitmask theo mentor và tập học viên đã gán, thử chọn tổ hợp học viên trong capacity của từng mentor.',
     timeLimitMs: 3000,
     memoryLimitMb: 256,
     status: 'PUBLISHED',
@@ -480,8 +571,468 @@ export const catalogCodeProblems: CatalogCodeProblem[] = [
     memoryLimitMb: 256,
     status: 'PUBLISHED',
     testCases: [
-      { input: '2\n0 1\na 0 1\nb 1 0\nc 0.7 0.7', expectedOutput: 'a c', isHidden: false, order: 1 },
-      { input: '3\n1 1\nx 1 0\ny 0 1\nz 2 2\na 1 1', expectedOutput: 'a z x', isHidden: true, order: 2 },
+      {
+        input: '2\n0 1\na 0 1\nb 1 0\nc 0.7 0.7',
+        expectedOutput: 'a c',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: '3\n1 1\nx 1 0\ny 0 1\nz 2 2\na 1 1',
+        expectedOutput: 'a z x',
+        isHidden: true,
+        order: 2,
+      },
     ],
   },
 ];
+
+type GeneratedTemplate = {
+  name: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  category: string;
+  tags: string[];
+  statement: string;
+  inputFormat: string;
+  outputFormat: string;
+  constraintsText: string;
+  examples: Array<{ input: string; output: string; explanation?: string }>;
+  solutionExplanation: string;
+  timeLimitMs: number;
+  memoryLimitMb: number;
+  testCases: Array<{ input: string; expectedOutput: string; isHidden: boolean; order: number }>;
+};
+
+const easyTemplates: GeneratedTemplate[] = [
+  {
+    name: 'Tính tổng dãy số',
+    difficulty: 'EASY',
+    category: 'ARRAY',
+    tags: ['array', 'sum', 'input-output'],
+    statement: 'Cho một dãy số nguyên trên một dòng. Hãy tính tổng tất cả phần tử.',
+    inputFormat: 'Một dòng gồm các số nguyên cách nhau bằng khoảng trắng.',
+    outputFormat: 'Một số nguyên là tổng dãy.',
+    constraintsText: 'Số phần tử không quá 10^5.',
+    examples: [{ input: '1 2 3 4', output: '10' }],
+    solutionExplanation: 'Split input thành số rồi reduce để cộng dồn.',
+    timeLimitMs: 1000,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '1 2 3 4', expectedOutput: '10', isHidden: false, order: 1 },
+      { input: '-2 5 7 -1', expectedOutput: '9', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Tìm phần tử lớn nhất',
+    difficulty: 'EASY',
+    category: 'ARRAY',
+    tags: ['array', 'max', 'scan'],
+    statement: 'Cho một dãy số nguyên. Hãy in ra phần tử lớn nhất.',
+    inputFormat: 'Một dòng gồm các số nguyên cách nhau bằng khoảng trắng.',
+    outputFormat: 'Một số nguyên lớn nhất trong dãy.',
+    constraintsText: 'Dãy có ít nhất 1 phần tử và không quá 10^5 phần tử.',
+    examples: [{ input: '3 9 1 7', output: '9' }],
+    solutionExplanation: 'Duyệt dãy và cập nhật giá trị lớn nhất.',
+    timeLimitMs: 1000,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '3 9 1 7', expectedOutput: '9', isHidden: false, order: 1 },
+      { input: '-8 -3 -11', expectedOutput: '-3', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Đếm số chẵn',
+    difficulty: 'EASY',
+    category: 'LOOP',
+    tags: ['loop', 'counting', 'modulo'],
+    statement: 'Cho một dãy số nguyên. Hãy đếm có bao nhiêu số chẵn.',
+    inputFormat: 'Một dòng gồm các số nguyên cách nhau bằng khoảng trắng.',
+    outputFormat: 'Một số nguyên là số lượng phần tử chẵn.',
+    constraintsText: 'Số phần tử không quá 10^5.',
+    examples: [{ input: '1 2 4 7 10', output: '3' }],
+    solutionExplanation: 'Duyệt từng số và tăng biến đếm nếu số chia hết cho 2.',
+    timeLimitMs: 1000,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '1 2 4 7 10', expectedOutput: '3', isHidden: false, order: 1 },
+      { input: '9 11 13', expectedOutput: '0', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Chuẩn hóa khoảng trắng',
+    difficulty: 'EASY',
+    category: 'STRING',
+    tags: ['string', 'trim', 'split'],
+    statement:
+      'Cho một câu có thể thừa khoảng trắng. Hãy chuẩn hóa để giữa hai từ chỉ có một khoảng trắng.',
+    inputFormat: 'Một dòng văn bản.',
+    outputFormat: 'Câu đã chuẩn hóa khoảng trắng.',
+    constraintsText: 'Độ dài chuỗi không quá 10^5.',
+    examples: [{ input: '  hoc   AI   cung   mentor ', output: 'hoc AI cung mentor' }],
+    solutionExplanation: 'Trim chuỗi, split theo regex khoảng trắng và join bằng một dấu cách.',
+    timeLimitMs: 1000,
+    memoryLimitMb: 128,
+    testCases: [
+      {
+        input: '  hoc   AI   cung   mentor ',
+        expectedOutput: 'hoc AI cung mentor',
+        isHidden: false,
+        order: 1,
+      },
+      {
+        input: 'MentorMind      online',
+        expectedOutput: 'MentorMind online',
+        isHidden: true,
+        order: 2,
+      },
+    ],
+  },
+  {
+    name: 'Tính điểm chữ',
+    difficulty: 'EASY',
+    category: 'CONDITION',
+    tags: ['condition', 'grading', 'basic'],
+    statement: 'Cho điểm số từ 0 đến 100. In A nếu >= 85, B nếu >= 70, C nếu >= 50, còn lại F.',
+    inputFormat: 'Một số nguyên score.',
+    outputFormat: 'Một ký tự A, B, C hoặc F.',
+    constraintsText: '0 <= score <= 100.',
+    examples: [{ input: '82', output: 'B' }],
+    solutionExplanation: 'Dùng các nhánh if theo ngưỡng từ cao xuống thấp.',
+    timeLimitMs: 1000,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '82', expectedOutput: 'B', isHidden: false, order: 1 },
+      { input: '49', expectedOutput: 'F', isHidden: true, order: 2 },
+    ],
+  },
+];
+
+const mediumTemplates: GeneratedTemplate[] = [
+  {
+    name: 'Dãy con tăng dài nhất bản nhỏ',
+    difficulty: 'MEDIUM',
+    category: 'DYNAMIC_PROGRAMMING',
+    tags: ['dp', 'array', 'lis'],
+    statement: 'Cho dãy số nguyên. Hãy tìm độ dài dãy con tăng nghiêm ngặt dài nhất.',
+    inputFormat: 'Một dòng gồm các số nguyên cách nhau bằng khoảng trắng.',
+    outputFormat: 'Một số nguyên là độ dài LIS.',
+    constraintsText: 'n <= 3000 cho phép dùng DP O(n^2).',
+    examples: [{ input: '10 9 2 5 3 7 101 18', output: '4' }],
+    solutionExplanation: 'dp[i] là độ dài LIS kết thúc ở i, thử mọi j < i có a[j] < a[i].',
+    timeLimitMs: 1500,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '10 9 2 5 3 7 101 18', expectedOutput: '4', isHidden: false, order: 1 },
+      { input: '1 2 3 4 5', expectedOutput: '5', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Subarray có tổng bằng K',
+    difficulty: 'MEDIUM',
+    category: 'HASH_MAP',
+    tags: ['prefix-sum', 'hash-map', 'array'],
+    statement: 'Cho K và dãy số. Đếm số đoạn con liên tiếp có tổng bằng K.',
+    inputFormat: 'Dòng 1 là K. Dòng 2 là dãy số nguyên.',
+    outputFormat: 'Số đoạn con có tổng bằng K.',
+    constraintsText: 'n <= 10^5, số có thể âm.',
+    examples: [{ input: '3\n1 2 1 2 1', output: '4' }],
+    solutionExplanation: 'Dùng prefix sum và map đếm số prefix đã gặp bằng current - K.',
+    timeLimitMs: 1500,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '3\n1 2 1 2 1', expectedOutput: '4', isHidden: false, order: 1 },
+      { input: '0\n1 -1 1 -1', expectedOutput: '4', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Cửa sổ trượt lớn nhất',
+    difficulty: 'MEDIUM',
+    category: 'DEQUE',
+    tags: ['deque', 'sliding-window', 'array'],
+    statement: 'Cho k và dãy số. In giá trị lớn nhất của từng cửa sổ độ dài k.',
+    inputFormat: 'Dòng 1 là k. Dòng 2 là dãy số nguyên.',
+    outputFormat: 'Các giá trị lớn nhất cách nhau bằng khoảng trắng.',
+    constraintsText: '1 <= k <= n <= 10^5.',
+    examples: [{ input: '3\n1 3 -1 -3 5 3 6 7', output: '3 3 5 5 6 7' }],
+    solutionExplanation: 'Dùng deque lưu index có giá trị giảm dần, loại index ra khỏi cửa sổ.',
+    timeLimitMs: 1600,
+    memoryLimitMb: 128,
+    testCases: [
+      { input: '3\n1 3 -1 -3 5 3 6 7', expectedOutput: '3 3 5 5 6 7', isHidden: false, order: 1 },
+      { input: '2\n4 2 12 3', expectedOutput: '4 12 12', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Sắp xếp log theo thời gian',
+    difficulty: 'MEDIUM',
+    category: 'SORTING',
+    tags: ['sorting', 'date-time', 'logs'],
+    statement:
+      'Cho nhiều log dạng HH:MM|message. Sắp xếp theo thời gian tăng dần, nếu bằng nhau giữ message alphabet.',
+    inputFormat: 'Mỗi dòng là một log HH:MM|message.',
+    outputFormat: 'Các message sau khi sort, cách nhau bằng dấu phẩy.',
+    constraintsText: 'Số log không quá 10^5.',
+    examples: [
+      { input: '09:30|deploy\n08:15|standup\n09:30|review', output: 'standup,deploy,review' },
+    ],
+    solutionExplanation: 'Parse phút trong ngày, sort theo phút rồi message.',
+    timeLimitMs: 1400,
+    memoryLimitMb: 128,
+    testCases: [
+      {
+        input: '09:30|deploy\n08:15|standup\n09:30|review',
+        expectedOutput: 'standup,deploy,review',
+        isHidden: false,
+        order: 1,
+      },
+      { input: '10:00|b\n10:00|a\n09:59|z', expectedOutput: 'z,a,b', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Thành phần liên thông',
+    difficulty: 'MEDIUM',
+    category: 'GRAPH',
+    tags: ['graph', 'dfs', 'connected-components'],
+    statement: 'Cho đồ thị vô hướng, hãy đếm số thành phần liên thông.',
+    inputFormat: 'Dòng 1: n m. m dòng tiếp theo: u v.',
+    outputFormat: 'Số thành phần liên thông.',
+    constraintsText: '1 <= n <= 10^5, 0 <= m <= 2*10^5.',
+    examples: [{ input: '5 3\n1 2\n2 3\n4 5', output: '2' }],
+    solutionExplanation: 'Dựng adjacency list và DFS/BFS từ mỗi node chưa thăm.',
+    timeLimitMs: 1800,
+    memoryLimitMb: 256,
+    testCases: [
+      { input: '5 3\n1 2\n2 3\n4 5', expectedOutput: '2', isHidden: false, order: 1 },
+      { input: '4 0', expectedOutput: '4', isHidden: true, order: 2 },
+    ],
+  },
+];
+
+const hardTemplates: GeneratedTemplate[] = [
+  {
+    name: 'Đếm đường đi trong DAG',
+    difficulty: 'HARD',
+    category: 'GRAPH_DP',
+    tags: ['dag', 'topological-sort', 'dynamic-programming'],
+    statement: 'Cho DAG, đếm số đường đi từ node 1 đến node n, lấy modulo 1e9+7.',
+    inputFormat: 'Dòng 1: n m. m dòng tiếp theo: u v.',
+    outputFormat: 'Số đường đi modulo 1000000007.',
+    constraintsText: '1 <= n <= 10^5, đồ thị không có chu trình.',
+    examples: [{ input: '4 4\n1 2\n1 3\n2 4\n3 4', output: '2' }],
+    solutionExplanation: 'Topo sort rồi cộng dp[u] sang các cạnh u -> v.',
+    timeLimitMs: 2500,
+    memoryLimitMb: 256,
+    testCases: [
+      { input: '4 4\n1 2\n1 3\n2 4\n3 4', expectedOutput: '2', isHidden: false, order: 1 },
+      { input: '3 2\n1 2\n2 3', expectedOutput: '1', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Knapsack tối ưu chi phí',
+    difficulty: 'HARD',
+    category: 'DYNAMIC_PROGRAMMING',
+    tags: ['knapsack', 'dp', 'optimization'],
+    statement:
+      'Cho capacity và các item weight value. Tìm tổng value lớn nhất không vượt capacity.',
+    inputFormat: 'Dòng 1: capacity. Các dòng sau: weight value.',
+    outputFormat: 'Value lớn nhất.',
+    constraintsText: 'capacity <= 10000, số item <= 500.',
+    examples: [{ input: '7\n6 13\n4 8\n3 6\n5 12', output: '14' }],
+    solutionExplanation: 'Dùng DP 0/1 knapsack một chiều, duyệt capacity giảm dần.',
+    timeLimitMs: 2500,
+    memoryLimitMb: 256,
+    testCases: [
+      { input: '7\n6 13\n4 8\n3 6\n5 12', expectedOutput: '14', isHidden: false, order: 1 },
+      { input: '5\n2 3\n3 4\n4 8', expectedOutput: '8', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Median của luồng số',
+    difficulty: 'HARD',
+    category: 'HEAP',
+    tags: ['heap', 'stream', 'median'],
+    statement:
+      'Cho luồng số, sau mỗi lần thêm số hãy in median hiện tại. Nếu số lượng chẵn, lấy trung bình dạng .5 nếu cần.',
+    inputFormat: 'Một dòng gồm các số nguyên theo thứ tự stream.',
+    outputFormat: 'Median sau mỗi bước, cách nhau bằng khoảng trắng.',
+    constraintsText: 'Số phần tử không quá 10^5.',
+    examples: [{ input: '5 15 1 3', output: '5 10 5 4' }],
+    solutionExplanation:
+      'Dùng hai heap: max-heap nửa nhỏ và min-heap nửa lớn, cân bằng kích thước.',
+    timeLimitMs: 2500,
+    memoryLimitMb: 256,
+    testCases: [
+      { input: '5 15 1 3', expectedOutput: '5 10 5 4', isHidden: false, order: 1 },
+      { input: '1 2 3', expectedOutput: '1 1.5 2', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Tìm chuỗi con khác nhau',
+    difficulty: 'HARD',
+    category: 'STRING_HASHING',
+    tags: ['string', 'hashing', 'set'],
+    statement: 'Cho chuỗi s và độ dài k. Đếm số chuỗi con độ dài k khác nhau.',
+    inputFormat: 'Dòng 1 là k. Dòng 2 là chuỗi s.',
+    outputFormat: 'Số chuỗi con khác nhau.',
+    constraintsText: '|s| <= 10^5.',
+    examples: [{ input: '3\nababa', output: '2' }],
+    solutionExplanation: 'Dùng Set với substring hoặc rolling hash để lưu các cửa sổ độ dài k.',
+    timeLimitMs: 1800,
+    memoryLimitMb: 256,
+    testCases: [
+      { input: '3\nababa', expectedOutput: '2', isHidden: false, order: 1 },
+      { input: '2\naaaa', expectedOutput: '1', isHidden: true, order: 2 },
+    ],
+  },
+  {
+    name: 'Binary search câu trả lời',
+    difficulty: 'HARD',
+    category: 'BINARY_SEARCH',
+    tags: ['binary-search', 'greedy', 'answer-search'],
+    statement:
+      'Cho k và dãy thời gian máy. Tìm thời gian nhỏ nhất để các máy hoàn thành ít nhất k sản phẩm.',
+    inputFormat: 'Dòng 1 là k. Dòng 2 là thời gian của từng máy.',
+    outputFormat: 'Thời gian nhỏ nhất.',
+    constraintsText: 'k <= 10^12, số máy <= 10^5.',
+    examples: [{ input: '10\n2 3 7', output: '12' }],
+    solutionExplanation: 'Binary search thời gian t, kiểm tra tổng floor(t / machineTime) >= k.',
+    timeLimitMs: 2200,
+    memoryLimitMb: 256,
+    testCases: [
+      { input: '10\n2 3 7', expectedOutput: '12', isHidden: false, order: 1 },
+      { input: '5\n5 5', expectedOutput: '15', isHidden: true, order: 2 },
+    ],
+  },
+];
+
+const generatedThemes = [
+  'điểm sprint',
+  'giờ tự học',
+  'chi phí mentor',
+  'lượt xem bài giảng',
+  'điểm quiz',
+  'số ticket hỗ trợ',
+  'lượt submit',
+  'thời lượng video',
+  'điểm phỏng vấn',
+  'task portfolio',
+  'commit dự án',
+  'review CV',
+  'keyword JD',
+  'log học tập',
+  'điểm roadmap',
+  'thời gian deploy',
+  'mốc deadline',
+  'lượt đọc tài liệu',
+  'dữ liệu chatbot',
+  'điểm SQL',
+  'request API',
+  'phiên đăng nhập',
+  'bài luyện thuật toán',
+  'điểm teamwork',
+  'feedback mentor',
+  'chuỗi pipeline',
+  'phiên học 1-1',
+  'lượt tìm tài nguyên',
+  'mốc OKR',
+  'bug production',
+  'batch embedding',
+  'câu hỏi phỏng vấn',
+  'số token prompt',
+  'dữ liệu training',
+  'kết quả A/B test',
+  'node hệ thống',
+  'cạnh phụ thuộc',
+  'job background',
+  'lịch mentor',
+  'khoảng thời gian',
+  'luồng giao dịch',
+  'bảng xếp hạng',
+  'cache key',
+  'session học viên',
+  'dòng log realtime',
+  'đường đi roadmap',
+  'graph kỹ năng',
+  'trọng số mentor',
+  'ma trận matching',
+  'hàng đợi job',
+  'vector tài liệu',
+  'cây quyết định',
+  'bảng phân quyền',
+  'snapshot ví',
+  'thông báo realtime',
+  'dịch vụ thanh toán',
+  'gói học nâng cao',
+  'bộ test ẩn',
+  'minh chứng dự án',
+  'pipeline RAG',
+  'đồ thị tri thức',
+  'luồng recommendation',
+  'phân bổ tài nguyên',
+  'rank ứng viên',
+  'bộ nhớ cache',
+  'lịch phỏng vấn',
+  'bài toán tối ưu',
+  'điểm cosine',
+  'route deployment',
+  'token bucket',
+  'dependency graph',
+  'multi-source BFS',
+  'dynamic pricing',
+  'schedule optimizer',
+  'feature flag',
+  'audit trail',
+  'semantic search',
+  'job orchestration',
+  'capacity planning',
+];
+
+function buildGeneratedProblem(index: number, theme: string): CatalogCodeProblem {
+  const order = handWrittenCodeProblems.length + index + 1;
+  const template =
+    order <= 45
+      ? easyTemplates[index % easyTemplates.length]!
+      : order <= 75
+        ? mediumTemplates[index % mediumTemplates.length]!
+        : hardTemplates[index % hardTemplates.length]!;
+  const isPremium = template.difficulty === 'HARD' && order >= 76;
+  const title = `Bài ${order}: ${template.name} - ${theme}`;
+  return {
+    ...template,
+    title,
+    slug: toSlug(title),
+    tags: [...template.tags, theme.replace(/\s+/g, '-')],
+    statement: `${template.statement} Bối cảnh dữ liệu: ${theme}.`,
+    starterCode,
+    isPremium,
+    unlockPrice: isPremium ? 20_000 : 0,
+    status: 'PUBLISHED',
+  };
+}
+
+function toSlug(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+const generatedCodeProblems = generatedThemes.map((theme, index) =>
+  buildGeneratedProblem(index, theme),
+);
+
+export const catalogCodeProblems: CatalogCodeProblem[] = [
+  ...handWrittenCodeProblems,
+  ...generatedCodeProblems,
+].map((problem) => {
+  const isPremium = problem.isPremium ?? problem.category === 'SUPER_HARD';
+  return {
+    ...problem,
+    isPremium,
+    unlockPrice: isPremium ? problem.unlockPrice || 20_000 : 0,
+  };
+});

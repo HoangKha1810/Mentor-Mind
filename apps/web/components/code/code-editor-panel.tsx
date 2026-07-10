@@ -1,18 +1,24 @@
 'use client';
 
 import Editor from '@monaco-editor/react';
-import { Play, Send, Sparkles } from 'lucide-react';
+import { Crown, Play, Send, Sparkles } from 'lucide-react';
+import { formatCurrency } from '@mentormind/shared';
 import { useState } from 'react';
 import { authHeaders, apiFetch } from '@/lib/api';
+import { WalletSummary } from '@/lib/domain-types';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
 export function CodeEditorPanel({
   problemId,
   starterCode = 'function solve(input) {\n  return input;\n}',
+  isPremium = false,
+  unlockPrice = 20_000,
 }: {
   problemId: string;
   starterCode?: string;
+  isPremium?: boolean;
+  unlockPrice?: number;
 }) {
   const [code, setCode] = useState(starterCode);
   const [output, setOutput] = useState('Chạy code để xem kết quả bộ test mẫu.');
@@ -28,6 +34,10 @@ export function CodeEditorPanel({
         headers: authHeaders(),
         body: JSON.stringify({ language: 'JAVASCRIPT', code, hintLevel: 1 }),
       });
+      const wallet = extractWallet(result);
+      if (wallet) {
+        window.dispatchEvent(new CustomEvent('mentormind:wallet-updated', { detail: { wallet } }));
+      }
       setOutput(JSON.stringify(result, null, 2));
     } catch (err) {
       setOutput(
@@ -51,10 +61,22 @@ export function CodeEditorPanel({
         />
       </Card>
       <Card>
+        {isPremium ? (
+          <div className="mb-4 rounded-lg border border-secondary/25 bg-secondary/10 p-3 text-sm leading-6 text-slate-100">
+            <div className="flex items-center gap-2 font-semibold text-secondary">
+              <Crown className="h-4 w-4" />
+              Bài code đặc biệt
+            </div>
+            <p className="mt-1 text-mutedText">
+              Gói Pro/Premium được luyện trực tiếp. Nếu bạn đang dùng Free, hệ thống sẽ tự mở khóa
+              một lần với phí {formatCurrency(unlockPrice, 'VND')} khi chạy hoặc nộp bài đầu tiên.
+            </p>
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => call(`/code/problems/${problemId}/run`)}>
             <Play className="h-4 w-4" />
-            Chạy thử
+            {isPremium ? 'Mở khóa & chạy' : 'Chạy thử'}
           </Button>
           <Button variant="secondary" onClick={() => call(`/code/problems/${problemId}/submit`)}>
             <Send className="h-4 w-4" />
@@ -71,4 +93,21 @@ export function CodeEditorPanel({
       </Card>
     </div>
   );
+}
+
+function extractWallet(value: unknown): WalletSummary | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const direct = record.wallet;
+  if (isWallet(direct)) return direct;
+  const access = record.access;
+  if (access && typeof access === 'object') {
+    const wallet = (access as Record<string, unknown>).wallet;
+    if (isWallet(wallet)) return wallet;
+  }
+  return null;
+}
+
+function isWallet(value: unknown): value is WalletSummary {
+  return value !== null && typeof value === 'object' && 'balance' in value && 'currency' in value;
 }

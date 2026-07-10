@@ -1,11 +1,28 @@
 'use client';
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Brain, Clock3, MessageSquarePlus, Send, Sparkles, UserRound } from 'lucide-react';
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { formatCurrency } from '@mentormind/shared';
+import {
+  Bot,
+  Clock3,
+  Crown,
+  MessageSquarePlus,
+  Send,
+  Sparkles,
+  UserRound,
+  Wallet,
+} from 'lucide-react';
 import { authHeaders, apiFetch } from '@/lib/api';
 import { useLiveQuery } from '@/lib/live-query';
-import { Account, AiChatResponse, AiConversation, AiMessage } from '@/lib/domain-types';
-import { formatDateTime } from '@/lib/format';
+import {
+  Account,
+  AiChatResponse,
+  AiConversation,
+  AiMessage,
+  EntitlementsSummary,
+} from '@/lib/domain-types';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { AuthRequiredCard, ErrorCard, LoadingCard } from '@/components/dashboard/live-common';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
@@ -24,6 +41,9 @@ export default function AiAssistantPage() {
     auth: true,
   });
   const accountQuery = useLiveQuery<Account>('/auth/me', { auth: true });
+  const entitlementsQuery = useLiveQuery<EntitlementsSummary>('/payments/entitlements', {
+    auth: true,
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [localMessages, setLocalMessages] = useState<AiMessage[] | null>(null);
@@ -47,8 +67,6 @@ export default function AiAssistantPage() {
       behavior: 'smooth',
     });
   }, [messages.length, sending]);
-
-  const contextItems = useMemo(() => buildContextItems(accountQuery.data), [accountQuery.data]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,6 +119,7 @@ export default function AiAssistantPage() {
       setLocalMessages(finalMessages);
       conversationsQuery.reload();
       accountQuery.reload();
+      entitlementsQuery.reload();
     } catch (error) {
       setLocalMessages([
         ...baseMessages,
@@ -275,32 +294,7 @@ export default function AiAssistantPage() {
         </section>
 
         <aside className="glass rounded-xl p-4">
-          <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-secondary" />
-            <h2 className="text-base font-semibold text-white">Ngữ cảnh đã nhớ</h2>
-          </div>
-          <p className="mt-2 text-sm leading-6 text-mutedText">
-            Các thông tin này được dùng để cá nhân hóa câu trả lời, lộ trình và gợi ý học tập.
-          </p>
-
-          <div className="mt-4 space-y-2">
-            {contextItems.length ? (
-              contextItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-lg border border-white/8 bg-white/[0.035] p-3"
-                >
-                  <div className="text-xs text-mutedText">{item.label}</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-100">{item.value}</div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-lg border border-dashed border-white/14 bg-white/[0.025] p-3 text-sm leading-6 text-mutedText">
-                Chưa có nhiều context. Hãy thử nói: “Mình muốn làm Backend ở TP.HCM, lương kỳ vọng
-                18 triệu”.
-              </div>
-            )}
-          </div>
+          <UsagePanel entitlements={entitlementsQuery.data} />
         </aside>
       </div>
     </DashboardShell>
@@ -371,19 +365,88 @@ function ChatMessage({ message }: { message: AiMessage }) {
   );
 }
 
-function buildContextItems(account: Account | null) {
-  const profile = account?.studentProfile;
-  if (!profile) return [];
-  return [
-    ['Vai trò mục tiêu', profile.targetRole],
-    ['Trình độ hiện tại', profile.currentLevel],
-    ['Mức lương kỳ vọng', profile.expectedSalary],
-    ['Địa điểm ưu tiên', profile.preferredLocation],
-    ['Thời gian học', profile.weeklyHours ? `${profile.weeklyHours} giờ/tuần` : null],
-    ['Ngân sách', profile.budgetRange],
-    ['Cách học phù hợp', profile.learningStyle],
-    ['Múi giờ', profile.timezone],
-  ]
-    .filter(([, value]) => Boolean(value))
-    .map(([label, value]) => ({ label: String(label), value: String(value) }));
+function UsagePanel({ entitlements }: { entitlements?: EntitlementsSummary | null }) {
+  if (!entitlements) {
+    return (
+      <div className="space-y-3">
+        <div className="h-24 animate-pulse rounded-xl border border-white/8 bg-white/[0.035]" />
+        <div className="h-32 animate-pulse rounded-xl border border-white/8 bg-white/[0.025]" />
+      </div>
+    );
+  }
+
+  const plan = entitlements.activePlan;
+  const chatPercent = Math.min(
+    Math.round(
+      (entitlements.usage.aiChatMessagesToday / entitlements.usage.aiChatMessagesPerDay) * 100,
+    ),
+    100,
+  );
+
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <Crown className="h-5 w-5 text-secondary" />
+        <h2 className="text-base font-semibold text-white">Quyền sử dụng</h2>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-mutedText">
+        Ngữ cảnh cá nhân vẫn được lưu trong hệ thống để AI trả lời chính xác hơn, không hiển thị
+        thành ghi nhớ mở rộng ở đây.
+      </p>
+
+      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.035] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs text-mutedText">Gói hiện tại</p>
+            <p className="mt-1 text-lg font-semibold text-white">{plan.name}</p>
+          </div>
+          <span className="rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary">
+            {plan.interval === 'free' ? 'Free' : plan.interval === 'year' ? 'Năm' : 'Tháng'}
+          </span>
+        </div>
+        {plan.expiresAt ? (
+          <p className="mt-3 text-xs text-mutedText">Hết hạn {formatDate(plan.expiresAt)}</p>
+        ) : null}
+      </div>
+
+      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.035] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-200">Tin nhắn AI hôm nay</p>
+          <span className="text-sm font-semibold text-secondary">
+            {entitlements.usage.aiChatMessagesRemaining}/{entitlements.usage.aiChatMessagesPerDay}
+          </span>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-[linear-gradient(90deg,#57b846,#00d4ff)] transition-all"
+            style={{ width: `${chatPercent}%` }}
+          />
+        </div>
+        <p className="mt-3 text-xs leading-5 text-mutedText">
+          Free chỉ có 3 tin nhắn/ngày. Nâng cấp để chat nhiều hơn và mở các tính năng nâng cao.
+        </p>
+      </div>
+
+      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.035] p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+          <Wallet className="h-4 w-4 text-secondary" />
+          Số dư ví
+        </div>
+        <p className="mt-2 text-xl font-semibold text-white">
+          {formatCurrency(entitlements.wallet.balance, entitlements.wallet.currency)}
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        <Link href="/pricing">
+          <Button className="w-full">Nâng cấp gói</Button>
+        </Link>
+        <Link href="/dashboard/payments/top-up">
+          <Button className="w-full" variant="outline">
+            Nạp tiền
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
 }

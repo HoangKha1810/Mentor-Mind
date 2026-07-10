@@ -122,6 +122,8 @@ export type CodeProblem = {
   starterCode?: Record<string, string>;
   timeLimitMs?: number;
   memoryLimitMb?: number;
+  isPremium?: boolean;
+  unlockPrice?: string | number;
   testCases?: Array<{ id: string; input: string; expectedOutput: string; order: number }>;
 };
 
@@ -266,6 +268,32 @@ export type AiChatResponse = {
   contextUpdates: AiContextUpdate;
 };
 
+export type SubscriptionPlan = {
+  slug: string;
+  packageSlug?: string;
+  packageId?: string | null;
+  name: string;
+  eyebrow: string;
+  description: string;
+  price: number;
+  currency: string;
+  interval: 'free' | 'month' | 'year';
+  durationDays: number;
+  rank: number;
+  features: {
+    aiChatMessagesPerDay: number;
+    aiToolCallsPerDay: number;
+    codeRunsPerDay: number;
+    premiumCodeIncluded: boolean;
+    prioritySupport: boolean;
+    mentorReviewIncluded: boolean;
+  };
+  highlights: string[];
+  startedAt?: string | null;
+  expiresAt?: string | null;
+  paymentId?: string | null;
+};
+
 export type PackageItem = {
   id: string;
   title: string;
@@ -300,8 +328,27 @@ export type WalletSummary = {
     currency: string;
     status: string;
     provider: string;
+    providerRef?: string | null;
     packageId?: string | null;
     roadmapId?: string | null;
     createdAt: string;
   }>;
+};
+
+export type EntitlementsSummary = {
+  activePlan: SubscriptionPlan;
+  plans: SubscriptionPlan[];
+  wallet: WalletSummary;
+  usage: {
+    aiChatMessagesToday: number;
+    aiChatMessagesRemaining: number;
+    aiChatMessagesPerDay: number;
+    aiToolCallsToday: number;
+    aiToolCallsRemaining: number;
+    aiToolCallsPerDay: number;
+    codeRunsToday: number;
+    codeRunsRemaining: number;
+    codeRunsPerDay: number;
+  };
+  updatedAt: string;
 };

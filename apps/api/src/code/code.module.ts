@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AiModule } from '../ai/ai.module';
+import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { CodeController } from './code.controller';
 import { CodeService, CODE_JUDGE_PROVIDER } from './code.service';
 import { Judge0Provider } from './judge0.provider';
 import { MockJudgeProvider } from './mock-judge.provider';
 
 @Module({
-  imports: [AiModule],
+  imports: [AiModule, EntitlementsModule],
   controllers: [CodeController],
   providers: [
     CodeService,

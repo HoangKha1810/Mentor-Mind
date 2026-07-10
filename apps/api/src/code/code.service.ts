@@ -1,9 +1,16 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CodeLanguage, CodeProblemStatus, Prisma, Role } from '@prisma/client';
 import { slugify } from '@mentormind/shared';
 import { z } from 'zod';
 import { AiService } from '../ai/ai.service';
 import { AuthUser } from '../common/decorators/current-user.decorator';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CodeJudgeProvider } from './code-judge.interface';
 
@@ -29,9 +36,18 @@ const problemSchema = z.object({
   solutionExplanation: z.string().default('Admin-only explanation'),
   timeLimitMs: z.number().int().positive().default(1000),
   memoryLimitMb: z.number().int().positive().default(128),
+  isPremium: z.boolean().default(false),
+  unlockPrice: z.number().int().nonnegative().default(0),
   status: z.nativeEnum(CodeProblemStatus).default(CodeProblemStatus.DRAFT),
   testCases: z
-    .array(z.object({ input: z.string(), expectedOutput: z.string(), isHidden: z.boolean().default(false), order: z.number().int() }))
+    .array(
+      z.object({
+        input: z.string(),
+        expectedOutput: z.string(),
+        isHidden: z.boolean().default(false),
+        order: z.number().int(),
+      }),
+    )
     .default([]),
 });
 
@@ -40,6 +56,7 @@ export class CodeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ai: AiService,
+    private readonly entitlements: EntitlementsService,
     @Inject(CODE_JUDGE_PROVIDER) private readonly judge: CodeJudgeProvider,
   ) {}
 
@@ -68,6 +85,8 @@ export class CodeService {
         examples: true,
         timeLimitMs: true,
         memoryLimitMb: true,
+        isPremium: true,
+        unlockPrice: true,
       },
     });
   }
@@ -119,7 +138,7 @@ export class CodeService {
     return problem;
   }
 
-  async run(problemId: string, input: unknown, includeHidden: boolean) {
+  async run(studentId: string, problemId: string, input: unknown, includeHidden: boolean) {
     const body = codeRunSchema.parse(input);
     const problem = await this.prisma.codeProblem.findUnique({
       where: { id: problemId },
@@ -128,22 +147,43 @@ export class CodeService {
     if (!problem) {
       throw new NotFoundException('Problem not found');
     }
-    const cases = includeHidden ? problem.testCases : problem.testCases.filter((test) => !test.isHidden);
+    const cases = includeHidden
+      ? problem.testCases
+      : problem.testCases.filter((test) => !test.isHidden);
     if (!cases.length) {
       throw new BadRequestException('Problem has no runnable test cases');
     }
-    return this.judge.run({
+    const access = await this.entitlements.ensureCodeProblemAccess(studentId, problem);
+    const result = await this.judge.run({
       language: body.language,
       code: body.code,
       testCases: cases,
       timeLimitMs: problem.timeLimitMs,
       memoryLimitMb: problem.memoryLimitMb,
     });
+    return { ...result, access };
   }
 
   async submit(studentId: string, problemId: string, input: unknown) {
     const body = codeRunSchema.parse(input);
-    const result = await this.run(problemId, body, true);
+    const problem = await this.prisma.codeProblem.findUnique({
+      where: { id: problemId },
+      include: { testCases: { orderBy: { order: 'asc' } } },
+    });
+    if (!problem) {
+      throw new NotFoundException('Problem not found');
+    }
+    if (!problem.testCases.length) {
+      throw new BadRequestException('Problem has no runnable test cases');
+    }
+    const access = await this.entitlements.ensureCodeProblemAccess(studentId, problem);
+    const result = await this.judge.run({
+      language: body.language,
+      code: body.code,
+      testCases: problem.testCases,
+      timeLimitMs: problem.timeLimitMs,
+      memoryLimitMb: problem.memoryLimitMb,
+    });
     const submission = await this.prisma.codeSubmission.create({
       data: {
         problemId,
@@ -158,7 +198,7 @@ export class CodeService {
         errorMessage: result.errorMessage,
       },
     });
-    return { submission, result: { ...result, publicResults: result.publicResults } };
+    return { submission, result: { ...result, publicResults: result.publicResults }, access };
   }
 
   submissions(studentId: string) {
@@ -188,7 +228,10 @@ export class CodeService {
     if (!problem) {
       throw new NotFoundException('Problem not found');
     }
-    const hintLevel = Math.min(Math.max(Number((input as { hintLevel?: number }).hintLevel ?? 1), 1), 4);
+    const hintLevel = Math.min(
+      Math.max(Number((input as { hintLevel?: number }).hintLevel ?? 1), 1),
+      4,
+    );
     const hint = await this.ai.codingHint(studentId, {
       hintLevel,
       title: problem.title,

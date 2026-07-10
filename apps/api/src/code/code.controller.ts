@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -23,8 +33,8 @@ export class CodeController {
   @Post('code/problems/:id/run')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.STUDENT)
-  run(@Param('id') id: string, @Body() body: unknown) {
-    return this.code.run(id, body, false);
+  run(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
+    return this.code.run(user.id, id, body, false);
   }
 
   @Post('code/problems/:id/submit')

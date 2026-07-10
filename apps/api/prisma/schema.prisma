@@ -543,6 +543,8 @@ model CodeProblem {
   solutionExplanation String
   timeLimitMs         Int
   memoryLimitMb       Int
+  isPremium           Boolean           @default(false)
+  unlockPrice         Decimal           @default(0) @db.Decimal(10, 2)
   status              CodeProblemStatus @default(DRAFT)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt

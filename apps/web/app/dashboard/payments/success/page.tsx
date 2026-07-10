@@ -23,11 +23,14 @@ export default function PaymentSuccessPage() {
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard/packages">
+          <Link href="/pricing">
             <Button>
-              Xem gói học
+              Xem gói sử dụng
               <ArrowRight className="h-4 w-4" />
             </Button>
+          </Link>
+          <Link href="/dashboard/payments/top-up">
+            <Button variant="outline">Về ví</Button>
           </Link>
           <Link href="/dashboard">
             <Button variant="outline">Về dashboard</Button>

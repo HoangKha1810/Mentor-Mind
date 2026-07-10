@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { AI_PROVIDER, AiService } from './ai.service';
 import { AIUsageService } from './ai-usage.service';
 import { AiController } from './ai.controller';
@@ -8,6 +9,7 @@ import { OpenAICompatibleProvider } from './openai-compatible.provider';
 import { PromptTemplateService } from './prompt-template.service';
 
 @Module({
+  imports: [EntitlementsModule],
   controllers: [AiController],
   providers: [
     AiService,

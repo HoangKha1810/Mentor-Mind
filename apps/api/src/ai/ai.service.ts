@@ -1,6 +1,7 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { AIMessage, AIUsageStatus, Prisma, PromptTemplate } from '@prisma/client';
 import { z } from 'zod';
+import { EntitlementsService } from '../entitlements/entitlements.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AIProvider } from './ai-provider.interface';
 import { MockAIProvider } from './mock-ai.provider';
@@ -77,6 +78,7 @@ export class AiService {
     private readonly prompts: PromptTemplateService,
     private readonly usage: AIUsageService,
     private readonly prisma: PrismaService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   async generateRoadmapDraft(userId: string, input: Record<string, unknown>) {
@@ -102,7 +104,8 @@ export class AiService {
         weaknesses: ['Cần bổ sung ví dụ cụ thể', 'Nên nêu rõ các đánh đổi kỹ thuật hơn'],
         betterAnswer:
           'Câu trả lời tốt hơn nên định nghĩa ý chính, giải thích vì sao nó quan trọng, rồi liên hệ với một dự án cụ thể và các đánh đổi đã cân nhắc.',
-        nextPracticeSuggestion: 'Luyện trả lời theo cấu trúc Tình huống, Hành động, Kết quả và thêm một chi tiết kỹ thuật.',
+        nextPracticeSuggestion:
+          'Luyện trả lời theo cấu trúc Tình huống, Hành động, Kết quả và thêm một chi tiết kỹ thuật.',
         rubric: {
           correctness: 7,
           clarity: 7,
@@ -174,8 +177,10 @@ export class AiService {
       input,
       codeReviewSchema,
       {
-        summary: 'The code is readable enough for a first pass, but verify edge cases before submitting.',
-        correctness: 'Likely correct for simple samples if input parsing matches the problem format.',
+        summary:
+          'The code is readable enough for a first pass, but verify edge cases before submitting.',
+        correctness:
+          'Likely correct for simple samples if input parsing matches the problem format.',
         edgeCases: ['Empty input', 'Duplicate values', 'Maximum constraints'],
         readability: ['Use descriptive variable names', 'Keep parsing separate from core logic'],
         complexity: { time: 'O(n)', space: 'O(n)' },
@@ -219,16 +224,28 @@ export class AiService {
       cvReviewSchema,
       {
         overallScore: 72,
-        strengths: ['Thể hiện được vai trò trong dự án', 'Tech stack liên quan đến vị trí mục tiêu'],
+        strengths: [
+          'Thể hiện được vai trò trong dự án',
+          'Tech stack liên quan đến vị trí mục tiêu',
+        ],
         weaknesses: ['Chỉ số tác động còn mơ hồ', 'Thiếu keyword đúng với JD/vai trò mục tiêu'],
         missingKeywords: ['testing', 'performance', 'accessibility', 'deployment'],
-        projectSuggestions: ['Bổ sung một dự án gần production có xác thực, database, test và deployment'],
+        projectSuggestions: [
+          'Bổ sung một dự án gần production có xác thực, database, test và deployment',
+        ],
         betterBulletPoints: [
           'Xây dựng dashboard React có phân quyền theo vai trò, giúp giảm 30% thời gian theo dõi thủ công.',
         ],
-        interviewRiskAreas: ['Giải thích trade-off thiết kế hệ thống', 'Trình bày tác động sản phẩm/kinh doanh'],
+        interviewRiskAreas: [
+          'Giải thích trade-off thiết kế hệ thống',
+          'Trình bày tác động sản phẩm/kinh doanh',
+        ],
         recommendedTutoringPackage: 'Coaching CV và Portfolio',
-        recommendedRoadmapItems: ['Viết lại bullet dự án', 'Bổ sung ghi chú deployment', 'Luyện phỏng vấn thử'],
+        recommendedRoadmapItems: [
+          'Viết lại bullet dự án',
+          'Bổ sung ghi chú deployment',
+          'Luyện phỏng vấn thử',
+        ],
       },
       userId,
     );
@@ -237,10 +254,9 @@ export class AiService {
   async chat(userId: string, rawMessage: string, conversationId?: string) {
     await this.ensureFeatureAllowed('LEARNING_ASSISTANT', userId);
     const body = chatInputSchema.parse({ message: rawMessage, conversationId });
-    const conversation =
-      body.conversationId
-        ? await this.prisma.aIConversation.findFirst({ where: { id: body.conversationId, userId } })
-        : null;
+    const conversation = body.conversationId
+      ? await this.prisma.aIConversation.findFirst({ where: { id: body.conversationId, userId } })
+      : null;
     const previousMessages = conversation
       ? await this.prisma.aIMessage.findMany({
           where: { conversationId: conversation.id },
@@ -250,7 +266,11 @@ export class AiService {
       : [];
 
     const contextBefore = await this.loadStudentContext(userId);
-    const contextUpdates = await this.extractAndStoreContext(userId, body.message, contextBefore.profile);
+    const contextUpdates = await this.extractAndStoreContext(
+      userId,
+      body.message,
+      contextBefore.profile,
+    );
     const context = await this.loadStudentContext(userId);
     const template = await this.prompts.getActiveTemplate('LEARNING_ASSISTANT');
     const prompt = `${this.prompts.render(template, {
@@ -335,7 +355,10 @@ Quy tắc:
   async testPrompt(id: string, variables: Record<string, unknown>) {
     const template = await this.prisma.promptTemplate.findUnique({ where: { id } });
     const rendered = this.prompts.render(template?.template ?? '', variables);
-    return this.provider.generateText({ prompt: rendered, fallback: 'Prompt test output in mock mode.' });
+    return this.provider.generateText({
+      prompt: rendered,
+      fallback: 'Prompt test output in mock mode.',
+    });
   }
 
   async settings() {
@@ -619,7 +642,9 @@ Trả về JSON đúng dạng:
 
     return this.parseMemoryExtraction({
       shouldRemember:
-        extraction.shouldRemember || Object.keys(profileUpdates).length > 0 || Object.keys(personalContext).length > 0,
+        extraction.shouldRemember ||
+        Object.keys(profileUpdates).length > 0 ||
+        Object.keys(personalContext).length > 0,
       profileUpdates,
       personalContext,
       rememberedFacts,
@@ -635,13 +660,18 @@ Trả về JSON đúng dạng:
     });
   }
 
-  private mergePersonalContext(existing: Record<string, unknown>, incoming: Record<string, unknown>) {
+  private mergePersonalContext(
+    existing: Record<string, unknown>,
+    incoming: Record<string, unknown>,
+  ) {
     const cleanIncoming = this.cleanJsonRecord(incoming);
     const merged: Record<string, unknown> = { ...existing };
     for (const [key, value] of Object.entries(cleanIncoming)) {
       const current = merged[key];
       if (Array.isArray(current) && Array.isArray(value)) {
-        merged[key] = Array.from(new Set([...current, ...value].map((item) => String(item)).filter(Boolean)));
+        merged[key] = Array.from(
+          new Set([...current, ...value].map((item) => String(item)).filter(Boolean)),
+        );
       } else if (this.isRecord(current) && this.isRecord(value)) {
         merged[key] = this.mergePersonalContext(current, value);
       } else {
@@ -671,7 +701,9 @@ Trả về JSON đúng dạng:
     if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
     if (typeof value === 'boolean') return value;
     if (Array.isArray(value)) {
-      const clean = value.map((item) => this.cleanJsonValue(item)).filter((item) => item !== undefined);
+      const clean = value
+        .map((item) => this.cleanJsonValue(item))
+        .filter((item) => item !== undefined);
       return clean.length ? clean : undefined;
     }
     if (this.isRecord(value)) {
@@ -724,8 +756,12 @@ Trả về JSON đúng dạng:
 
     return {
       shouldRemember: Boolean(parsed.shouldRemember),
-      profileUpdates: this.cleanProfileUpdates((parsed.profileUpdates ?? {}) as Record<string, unknown>),
-      personalContext: this.cleanJsonRecord((parsed.personalContext ?? {}) as Record<string, unknown>),
+      profileUpdates: this.cleanProfileUpdates(
+        (parsed.profileUpdates ?? {}) as Record<string, unknown>,
+      ),
+      personalContext: this.cleanJsonRecord(
+        (parsed.personalContext ?? {}) as Record<string, unknown>,
+      ),
       rememberedFacts,
     };
   }
@@ -735,7 +771,12 @@ Trả về JSON đúng dạng:
       .slice()
       .reverse()
       .map((message) => {
-        const role = message.role === 'USER' ? 'Học viên' : message.role === 'ASSISTANT' ? 'Trợ lý' : 'Hệ thống';
+        const role =
+          message.role === 'USER'
+            ? 'Học viên'
+            : message.role === 'ASSISTANT'
+              ? 'Trợ lý'
+              : 'Hệ thống';
         return `${role}: ${message.content.slice(0, 900)}`;
       })
       .join('\n');
@@ -817,28 +858,29 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
   }
 
   private async ensureFeatureAllowed(feature: string, userId?: string) {
-    const setting = await this.prisma.aISetting.findUnique({ where: { key: `${feature}:enabled` } });
+    const setting = await this.prisma.aISetting.findUnique({
+      where: { key: `${feature}:enabled` },
+    });
     if (setting?.value === false) {
-      throw new ForbiddenException(`${feature} is disabled by admin`);
+      throw new ForbiddenException(`${feature} đang bị tạm tắt bởi quản trị viên.`);
     }
     if (!userId) {
       return;
     }
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const usage = await this.prisma.aIUsageLog.aggregate({
-      where: { userId, createdAt: { gte: since } },
-      _sum: { estimatedCost: true },
-    });
-    const total = Number(usage._sum.estimatedCost ?? 0);
-    if (total > 1) {
-      throw new ForbiddenException('Daily AI usage limit reached');
+    if (feature === 'LEARNING_ASSISTANT') {
+      await this.entitlements.ensureAiChatAllowed(userId);
+      return;
     }
+    await this.entitlements.ensureAiToolAllowed(userId, feature);
   }
 
   private async loadStudentContext(userId: string) {
     const [profile, roadmap, submissions, interviews] = await this.prisma.$transaction([
       this.prisma.studentProfile.findUnique({ where: { userId } }),
-      this.prisma.roadmap.findFirst({ where: { studentId: userId }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.roadmap.findFirst({
+        where: { studentId: userId },
+        orderBy: { createdAt: 'desc' },
+      }),
       this.prisma.codeSubmission.findMany({
         where: { studentId: userId },
         orderBy: { createdAt: 'desc' },
@@ -850,7 +892,12 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
         take: 5,
       }),
     ]);
-    return { profile, activeRoadmap: roadmap, recentSubmissions: submissions, recentInterviews: interviews };
+    return {
+      profile,
+      activeRoadmap: roadmap,
+      recentSubmissions: submissions,
+      recentInterviews: interviews,
+    };
   }
 
   private fallbackRoadmap(input: Record<string, unknown>): RoadmapDraft {
@@ -874,10 +921,19 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
       })),
       milestones: ['Foundation check', 'Portfolio review', 'Mock interview', 'Final action plan'],
       recommendedSessions: 12,
-      recommendedAiTools: ['AI Learning Assistant', 'AI Interview', 'AI Code Review', 'Resource Search'],
+      recommendedAiTools: [
+        'AI Learning Assistant',
+        'AI Interview',
+        'AI Code Review',
+        'Resource Search',
+      ],
       practiceSchedule: ['3 coding sessions/week', '1 project block/week', '1 reflection/week'],
       interviewPrepSchedule: ['Weekly mock question set', 'Bi-weekly mentor mock interview'],
-      projectSuggestions: ['Role-focused portfolio project', 'API integration feature', 'Testing and deployment pass'],
+      projectSuggestions: [
+        'Role-focused portfolio project',
+        'API integration feature',
+        'Testing and deployment pass',
+      ],
       recommendedResources: [
         {
           title: 'MDN JavaScript Guide',
@@ -886,7 +942,10 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
           url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide',
         },
       ],
-      risks: ['Timeline may need adjustment if weekly hours drop', 'Portfolio scope should stay focused'],
+      risks: [
+        'Timeline may need adjustment if weekly hours drop',
+        'Portfolio scope should stay focused',
+      ],
     };
   }
 }

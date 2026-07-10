@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Code2, History } from 'lucide-react';
+import { Code2, Crown, History } from 'lucide-react';
+import { formatCurrency } from '@mentormind/shared';
 import { CodeProblem, CodeSubmission } from '@/lib/domain-types';
 import { formatDateTime } from '@/lib/format';
 import { useLiveQuery } from '@/lib/live-query';
@@ -53,6 +54,12 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
               <div className="flex flex-wrap gap-2">
                 <StatusBadge value={problem.difficulty} />
                 <Badge>{problem.category}</Badge>
+                {problem.isPremium ? (
+                  <Badge className="gap-1.5 border-secondary/30 bg-secondary/10 text-secondary">
+                    <Crown className="h-3.5 w-3.5" />
+                    Đặc biệt {formatCurrency(Number(problem.unlockPrice ?? 20_000), 'VND')}
+                  </Badge>
+                ) : null}
               </div>
               <Badge>{accepted.has(problem.slug) ? 'Đã giải' : 'Chưa giải'}</Badge>
             </div>
@@ -64,9 +71,9 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
               </CardDescription>
             </CardHeader>
             <Link href={`/dashboard/code-practice/${problem.slug}`}>
-              <Button>
+              <Button variant={problem.isPremium ? 'secondary' : 'primary'}>
                 <Code2 className="h-4 w-4" />
-                Mở bài
+                {problem.isPremium ? 'Mở bài đặc biệt' : 'Mở bài'}
               </Button>
             </Link>
           </Card>

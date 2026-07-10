@@ -22,11 +22,14 @@ export default function PaymentCancelPage() {
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard/packages">
+          <Link href="/dashboard/payments/top-up">
             <Button>
-              Chọn gói học
+              Nạp lại
               <ArrowRight className="h-4 w-4" />
             </Button>
+          </Link>
+          <Link href="/pricing">
+            <Button variant="outline">Xem gói sử dụng</Button>
           </Link>
           <Link href="/dashboard">
             <Button variant="outline">Về dashboard</Button>

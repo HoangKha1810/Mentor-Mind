@@ -5,6 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Badge } from '@/components/ui/badge';
 import { CodeProblem } from '@/lib/domain-types';
 import { useLiveQuery } from '@/lib/live-query';
+import { formatCurrency } from '@mentormind/shared';
 import { ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
 export function CodeProblemWorkspace({ slug }: { slug: string }) {
@@ -25,6 +26,11 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
         <div className="mb-3 flex flex-wrap gap-2">
           <StatusBadge value={query.data.difficulty} />
           <Badge>{query.data.category}</Badge>
+          {query.data.isPremium ? (
+            <Badge className="border-secondary/30 bg-secondary/10 text-secondary">
+              Bài đặc biệt · {formatCurrency(Number(query.data.unlockPrice ?? 20_000), 'VND')}
+            </Badge>
+          ) : null}
           {query.data.timeLimitMs ? <Badge>{query.data.timeLimitMs}ms</Badge> : null}
           {query.data.memoryLimitMb ? <Badge>{query.data.memoryLimitMb}MB</Badge> : null}
         </div>
@@ -60,7 +66,12 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
           </div>
         ) : null}
       </Card>
-      <CodeEditorPanel problemId={query.data.id} starterCode={starter} />
+      <CodeEditorPanel
+        problemId={query.data.id}
+        starterCode={starter}
+        isPremium={query.data.isPremium}
+        unlockPrice={Number(query.data.unlockPrice ?? 20_000)}
+      />
     </>
   );
 }

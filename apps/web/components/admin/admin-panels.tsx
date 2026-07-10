@@ -3,15 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  CheckCircle2,
-  FilePenLine,
-  Plus,
-  RefreshCcw,
-  Save,
-  Send,
-  Trash2,
-} from 'lucide-react';
+import { CheckCircle2, FilePenLine, Plus, RefreshCcw, Save, Send, Trash2 } from 'lucide-react';
 import { apiFetch, authHeaders } from '@/lib/api';
 import {
   Booking,
@@ -160,16 +152,24 @@ export function AdminBookingsPanel() {
               <CardHeader>
                 <CardTitle>{formatDateTime(booking.startTime)}</CardTitle>
                 <CardDescription>
-                  {booking.student?.fullName ?? booking.studentId} với {booking.mentor?.fullName ?? booking.mentorId}
+                  {booking.student?.fullName ?? booking.studentId} với{' '}
+                  {booking.mentor?.fullName ?? booking.mentorId}
                 </CardDescription>
               </CardHeader>
               <StatusBadge value={booking.status} />
               <div className="mt-4 flex flex-wrap gap-2">
-                {['REQUESTED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED', 'NO_SHOW'].map((status) => (
-                  <Button key={status} size="sm" variant="outline" onClick={() => updateStatus(booking.id, status)}>
-                    {formatStatus(status)}
-                  </Button>
-                ))}
+                {['REQUESTED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED', 'NO_SHOW'].map(
+                  (status) => (
+                    <Button
+                      key={status}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateStatus(booking.id, status)}
+                    >
+                      {formatStatus(status)}
+                    </Button>
+                  ),
+                )}
               </div>
             </Card>
           ))}
@@ -205,12 +205,22 @@ export function AdminSupportPanel() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map((status) => (
-                  <Button key={status} size="sm" variant="outline" onClick={() => update(ticket.id, { status })}>
+                  <Button
+                    key={status}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => update(ticket.id, { status })}
+                  >
                     {formatStatus(status)}
                   </Button>
                 ))}
                 {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((priority) => (
-                  <Button key={priority} size="sm" variant="secondary" onClick={() => update(ticket.id, { priority })}>
+                  <Button
+                    key={priority}
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => update(ticket.id, { priority })}
+                  >
                     {formatStatus(priority)}
                   </Button>
                 ))}
@@ -241,7 +251,9 @@ export function AdminPaymentsPanel() {
                 <StatusBadge value={payment.status} />
                 <Badge>{payment.provider}</Badge>
               </div>
-              <p className="mt-3 text-sm text-mutedText">Tạo lúc {formatDateTime(payment.createdAt)}</p>
+              <p className="mt-3 text-sm text-mutedText">
+                Tạo lúc {formatDateTime(payment.createdAt)}
+              </p>
             </Card>
           ))}
         </Grid>
@@ -392,7 +404,9 @@ export function AdminRoadmapRequestDetailPanel({ id }: { id: string }) {
       <Card>
         <CardHeader>
           <CardTitle>Phân mentor và lên lịch tư vấn</CardTitle>
-          <CardDescription>Thao tác này tạo booking thật và thông báo cho học viên.</CardDescription>
+          <CardDescription>
+            Thao tác này tạo booking thật và thông báo cho học viên.
+          </CardDescription>
         </CardHeader>
         <form
           className="grid gap-3 md:grid-cols-2"
@@ -409,7 +423,10 @@ export function AdminRoadmapRequestDetailPanel({ id }: { id: string }) {
             });
           }}
         >
-          <select name="mentorId" className="h-12 rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white">
+          <select
+            name="mentorId"
+            className="h-12 rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white"
+          >
             {mentorOptions.map((mentor) => (
               <option key={mentor.id} value={mentor.id}>
                 {mentor.fullName}
@@ -431,10 +448,15 @@ export function AdminRoadmapRequestDetailPanel({ id }: { id: string }) {
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            void post(`/admin/roadmap-requests/${id}/assign-mentor`, { mentorId: form.get('mentorId') });
+            void post(`/admin/roadmap-requests/${id}/assign-mentor`, {
+              mentorId: form.get('mentorId'),
+            });
           }}
         >
-          <select name="mentorId" className="h-12 flex-1 rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white">
+          <select
+            name="mentorId"
+            className="h-12 flex-1 rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white"
+          >
             {mentorOptions.map((mentor) => (
               <option key={mentor.id} value={mentor.id}>
                 {mentor.fullName}
@@ -453,14 +475,19 @@ export function AdminRoadmapRequestDetailPanel({ id }: { id: string }) {
           <JsonBlock value={roadmap} />
         </Card>
       ) : (
-        <EmptyState title="Chưa có bản nháp" description="Tạo bản nháp AI trước khi duyệt lộ trình." />
+        <EmptyState
+          title="Chưa có bản nháp"
+          description="Tạo bản nháp AI trước khi duyệt lộ trình."
+        />
       )}
     </div>
   );
 }
 
 export function AdminAiCenterPanel() {
-  const settings = useLiveQuery<{ provider: string; model: string }>('/admin/ai/settings', { auth: true });
+  const settings = useLiveQuery<{ provider: string; model: string }>('/admin/ai/settings', {
+    auth: true,
+  });
   const usage = useLiveQuery<AiUsageSummary>('/admin/ai/usage', { auth: true });
   if (settings.unauthenticated || usage.unauthenticated) return <AuthRequiredCard />;
   if (settings.loading || usage.loading) return <LoadingCard />;
@@ -475,21 +502,27 @@ export function AdminAiCenterPanel() {
             {settings.data?.provider} · {settings.data?.model}
           </CardDescription>
         </CardHeader>
-        <Link href="/admin/ai/settings"><Button>Cài đặt AI</Button></Link>
+        <Link href="/admin/ai/settings">
+          <Button>Cài đặt AI</Button>
+        </Link>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>{usage.data?.total ?? 0} lượt gọi AI</CardTitle>
           <CardDescription>{usage.data?.failed ?? 0} lỗi đã ghi nhận</CardDescription>
         </CardHeader>
-        <Link href="/admin/ai/usage"><Button variant="secondary">Xem log</Button></Link>
+        <Link href="/admin/ai/usage">
+          <Button variant="secondary">Xem log</Button>
+        </Link>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>Prompt template</CardTitle>
           <CardDescription>Sửa và test prompt theo từng tính năng.</CardDescription>
         </CardHeader>
-        <Link href="/admin/ai/prompts"><Button variant="outline">Mở prompt</Button></Link>
+        <Link href="/admin/ai/prompts">
+          <Button variant="outline">Mở prompt</Button>
+        </Link>
       </Card>
     </Grid>
   );
@@ -517,7 +550,9 @@ export function AdminAiUsagePanel() {
                 </div>
                 <StatusBadge value={log.status} />
               </div>
-              {log.errorMessage ? <p className="mt-3 text-sm text-warning">{log.errorMessage}</p> : null}
+              {log.errorMessage ? (
+                <p className="mt-3 text-sm text-warning">{log.errorMessage}</p>
+              ) : null}
             </Card>
           ))}
         </div>
@@ -568,12 +603,18 @@ export function AdminAiPromptsPanel() {
     <DataGate query={query}>
       {(items) => (
         <div className="space-y-4">
-          {message ? <Card><pre className="overflow-auto text-xs text-slate-200">{message}</pre></Card> : null}
+          {message ? (
+            <Card>
+              <pre className="overflow-auto text-xs text-slate-200">{message}</pre>
+            </Card>
+          ) : null}
           {items.map((template) => (
             <Card key={template.id}>
               <CardHeader>
                 <CardTitle>{template.name}</CardTitle>
-                <CardDescription>{template.key} · v{template.version}</CardDescription>
+                <CardDescription>
+                  {template.key} · v{template.version}
+                </CardDescription>
               </CardHeader>
               <form
                 className="space-y-3"
@@ -583,17 +624,34 @@ export function AdminAiPromptsPanel() {
                 }}
               >
                 <Input name="description" defaultValue={template.description} />
-                <Textarea name="template" defaultValue={template.template} className="min-h-36 font-mono text-xs" />
+                <Textarea
+                  name="template"
+                  defaultValue={template.template}
+                  className="min-h-36 font-mono text-xs"
+                />
                 <label className="flex items-center gap-2 text-sm text-slate-300">
-                  <input name="isActive" type="checkbox" defaultChecked={template.isActive} /> Đang bật
+                  <input name="isActive" type="checkbox" defaultChecked={template.isActive} /> Đang
+                  bật
                 </label>
-                <Textarea name="variables" defaultValue='{"targetRole":"Frontend Intern","goal":"Đi làm"}' className="font-mono text-xs" />
+                <Textarea
+                  name="variables"
+                  defaultValue='{"targetRole":"Frontend Intern","goal":"Đi làm"}'
+                  className="font-mono text-xs"
+                />
                 <div className="flex flex-wrap gap-2">
-                  <Button><Save className="h-4 w-4" /> Lưu prompt</Button>
-                  <Button type="button" variant="outline" onClick={(event) => {
-                    const form = new FormData(event.currentTarget.closest('form')!);
-                    void test(template, form);
-                  }}>Test prompt</Button>
+                  <Button>
+                    <Save className="h-4 w-4" /> Lưu prompt
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={(event) => {
+                      const form = new FormData(event.currentTarget.closest('form')!);
+                      void test(template, form);
+                    }}
+                  >
+                    Test prompt
+                  </Button>
                 </div>
               </form>
             </Card>
@@ -682,7 +740,9 @@ export function AdminInterviewQuestionsPanel() {
   );
 }
 
-function AdminJsonCrudPanel<T extends { id?: string; title?: string; name?: string; key?: string; status?: string }>({
+function AdminJsonCrudPanel<
+  T extends { id?: string; title?: string; name?: string; key?: string; status?: string },
+>({
   title,
   listPath,
   createPath,
@@ -701,7 +761,7 @@ function AdminJsonCrudPanel<T extends { id?: string; title?: string; name?: stri
 }) {
   const query = useLiveQuery<T[] | Paginated<T>>(listPath, { auth: listPath.startsWith('/admin') });
   const [message, setMessage] = useState('');
-  const items = Array.isArray(query.data) ? query.data : query.data?.items ?? [];
+  const items = Array.isArray(query.data) ? query.data : (query.data?.items ?? []);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -735,13 +795,23 @@ function AdminJsonCrudPanel<T extends { id?: string; title?: string; name?: stri
               <CardTitle>Tạo {title.toLowerCase()}</CardTitle>
               <CardDescription>Dán JSON hợp lệ theo template để tạo bản ghi thật.</CardDescription>
             </div>
-            {newHref ? <Link href={newHref}><Button variant="outline">Mở form riêng</Button></Link> : null}
+            {newHref ? (
+              <Link href={newHref}>
+                <Button variant="outline">Mở form riêng</Button>
+              </Link>
+            ) : null}
           </div>
         </CardHeader>
         <form onSubmit={create} className="space-y-3">
-          <Textarea name="json" defaultValue={pretty(template)} className="min-h-48 font-mono text-xs" />
+          <Textarea
+            name="json"
+            defaultValue={pretty(template)}
+            className="min-h-48 font-mono text-xs"
+          />
           {message ? <p className="text-sm text-secondary">{message}</p> : null}
-          <Button><Plus className="h-4 w-4" /> Tạo</Button>
+          <Button>
+            <Plus className="h-4 w-4" /> Tạo
+          </Button>
         </form>
       </Card>
       <DataGate query={query}>
@@ -760,7 +830,9 @@ function AdminJsonCrudPanel<T extends { id?: string; title?: string; name?: stri
                   <div className="mt-4 flex flex-wrap gap-2">
                     {editBase && id ? (
                       <Link href={`${editBase}/${id}/edit`}>
-                        <Button variant="secondary" size="sm">Sửa</Button>
+                        <Button variant="secondary" size="sm">
+                          Sửa
+                        </Button>
                       </Link>
                     ) : null}
                     {id ? (
@@ -795,7 +867,10 @@ function AdminJsonEditorPanel({
   backHref: string;
 }) {
   const router = useRouter();
-  const query = useLiveQuery<unknown>(detailPath ?? null, { auth: Boolean(detailPath), deps: [detailPath] });
+  const query = useLiveQuery<unknown>(detailPath ?? null, {
+    auth: Boolean(detailPath),
+    deps: [detailPath],
+  });
   const [message, setMessage] = useState('');
   const defaultValue = pretty(query.data ?? template);
 
@@ -825,11 +900,22 @@ function AdminJsonEditorPanel({
         <CardDescription>Form JSON trực tiếp với validation từ API.</CardDescription>
       </CardHeader>
       <form onSubmit={save} className="space-y-3">
-        <Textarea key={defaultValue} name="json" defaultValue={defaultValue} className="min-h-[520px] font-mono text-xs" />
+        <Textarea
+          key={defaultValue}
+          name="json"
+          defaultValue={defaultValue}
+          className="min-h-[520px] font-mono text-xs"
+        />
         {message ? <p className="text-sm text-secondary">{message}</p> : null}
         <div className="flex flex-wrap gap-2">
-          <Button><Save className="h-4 w-4" /> Lưu</Button>
-          <Link href={backHref}><Button type="button" variant="outline">Quay lại</Button></Link>
+          <Button>
+            <Save className="h-4 w-4" /> Lưu
+          </Button>
+          <Link href={backHref}>
+            <Button type="button" variant="outline">
+              Quay lại
+            </Button>
+          </Link>
         </div>
       </form>
     </Card>
@@ -877,9 +963,15 @@ function JsonPatchPanel({
       </CardHeader>
       <JsonBlock value={query.data} />
       <form onSubmit={submit} className="mt-4 space-y-3">
-        <Textarea name="json" defaultValue={pretty(template)} className="min-h-44 font-mono text-xs" />
+        <Textarea
+          name="json"
+          defaultValue={pretty(template)}
+          className="min-h-44 font-mono text-xs"
+        />
         {message ? <p className="text-sm text-secondary">{message}</p> : null}
-        <Button><Save className="h-4 w-4" /> Lưu</Button>
+        <Button>
+          <Save className="h-4 w-4" /> Lưu
+        </Button>
       </form>
     </Card>
   );
@@ -896,7 +988,12 @@ function DataGate<T>({
   if (query.loading) return <LoadingCard />;
   if (query.error) return <ErrorCard message={query.error} onRetry={query.reload} />;
   if (!query.data || (Array.isArray(query.data) && !query.data.length)) {
-    return <EmptyState title="Chưa có dữ liệu" description="Khi hệ thống có bản ghi thật, danh sách sẽ xuất hiện tại đây." />;
+    return (
+      <EmptyState
+        title="Chưa có dữ liệu"
+        description="Khi hệ thống có bản ghi thật, danh sách sẽ xuất hiện tại đây."
+      />
+    );
   }
   return <>{children(query.data)}</>;
 }
@@ -926,7 +1023,8 @@ function pretty(value: unknown) {
 const packageTemplate = {
   title: 'Frontend Intern 1-1',
   shortDescription: 'Lộ trình mentor 1-1 cho mục tiêu Frontend Intern.',
-  longDescription: 'Gói học có mentor theo sát, bài tập theo tuần, luyện code, luyện phỏng vấn và cải thiện portfolio.',
+  longDescription:
+    'Gói học có mentor theo sát, bài tập theo tuần, luyện code, luyện phỏng vấn và cải thiện portfolio.',
   targetAudience: 'Học viên muốn ứng tuyển thực tập hoặc fresher frontend.',
   targetRole: 'Frontend Intern',
   level: 'FOUNDATION',
@@ -966,7 +1064,8 @@ const codeProblemTemplate = {
   difficulty: 'EASY',
   category: 'Array',
   tags: ['array', 'hash-map'],
-  statement: 'Given an array of integers nums and target, return indices of two numbers that add up to target.',
+  statement:
+    'Given an array of integers nums and target, return indices of two numbers that add up to target.',
   inputFormat: 'First line target, second line comma-separated nums.',
   outputFormat: 'Two indices separated by space.',
   constraintsText: '2 <= nums.length <= 10000',
@@ -975,6 +1074,8 @@ const codeProblemTemplate = {
   solutionExplanation: 'Use a hash map from value to index.',
   timeLimitMs: 1000,
   memoryLimitMb: 128,
+  isPremium: false,
+  unlockPrice: 0,
   status: 'PUBLISHED',
   testCases: [{ input: '9\\n2,7,11,15', expectedOutput: '0 1', isHidden: false, order: 1 }],
 };
@@ -984,7 +1085,11 @@ const interviewQuestionTemplate = {
   category: 'FRONTEND',
   level: 'Intern',
   question: 'Giải thích sự khác nhau giữa state và props trong React.',
-  expectedPoints: ['State thuộc component', 'Props truyền từ ngoài vào', 'Cả hai đều ảnh hưởng render'],
+  expectedPoints: [
+    'State thuộc component',
+    'Props truyền từ ngoài vào',
+    'Cả hai đều ảnh hưởng render',
+  ],
   sampleAnswer: 'Props là dữ liệu truyền vào component, state là dữ liệu component tự quản lý.',
   commonMistakes: ['Nói state và props giống nhau', 'Không nhắc immutable update'],
   tags: ['react', 'frontend'],

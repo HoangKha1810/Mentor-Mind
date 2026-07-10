@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { EntitlementsService, walletCurrency } from '../entitlements/entitlements.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentProvider } from './payment-provider.interface';
 
@@ -22,14 +23,11 @@ const purchasePackageSchema = z.object({
   packageId: z.string().min(1),
 });
 
-type WalletTransactionType = 'CREDIT' | 'DEBIT';
-
-const walletCurrency = 'VND';
-
 @Injectable()
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly entitlements: EntitlementsService,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
   ) {}
 
@@ -39,7 +37,19 @@ export class PaymentsService {
   }
 
   async wallet(studentId: string) {
-    return this.walletSummary(studentId);
+    return this.entitlements.walletSummary(studentId);
+  }
+
+  plans() {
+    return this.entitlements.plans();
+  }
+
+  entitlementsSummary(studentId: string) {
+    return this.entitlements.summary(studentId);
+  }
+
+  purchaseSubscription(studentId: string, slug: string) {
+    return this.entitlements.purchaseSubscription(studentId, slug);
   }
 
   async createTopUpLink(studentId: string, input: unknown) {
@@ -64,7 +74,7 @@ export class PaymentsService {
     }
 
     const price = Number(pack.price);
-    const wallet = await this.walletSummary(studentId);
+    const wallet = await this.entitlements.walletSummary(studentId);
     if (wallet.balance < price) {
       throw new BadRequestException('Số dư không đủ để mua gói học này. Vui lòng nạp thêm tiền.');
     }
@@ -91,7 +101,11 @@ export class PaymentsService {
       },
     });
 
-    return { payment, wallet: await this.walletSummary(studentId) };
+    return {
+      payment,
+      wallet: await this.entitlements.walletSummary(studentId),
+      entitlements: await this.entitlements.summary(studentId),
+    };
   }
 
   private async createPaymentIntent(studentId: string, body: z.infer<typeof createPaymentSchema>) {
@@ -170,62 +184,5 @@ export class PaymentsService {
     });
 
     return { received: true, matched: true, payment: updated };
-  }
-
-  private async walletSummary(studentId: string) {
-    const payments = await this.prisma.payment.findMany({
-      where: {
-        studentId,
-        status: PaymentStatus.PAID,
-        currency: walletCurrency,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    const pendingTopUps = await this.prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        studentId,
-        status: PaymentStatus.PENDING,
-        currency: walletCurrency,
-        packageId: null,
-        roadmapId: null,
-      },
-    });
-
-    let credit = 0;
-    let debit = 0;
-    const transactions = payments.map((payment) => {
-      const amount = Number(payment.amount);
-      const type: WalletTransactionType =
-        payment.packageId || payment.roadmapId || payment.provider === 'wallet'
-          ? 'DEBIT'
-          : 'CREDIT';
-      if (type === 'CREDIT') {
-        credit += amount;
-      } else {
-        debit += amount;
-      }
-      return {
-        id: payment.id,
-        type,
-        amount,
-        currency: payment.currency,
-        status: payment.status,
-        provider: payment.provider,
-        packageId: payment.packageId,
-        roadmapId: payment.roadmapId,
-        createdAt: payment.createdAt,
-      };
-    });
-
-    return {
-      balance: Math.max(credit - debit, 0),
-      currency: walletCurrency,
-      credit,
-      debit,
-      pendingTopUp: Number(pendingTopUps._sum.amount ?? 0),
-      transactions: transactions.slice(0, 10),
-      updatedAt: new Date().toISOString(),
-    };
   }
 }
