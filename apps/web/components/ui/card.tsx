@@ -13,7 +13,7 @@ export function Card({ className, ...props }: HTMLMotionProps<'div'>) {
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        'glass rounded-lg p-5 shadow-soft transition-colors duration-300 hover:border-success/30',
+        'dashboard-surface glass relative overflow-hidden rounded-xl p-5 shadow-soft transition-colors duration-300 hover:border-secondary/25 hover:bg-white/[0.045]',
         className,
       )}
       {...props}
@@ -26,7 +26,9 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-lg font-semibold tracking-normal text-white', className)} {...props} />;
+  return (
+    <h3 className={cn('text-lg font-semibold tracking-normal text-white', className)} {...props} />
+  );
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

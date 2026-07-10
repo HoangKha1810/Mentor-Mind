@@ -109,12 +109,20 @@ export function DashboardShell({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="fixed inset-x-0 top-0 z-30 border-b border-white/8 bg-background/90 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-4 lg:px-6">
-          <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
-            <BrandMark className="h-8 w-8 rounded-md" priority />
-            MentorMind
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div className="dashboard-backdrop" aria-hidden="true" />
+      <div className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#07111f]/[0.82] shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
+        <div className="flex h-20 items-center justify-between px-5 lg:px-8">
+          <Link href="/" className="group flex items-center gap-3 text-base font-semibold">
+            <span className="dashboard-surface flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] shadow-[0_14px_42px_rgba(0,212,255,0.12)] transition group-hover:border-secondary/30">
+              <BrandMark className="h-10 w-10 rounded-lg" priority />
+            </span>
+            <span className="hidden sm:block">
+              <span className="block text-lg leading-none text-white">MentorMind</span>
+              <span className="mt-1 block text-xs font-medium text-secondary">
+                {workspaceLabels[role]}
+              </span>
+            </span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             {role === 'student' ? <WalletWidget /> : null}
@@ -123,7 +131,7 @@ export function DashboardShell({
               aria-label="Mở menu dashboard"
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-3 text-sm font-semibold text-white shadow-soft transition hover:border-secondary/40 hover:bg-secondary/10 lg:hidden"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.06] px-4 text-sm font-semibold text-white shadow-soft transition hover:border-secondary/40 hover:bg-secondary/[0.10] lg:hidden"
             >
               <Menu className="h-4 w-4" />
               Menu
@@ -131,8 +139,14 @@ export function DashboardShell({
           </div>
         </div>
       </div>
-      <aside className="fixed bottom-0 left-0 top-14 hidden w-64 border-r border-white/8 bg-surface/60 p-4 lg:block">
-        <nav className="space-y-1.5 pt-2">
+      <aside className="fixed bottom-0 left-0 top-20 z-30 hidden w-72 border-r border-white/10 bg-[#07111f]/[0.64] p-5 shadow-[18px_0_80px_rgba(0,0,0,0.18)] backdrop-blur-2xl lg:block">
+        <div className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.035] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
+            Workspace
+          </p>
+          <p className="mt-2 text-sm font-semibold text-white">{workspaceLabels[role]}</p>
+        </div>
+        <nav className="space-y-2">
           {items.map(([label, href, Icon]) => {
             const isActive = isNavActive(pathname, href);
             return (
@@ -140,19 +154,26 @@ export function DashboardShell({
                 key={href}
                 href={href}
                 className={cn(
-                  'group flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-all duration-300 active:scale-95',
+                  'dashboard-nav-link group flex min-h-[3.65rem] items-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition-all duration-300 active:scale-[0.98]',
                   isActive
-                    ? 'border-secondary/20 bg-secondary/10 text-secondary shadow-[0_4px_20px_rgba(0,212,255,0.1)]'
-                    : 'border-white/5 bg-white/[0.02] text-slate-300 hover:border-white/10 hover:bg-white/[0.06] hover:text-white hover:shadow-soft',
+                    ? 'border-secondary/30 bg-secondary/[0.12] text-white shadow-[0_12px_38px_rgba(0,212,255,0.14)]'
+                    : 'border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-white/[0.14] hover:bg-white/[0.065] hover:text-white hover:shadow-soft',
                 )}
               >
-                <Icon
+                <span
                   className={cn(
-                    'h-4 w-4 transition-transform duration-300 group-hover:scale-110',
-                    isActive ? 'text-secondary' : 'text-slate-400 group-hover:text-white',
+                    'relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition duration-300 group-hover:scale-105',
+                    isActive
+                      ? 'bg-secondary/[0.16] text-secondary shadow-[0_0_24px_rgba(0,212,255,0.16)]'
+                      : 'bg-white/[0.05] text-slate-400 group-hover:text-white',
                   )}
-                />
-                {label}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="relative z-10 min-w-0 flex-1 truncate">{label}</span>
+                {isActive ? (
+                  <span className="relative z-10 h-2 w-2 shrink-0 rounded-full bg-secondary" />
+                ) : null}
               </Link>
             );
           })}
@@ -166,7 +187,7 @@ export function DashboardShell({
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-[min(88vw,23rem)] flex-col border-r border-white/12 bg-[#07111f]/98 shadow-[24px_0_80px_rgba(0,0,0,0.42)]">
+          <aside className="absolute inset-y-0 left-0 flex w-[min(88vw,23rem)] flex-col border-r border-white/[0.12] bg-[#07111f]/[0.98] shadow-[24px_0_80px_rgba(0,0,0,0.42)]">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <Link href="/" className="flex min-w-0 items-center gap-3">
                 <BrandMark className="h-11 w-11 rounded-xl" priority />
@@ -178,7 +199,7 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-3 text-sm font-semibold text-white transition hover:border-secondary/40 hover:bg-secondary/10"
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.05] px-3 text-sm font-semibold text-white transition hover:border-secondary/40 hover:bg-secondary/[0.10]"
               >
                 <X className="h-4 w-4" />
                 Đóng
@@ -194,15 +215,15 @@ export function DashboardShell({
                     className={cn(
                       'group flex min-h-12 items-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition-all duration-200 active:scale-[0.98]',
                       isActive
-                        ? 'border-secondary/35 bg-secondary/14 text-white shadow-[0_10px_32px_rgba(0,212,255,0.16)]'
-                        : 'border-white/8 bg-white/[0.025] text-slate-300 hover:border-white/16 hover:bg-white/[0.07] hover:text-white',
+                        ? 'border-secondary/35 bg-secondary/[0.14] text-white shadow-[0_10px_32px_rgba(0,212,255,0.16)]'
+                        : 'border-white/[0.08] bg-white/[0.025] text-slate-300 hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white',
                     )}
                   >
                     <span
                       className={cn(
                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition',
                         isActive
-                          ? 'bg-secondary/18 text-secondary'
+                          ? 'bg-secondary/[0.18] text-secondary'
                           : 'bg-white/[0.05] text-slate-400',
                       )}
                     >
@@ -217,7 +238,7 @@ export function DashboardShell({
             <div className="space-y-2 border-t border-white/10 p-4">
               <Link
                 href="/"
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] px-4 text-sm font-semibold text-slate-200 transition hover:border-white/16 hover:bg-white/[0.07] hover:text-white"
+                className="flex min-h-11 items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 text-sm font-semibold text-slate-200 transition hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white"
               >
                 <Home className="h-4 w-4 text-secondary" />
                 Về trang chủ
@@ -234,13 +255,17 @@ export function DashboardShell({
           </aside>
         </div>
       )}
-      <main className="px-4 pb-12 pt-20 lg:ml-64 lg:px-8">
+      <main className="relative z-10 px-4 pb-14 pt-28 lg:ml-72 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <PageTransition>
-            <div className="mb-8">
-              <p className="text-sm font-medium text-secondary">{workspaceLabels[role]}</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-normal text-white">{title}</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-mutedText">{subtitle}</p>
+            <div className="dashboard-hero mb-8 rounded-2xl px-5 py-6 sm:px-7">
+              <div className="relative z-10">
+                <p className="text-sm font-semibold text-secondary">{workspaceLabels[role]}</p>
+                <h1 className="mt-2 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+                  {title}
+                </h1>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">{subtitle}</p>
+              </div>
             </div>
             {children}
           </PageTransition>

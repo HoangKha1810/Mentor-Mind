@@ -72,7 +72,9 @@ function upcomingBookings(bookings: Booking[]) {
       const time = new Date(booking.startTime).getTime();
       return time >= now && !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(booking.status);
     })
-    .sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime());
+    .sort(
+      (left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime(),
+    );
 }
 
 function nextAction(payload: DashboardPayload) {
@@ -200,25 +202,25 @@ export function LiveDashboardOverview() {
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-2 rounded-md border border-white/8 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-sm text-mutedText">Tài khoản đang xem</p>
-          <p className="font-medium text-white">
+      <div className="dashboard-surface mb-5 flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-soft md:flex-row md:items-center md:justify-between">
+        <div className="relative z-10">
+          <p className="text-sm font-medium text-mutedText">Tài khoản đang xem</p>
+          <p className="mt-1 text-lg font-semibold text-white">
             {payload.account.fullName} · {payload.account.email}
           </p>
         </div>
-        <Button variant="outline" onClick={reloadAll}>
+        <Button className="relative z-10" variant="outline" onClick={reloadAll}>
           Cập nhật dữ liệu
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
         {latestRoadmap ? (
           <Card>
             <CardHeader>
@@ -263,12 +265,18 @@ export function LiveDashboardOverview() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="mt-4 space-y-2 text-sm text-mutedText">
-            <p>Lộ trình: {payload.roadmaps.length}</p>
-            <p>Lịch học: {payload.bookings.length}</p>
-            <p>
+          <div className="mt-5 grid gap-3 text-sm text-mutedText">
+            <p className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
+              Lộ trình: <span className="font-semibold text-white">{payload.roadmaps.length}</span>
+            </p>
+            <p className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
+              Lịch học: <span className="font-semibold text-white">{payload.bookings.length}</span>
+            </p>
+            <p className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
               Thông báo chưa đọc:{' '}
-              {payload.notifications.filter((notification) => !notification.readAt).length}
+              <span className="font-semibold text-white">
+                {payload.notifications.filter((notification) => !notification.readAt).length}
+              </span>
               <Bell className="ml-2 inline h-3.5 w-3.5" />
             </p>
           </div>
@@ -280,7 +288,7 @@ export function LiveDashboardOverview() {
 
 function Info({ label, value }: { label: string; value?: string | number | null }) {
   return (
-    <div className="rounded-md border border-white/8 bg-white/[0.03] p-3">
+    <div className="rounded-lg border border-white/[0.08] bg-white/[0.035] p-3 transition hover:border-secondary/20 hover:bg-secondary/[0.08]">
       <p className="text-xs text-mutedText">{label}</p>
       <p className="mt-1 text-sm font-medium text-slate-100">{value ?? 'Chưa có'}</p>
     </div>

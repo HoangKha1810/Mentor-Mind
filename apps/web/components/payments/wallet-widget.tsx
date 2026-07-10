@@ -72,8 +72,8 @@ export function WalletWidget() {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] p-1.5 shadow-soft">
-        <div className="hidden items-center gap-2 rounded-full bg-black/18 px-3 py-1.5 text-xs font-semibold text-slate-100 sm:flex">
+      <div className="flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.055] p-2 shadow-[0_18px_55px_rgba(0,0,0,0.2)] backdrop-blur-xl transition hover:border-secondary/[0.28]">
+        <div className="hidden min-h-10 items-center gap-2 rounded-full bg-black/20 px-4 text-sm font-semibold text-slate-100 sm:flex">
           <Wallet className="h-4 w-4 text-secondary" />
           <motion.span
             key={`${currency}-${balance}`}
@@ -85,7 +85,7 @@ export function WalletWidget() {
           </motion.span>
         </div>
         <Link href="/dashboard/payments/top-up">
-          <Button type="button" size="sm">
+          <Button type="button" size="md" className="h-11 px-5">
             <Plus className="h-4 w-4" />
             Nạp
           </Button>

@@ -58,9 +58,19 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 12% 8%, rgba(0, 212, 255, 0.16), transparent 26rem),
-    radial-gradient(circle at 88% 4%, rgba(87, 184, 70, 0.1), transparent 22rem),
-    radial-gradient(circle at 72% 38%, rgba(109, 93, 254, 0.16), transparent 28rem), #07111f;
+    linear-gradient(
+      125deg,
+      rgba(4, 12, 26, 0.98),
+      rgba(7, 17, 31, 0.96) 42%,
+      rgba(7, 31, 35, 0.98)
+    ),
+    linear-gradient(
+      90deg,
+      rgba(0, 212, 255, 0.08),
+      rgba(87, 184, 70, 0.06) 52%,
+      rgba(109, 93, 254, 0.08)
+    ),
+    #07111f;
   color: #f8fafc;
   font-family: 'Poppins', var(--font-geist-sans), Inter, system-ui, sans-serif;
 }
@@ -84,10 +94,146 @@ a[role='button']:not([aria-disabled='true']):active {
 .glass {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
-    linear-gradient(135deg, rgba(17, 30, 51, 0.9), rgba(11, 22, 40, 0.76));
+    linear-gradient(135deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.026)),
+    linear-gradient(135deg, rgba(18, 31, 52, 0.92), rgba(10, 21, 38, 0.8));
   backdrop-filter: blur(20px);
   box-shadow: 0 18px 70px rgba(0, 0, 0, 0.22);
+}
+
+.dashboard-backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5, 12, 24, 0.34),
+      rgba(7, 17, 31, 0.92) 62%,
+      rgba(7, 17, 31, 0.98)
+    ),
+    linear-gradient(
+      115deg,
+      rgba(0, 212, 255, 0.1),
+      transparent 22%,
+      rgba(87, 184, 70, 0.08) 58%,
+      transparent 76%
+    ),
+    #07111f;
+}
+
+.dashboard-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: -24% -16%;
+  background:
+    linear-gradient(112deg, transparent 0 22%, rgba(0, 212, 255, 0.14) 34%, transparent 48%),
+    linear-gradient(68deg, transparent 0 40%, rgba(87, 184, 70, 0.11) 56%, transparent 72%),
+    linear-gradient(150deg, transparent 0 52%, rgba(109, 93, 254, 0.1) 68%, transparent 82%);
+  filter: blur(18px);
+  opacity: 0.72;
+  transform: translate3d(-6%, 0, 0) rotate(0.001deg);
+  animation: dashboard-sweep 18s ease-in-out infinite alternate;
+}
+
+.dashboard-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.08), transparent);
+  background-size:
+    56px 56px,
+    56px 56px,
+    100% 100%;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.26) 68%, transparent);
+  opacity: 0.62;
+}
+
+.dashboard-surface {
+  position: relative;
+}
+
+.dashboard-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.14),
+    transparent 22%,
+    transparent 78%,
+    rgba(0, 212, 255, 0.16)
+  );
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.dashboard-nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-nav-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  transform: translateX(-115%);
+  transition: transform 600ms ease;
+}
+
+.dashboard-nav-link:hover::before {
+  transform: translateX(115%);
+}
+
+.dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.022)),
+    linear-gradient(135deg, rgba(13, 30, 48, 0.82), rgba(7, 17, 31, 0.5));
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.22);
+}
+
+.dashboard-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 212, 255, 0.72),
+    rgba(87, 184, 70, 0.6),
+    transparent
+  );
+  animation: dashboard-line 4.5s ease-in-out infinite;
+}
+
+@keyframes dashboard-sweep {
+  0% {
+    transform: translate3d(-7%, -2%, 0) skewX(-8deg);
+  }
+  100% {
+    transform: translate3d(7%, 3%, 0) skewX(8deg);
+  }
+}
+
+@keyframes dashboard-line {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scaleX(0.42);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scaleX(1);
+  }
 }
 
 .grid-fade {
