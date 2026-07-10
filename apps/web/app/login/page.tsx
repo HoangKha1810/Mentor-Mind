@@ -147,8 +147,8 @@ export default function LoginPage() {
           <Button className="mt-6 h-[50px] w-full">Đăng nhập</Button>
           <p className="mt-5 text-center text-xs leading-6 text-slate-400">
             Quên mật khẩu?{' '}
-            <Link href="mailto:support@mentormind.center" className="font-medium text-slate-600 transition hover:text-[#57b846]">
-              Liên hệ hỗ trợ
+            <Link href="/forgot-password" className="font-medium text-slate-600 transition hover:text-[#57b846]">
+              Đặt lại mật khẩu
             </Link>
           </p>
         </form>

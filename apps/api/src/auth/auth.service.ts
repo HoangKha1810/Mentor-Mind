@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AccountStatus, Prisma, Role } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { randomInt } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { Response } from 'express';
 import { z } from 'zod';
 import { EmailProvider } from '../email/email-provider.interface';
@@ -30,6 +30,15 @@ const loginSchema = z.object({
 const adminTwoFactorSchema = z.object({
   challengeId: z.string().min(1),
   code: z.string().regex(/^\d{6}$/),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(20),
+  password: z.string().min(8),
 });
 
 type TokenPayload = {
@@ -152,6 +161,82 @@ export class AuthService {
     });
 
     return this.issueTokens(challenge.user, response);
+  }
+
+  async forgotPassword(input: unknown) {
+    const body = forgotPasswordSchema.parse(input);
+    const email = body.email.toLowerCase();
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (user?.status === AccountStatus.ACTIVE) {
+      await this.createPasswordReset(user);
+      await this.audit(user.id, 'AUTH_PASSWORD_RESET_REQUEST', 'User', user.id, {});
+    }
+
+    return {
+      ok: true,
+      message:
+        'Nếu email tồn tại trong hệ thống, MentorMind đã gửi link đặt lại mật khẩu.',
+    };
+  }
+
+  async resetPassword(input: unknown) {
+    const body = resetPasswordSchema.parse(input);
+    const [tokenId, secret] = body.token.split('.');
+    if (!tokenId || !secret) {
+      throw new BadRequestException('Link đặt lại mật khẩu không hợp lệ');
+    }
+
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: { id: tokenId },
+      include: { user: true },
+    });
+
+    if (
+      !resetToken ||
+      resetToken.consumedAt ||
+      resetToken.expiresAt.getTime() < Date.now() ||
+      resetToken.attempts >= 5 ||
+      resetToken.user.status !== AccountStatus.ACTIVE
+    ) {
+      throw new UnauthorizedException('Link đặt lại mật khẩu đã hết hạn hoặc không hợp lệ');
+    }
+
+    if (hashToken(secret) !== resetToken.tokenHash) {
+      await this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new UnauthorizedException('Link đặt lại mật khẩu không hợp lệ');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: resetToken.userId },
+        data: {
+          passwordHash: await argon2.hash(body.password),
+          refreshTokenHash: null,
+        },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { consumedAt: new Date() },
+      }),
+      this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: resetToken.userId,
+          id: { not: resetToken.id },
+          consumedAt: null,
+        },
+        data: { consumedAt: new Date() },
+      }),
+    ]);
+
+    await this.audit(resetToken.userId, 'AUTH_PASSWORD_RESET_COMPLETE', 'User', resetToken.userId, {
+      tokenId: resetToken.id,
+    });
+
+    return { ok: true, message: 'Đã đặt lại mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.' };
   }
 
   async refresh(refreshToken: string | undefined, response: Response) {
@@ -294,6 +379,7 @@ export class AuthService {
     const appName = this.config.get<string>('APP_NAME') ?? 'MentorMind';
     const email = await this.emailProvider.send({
       to,
+      from: this.supportFrom(),
       subject: `${appName} admin login code: ${code}`,
       text: `Mã xác thực đăng nhập admin của bạn là ${code}. Mã hết hạn sau 10 phút. Nếu bạn không yêu cầu đăng nhập, hãy đổi mật khẩu ngay.`,
       html: `
@@ -314,6 +400,72 @@ export class AuthService {
     };
   }
 
+  private async createPasswordReset(user: { id: string; email: string; fullName: string }) {
+    const secret = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await this.prisma.passwordResetToken.updateMany({
+      where: {
+        userId: user.id,
+        consumedAt: null,
+      },
+      data: { consumedAt: new Date() },
+    });
+
+    const reset = await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: hashToken(secret),
+        expiresAt,
+      },
+    });
+
+    const appName = this.config.get<string>('APP_NAME') ?? 'MentorMind';
+    const webUrl = this.config.get<string>('WEB_URL') ?? 'https://mentormind.center';
+    const resetUrl = `${webUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(
+      `${reset.id}.${secret}`,
+    )}`;
+
+    await this.emailProvider.send({
+      to: user.email,
+      from: this.supportFrom(),
+      subject: `${appName} đặt lại mật khẩu`,
+      text: `Bạn vừa yêu cầu đặt lại mật khẩu MentorMind. Mở link sau trong 30 phút: ${resetUrl}. Nếu bạn không yêu cầu, hãy bỏ qua email này.`,
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
+          <h2>Đặt lại mật khẩu ${appName}</h2>
+          <p>Xin chào ${escapeHtml(user.fullName)},</p>
+          <p>Bạn vừa yêu cầu đặt lại mật khẩu. Link này hết hạn sau <strong>30 phút</strong>.</p>
+          <p>
+            <a href="${resetUrl}" style="display:inline-block;background:#16a34a;color:white;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:700">
+              Đặt lại mật khẩu
+            </a>
+          </p>
+          <p>Nếu nút không hoạt động, copy link này vào trình duyệt:</p>
+          <p style="word-break:break-all">${resetUrl}</p>
+          <p>Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.</p>
+        </div>
+      `,
+    });
+  }
+
+  private supportFrom() {
+    return (
+      this.config.get<string>('SMTP_FROM_SUPPORT') ??
+      this.config.get<string>('SUPPORT_EMAIL') ??
+      this.config.get<string>('SMTP_FROM') ??
+      'MentorMind Support <support@mentormind.center>'
+    );
+  }
+
+  private adminFrom() {
+    return (
+      this.config.get<string>('SMTP_FROM_ADMIN') ??
+      this.config.get<string>('ADMIN_EMAIL_FROM') ??
+      'MentorMind Admin <admin@mentormind.center>'
+    );
+  }
+
   private async audit(
     actorId: string | null,
     action: string,
@@ -325,6 +477,10 @@ export class AuthService {
       data: { actorId, action, entityType, entityId, metadata: metadata as Prisma.InputJsonValue },
     });
   }
+}
+
+function hashToken(value: string) {
+  return createHash('sha256').update(value).digest('hex');
 }
 
 function maskEmail(email: string) {

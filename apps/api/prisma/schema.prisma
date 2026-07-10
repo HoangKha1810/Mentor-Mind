@@ -250,12 +250,28 @@ model User {
   mentorProfile  MentorProfile?
   adminProfile   AdminProfile?
   adminLoginChallenges AdminLoginChallenge[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model AdminLoginChallenge {
   id         String    @id @default(cuid())
   userId     String
   codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String
   expiresAt  DateTime
   consumedAt DateTime?
   attempts   Int       @default(0)

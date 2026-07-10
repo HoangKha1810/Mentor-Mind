@@ -23,6 +23,16 @@ export class AuthController {
     return this.authService.verifyAdminTwoFactor(body, response);
   }
 
+  @Post('forgot-password')
+  forgotPassword(@Body() body: unknown) {
+    return this.authService.forgotPassword(body);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: unknown) {
+    return this.authService.resetPassword(body);
+  }
+
   @Post('refresh')
   refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     return this.authService.refresh(request.cookies?.refreshToken, response);

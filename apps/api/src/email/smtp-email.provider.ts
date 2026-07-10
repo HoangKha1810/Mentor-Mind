@@ -18,7 +18,7 @@ export class SmtpEmailProvider implements EmailProvider {
     const port = Number(this.config.get<string>('SMTP_PORT') ?? 587);
     const user = this.config.get<string>('SMTP_USER');
     const pass = this.config.get<string>('SMTP_PASS');
-    const from = this.config.get<string>('SMTP_FROM') ?? user ?? 'no-reply@mentormind.center';
+    const from = input.from ?? this.config.get<string>('SMTP_FROM') ?? user ?? 'no-reply@mentormind.center';
     const secure = this.config.get<string>('SMTP_SECURE') === 'true' || port === 465;
 
     const transporter = nodemailer.createTransport({
