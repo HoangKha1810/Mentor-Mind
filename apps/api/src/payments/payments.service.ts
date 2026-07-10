@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,6 +14,18 @@ const createPaymentSchema = z.object({
   roadmapId: z.string().optional(),
 });
 
+const topUpSchema = z.object({
+  amount: z.number().int().min(10_000).max(100_000_000),
+});
+
+const purchasePackageSchema = z.object({
+  packageId: z.string().min(1),
+});
+
+type WalletTransactionType = 'CREDIT' | 'DEBIT';
+
+const walletCurrency = 'VND';
+
 @Injectable()
 export class PaymentsService {
   constructor(
@@ -23,6 +35,66 @@ export class PaymentsService {
 
   async createPaymentLink(studentId: string, input: unknown) {
     const body = createPaymentSchema.parse(input);
+    return this.createPaymentIntent(studentId, body);
+  }
+
+  async wallet(studentId: string) {
+    return this.walletSummary(studentId);
+  }
+
+  async createTopUpLink(studentId: string, input: unknown) {
+    const body = topUpSchema.parse(input);
+    return this.createPaymentIntent(studentId, {
+      amount: body.amount,
+      currency: walletCurrency,
+      description: 'Nap MentorMind',
+    });
+  }
+
+  async purchasePackage(studentId: string, input: unknown) {
+    const body = purchasePackageSchema.parse(input);
+    const pack = await this.prisma.tutoringPackage.findUnique({ where: { id: body.packageId } });
+    if (!pack || pack.status !== 'PUBLISHED') {
+      throw new NotFoundException('Package not found');
+    }
+    if (pack.currency !== walletCurrency) {
+      throw new BadRequestException(
+        `Ví hiện chỉ thanh toán bằng ${walletCurrency}. Vui lòng đổi gói học sang ${walletCurrency}.`,
+      );
+    }
+
+    const price = Number(pack.price);
+    const wallet = await this.walletSummary(studentId);
+    if (wallet.balance < price) {
+      throw new BadRequestException('Số dư không đủ để mua gói học này. Vui lòng nạp thêm tiền.');
+    }
+
+    const payment = await this.prisma.payment.create({
+      data: {
+        studentId,
+        packageId: pack.id,
+        amount: price,
+        currency: walletCurrency,
+        status: PaymentStatus.PAID,
+        provider: 'wallet',
+        providerRef: `wallet_${Date.now()}`,
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: studentId,
+        type: 'PAYMENT_STATUS',
+        title: 'Đã mua gói học',
+        message: `Bạn đã mua gói "${pack.title}" bằng số dư ví.`,
+        metadata: { paymentId: payment.id, packageId: pack.id } as Prisma.InputJsonValue,
+      },
+    });
+
+    return { payment, wallet: await this.walletSummary(studentId) };
+  }
+
+  private async createPaymentIntent(studentId: string, body: z.infer<typeof createPaymentSchema>) {
     const user = await this.prisma.user.findUnique({ where: { id: studentId } });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -98,5 +170,62 @@ export class PaymentsService {
     });
 
     return { received: true, matched: true, payment: updated };
+  }
+
+  private async walletSummary(studentId: string) {
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        studentId,
+        status: PaymentStatus.PAID,
+        currency: walletCurrency,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const pendingTopUps = await this.prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: {
+        studentId,
+        status: PaymentStatus.PENDING,
+        currency: walletCurrency,
+        packageId: null,
+        roadmapId: null,
+      },
+    });
+
+    let credit = 0;
+    let debit = 0;
+    const transactions = payments.map((payment) => {
+      const amount = Number(payment.amount);
+      const type: WalletTransactionType =
+        payment.packageId || payment.roadmapId || payment.provider === 'wallet'
+          ? 'DEBIT'
+          : 'CREDIT';
+      if (type === 'CREDIT') {
+        credit += amount;
+      } else {
+        debit += amount;
+      }
+      return {
+        id: payment.id,
+        type,
+        amount,
+        currency: payment.currency,
+        status: payment.status,
+        provider: payment.provider,
+        packageId: payment.packageId,
+        roadmapId: payment.roadmapId,
+        createdAt: payment.createdAt,
+      };
+    });
+
+    return {
+      balance: Math.max(credit - debit, 0),
+      currency: walletCurrency,
+      credit,
+      debit,
+      pendingTopUp: Number(pendingTopUps._sum.amount ?? 0),
+      transactions: transactions.slice(0, 10),
+      updatedAt: new Date().toISOString(),
+    };
   }
 }

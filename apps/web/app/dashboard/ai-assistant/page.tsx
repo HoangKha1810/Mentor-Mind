@@ -1,25 +1,10 @@
 'use client';
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Bot,
-  Brain,
-  CheckCircle2,
-  Clock3,
-  MessageSquarePlus,
-  Send,
-  Sparkles,
-  UserRound,
-} from 'lucide-react';
+import { Bot, Brain, Clock3, MessageSquarePlus, Send, Sparkles, UserRound } from 'lucide-react';
 import { authHeaders, apiFetch } from '@/lib/api';
 import { useLiveQuery } from '@/lib/live-query';
-import {
-  Account,
-  AiChatResponse,
-  AiContextUpdate,
-  AiConversation,
-  AiMessage,
-} from '@/lib/domain-types';
+import { Account, AiChatResponse, AiConversation, AiMessage } from '@/lib/domain-types';
 import { formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { AuthRequiredCard, ErrorCard, LoadingCard } from '@/components/dashboard/live-common';
@@ -35,7 +20,9 @@ const suggestions = [
 ];
 
 export default function AiAssistantPage() {
-  const conversationsQuery = useLiveQuery<AiConversation[]>('/ai/chat/conversations', { auth: true });
+  const conversationsQuery = useLiveQuery<AiConversation[]>('/ai/chat/conversations', {
+    auth: true,
+  });
   const accountQuery = useLiveQuery<Account>('/auth/me', { auth: true });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -62,7 +49,6 @@ export default function AiAssistantPage() {
   }, [messages.length, sending]);
 
   const contextItems = useMemo(() => buildContextItems(accountQuery.data), [accountQuery.data]);
-  const personalContext = accountQuery.data?.studentProfile?.personalContext ?? {};
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -160,7 +146,10 @@ export default function AiAssistantPage() {
     );
   }
 
-  if ((conversationsQuery.loading && !conversationsQuery.data) || (accountQuery.loading && !accountQuery.data)) {
+  if (
+    (conversationsQuery.loading && !conversationsQuery.data) ||
+    (accountQuery.loading && !accountQuery.data)
+  ) {
     return (
       <DashboardShell
         title="Trợ lý học tập AI"
@@ -234,7 +223,9 @@ export default function AiAssistantPage() {
                 <p className="truncate text-sm font-semibold text-white">
                   {selectedConversation?.title ?? 'Cuộc trò chuyện mới'}
                 </p>
-                <p className="text-xs text-mutedText">Có thể ghi nhớ context học tập và nghề nghiệp</p>
+                <p className="text-xs text-mutedText">
+                  Có thể ghi nhớ context học tập và nghề nghiệp
+                </p>
               </div>
             </div>
             <button
@@ -271,7 +262,9 @@ export default function AiAssistantPage() {
                   required
                 />
                 <div className="flex items-center justify-between gap-3 px-2 pb-1">
-                  <p className="text-xs text-mutedText">Enter để gửi, Shift + Enter để xuống dòng</p>
+                  <p className="text-xs text-mutedText">
+                    Enter để gửi, Shift + Enter để xuống dòng
+                  </p>
                   <Button size="icon" disabled={sending || !draft.trim()} aria-label="Gửi tin nhắn">
                     <Send className="h-4 w-4" />
                   </Button>
@@ -293,37 +286,21 @@ export default function AiAssistantPage() {
           <div className="mt-4 space-y-2">
             {contextItems.length ? (
               contextItems.map((item) => (
-                <div key={item.label} className="rounded-lg border border-white/8 bg-white/[0.035] p-3">
+                <div
+                  key={item.label}
+                  className="rounded-lg border border-white/8 bg-white/[0.035] p-3"
+                >
                   <div className="text-xs text-mutedText">{item.label}</div>
                   <div className="mt-1 text-sm font-semibold text-slate-100">{item.value}</div>
                 </div>
               ))
             ) : (
               <div className="rounded-lg border border-dashed border-white/14 bg-white/[0.025] p-3 text-sm leading-6 text-mutedText">
-                Chưa có nhiều context. Hãy thử nói: “Mình muốn làm Backend ở TP.HCM, lương kỳ vọng 18 triệu”.
+                Chưa có nhiều context. Hãy thử nói: “Mình muốn làm Backend ở TP.HCM, lương kỳ vọng
+                18 triệu”.
               </div>
             )}
           </div>
-
-          {Object.keys(personalContext).length ? (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-mutedText">
-                Ghi nhớ mở rộng
-              </p>
-              <div className="space-y-2">
-                {Object.entries(personalContext)
-                  .slice(0, 8)
-                  .map(([key, value]) => (
-                    <div key={key} className="rounded-lg bg-black/18 px-3 py-2">
-                      <div className="text-[11px] text-mutedText">{formatContextKey(key)}</div>
-                      <div className="mt-1 break-words text-xs leading-5 text-slate-200">
-                        {formatContextValue(value)}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          ) : null}
         </aside>
       </div>
     </DashboardShell>
@@ -359,7 +336,6 @@ function WelcomeState({ onPickSuggestion }: { onPickSuggestion: (value: string) 
 
 function ChatMessage({ message }: { message: AiMessage }) {
   const isUser = message.role === 'USER';
-  const contextUpdates = message.metadata?.contextUpdates;
   return (
     <div className={cn('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser ? (
@@ -385,31 +361,12 @@ function ChatMessage({ message }: { message: AiMessage }) {
             <p className="whitespace-pre-wrap">{message.content}</p>
           )}
         </div>
-        {!isUser && contextUpdates?.rememberedFacts?.length ? (
-          <RememberedFacts updates={contextUpdates} />
-        ) : null}
       </div>
       {isUser ? (
         <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-slate-200">
           <UserRound className="h-4 w-4" />
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function RememberedFacts({ updates }: { updates: AiContextUpdate }) {
-  return (
-    <div className="mt-2 flex flex-wrap gap-2">
-      {updates.rememberedFacts.map((fact) => (
-        <span
-          key={`${fact.label}-${fact.value}`}
-          className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1 text-xs font-medium text-green-100"
-        >
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Đã nhớ {fact.label}: {fact.value}
-        </span>
-      ))}
     </div>
   );
 }
@@ -429,31 +386,4 @@ function buildContextItems(account: Account | null) {
   ]
     .filter(([, value]) => Boolean(value))
     .map(([label, value]) => ({ label: String(label), value: String(value) }));
-}
-
-function formatContextKey(key: string) {
-  const labels: Record<string, string> = {
-    expectedSalary: 'Mức lương kỳ vọng',
-    preferredLocation: 'Địa điểm ưu tiên',
-    workMode: 'Hình thức làm việc',
-    availability: 'Lịch rảnh',
-    constraints: 'Ràng buộc',
-    interests: 'Quan tâm',
-    notes: 'Ghi chú',
-    weeklyHours: 'Thời gian học',
-    budgetRange: 'Ngân sách',
-  };
-  return labels[key] ?? key;
-}
-
-function formatContextValue(value: unknown): string {
-  if (Array.isArray(value)) {
-    return value.map((item) => formatContextValue(item)).join(', ');
-  }
-  if (value && typeof value === 'object') {
-    return Object.entries(value)
-      .map(([key, entry]) => `${formatContextKey(key)}: ${formatContextValue(entry)}`)
-      .join('; ');
-  }
-  return String(value ?? '');
 }

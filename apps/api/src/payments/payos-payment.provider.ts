@@ -78,7 +78,7 @@ export class PayOsPaymentProvider implements PaymentProvider {
 
     return {
       provider: this.name,
-      providerRef: String(json.data.paymentLinkId ?? json.data.orderCode ?? orderCode),
+      providerRef: String(json.data.orderCode ?? orderCode),
       checkoutUrl: json.data.checkoutUrl,
       status: this.mapPayOsStatus(json.data.status),
       raw: json,
@@ -100,7 +100,10 @@ export class PayOsPaymentProvider implements PaymentProvider {
     }
 
     const providerRef =
-      body.data.paymentLinkId ?? body.data.orderCode ?? body.data.reference ?? `payos_${Date.now()}`;
+      body.data.orderCode ??
+      body.data.paymentLinkId ??
+      body.data.reference ??
+      `payos_${Date.now()}`;
     const payOsCode = String(body.data.code ?? body.code ?? '');
 
     return {

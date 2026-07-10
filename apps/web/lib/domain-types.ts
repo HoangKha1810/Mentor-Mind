@@ -64,7 +64,13 @@ export type RoadmapDetail = {
     durationWeeks: number;
     status: string;
     weeks?: RoadmapWeek[];
-    items?: Array<{ id: string; title: string; description: string; status: string; order: number }>;
+    items?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      order: number;
+    }>;
   } | null;
   finalRoadmap?: RoadmapDetail['aiDraft'];
 };
@@ -278,4 +284,24 @@ export type PackageItem = {
   mentorType: string;
   price: string | number;
   currency: string;
+};
+
+export type WalletSummary = {
+  balance: number;
+  currency: string;
+  credit: number;
+  debit: number;
+  pendingTopUp: number;
+  updatedAt: string;
+  transactions: Array<{
+    id: string;
+    type: 'CREDIT' | 'DEBIT';
+    amount: number;
+    currency: string;
+    status: string;
+    provider: string;
+    packageId?: string | null;
+    roadmapId?: string | null;
+    createdAt: string;
+  }>;
 };

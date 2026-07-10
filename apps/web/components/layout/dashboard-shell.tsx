@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
+import { WalletWidget } from '@/components/payments/wallet-widget';
 import { PageTransition } from '../ui/motion';
 import { logoutSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -113,17 +114,19 @@ export function DashboardShell({
             <BrandMark className="h-8 w-8 rounded-md" priority />
             MentorMind
           </Link>
-          <div className="hidden text-xs text-mutedText sm:block">Sẵn sàng vận hành</div>
-          <button
-            type="button"
-            aria-label="Mở menu dashboard"
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-3 text-sm font-semibold text-white shadow-soft transition hover:border-secondary/40 hover:bg-secondary/10 lg:hidden"
-          >
-            <Menu className="h-4 w-4" />
-            Menu
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            {role === 'student' ? <WalletWidget /> : null}
+            <button
+              type="button"
+              aria-label="Mở menu dashboard"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-3 text-sm font-semibold text-white shadow-soft transition hover:border-secondary/40 hover:bg-secondary/10 lg:hidden"
+            >
+              <Menu className="h-4 w-4" />
+              Menu
+            </button>
+          </div>
         </div>
       </div>
       <aside className="fixed bottom-0 left-0 top-14 hidden w-64 border-r border-white/8 bg-surface/60 p-4 lg:block">
@@ -196,7 +199,9 @@ export function DashboardShell({
                     <span
                       className={cn(
                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition',
-                        isActive ? 'bg-secondary/18 text-secondary' : 'bg-white/[0.05] text-slate-400',
+                        isActive
+                          ? 'bg-secondary/18 text-secondary'
+                          : 'bg-white/[0.05] text-slate-400',
                       )}
                     >
                       <Icon className="h-4 w-4" />

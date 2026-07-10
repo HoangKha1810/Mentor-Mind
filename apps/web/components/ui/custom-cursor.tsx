@@ -44,20 +44,20 @@ export function CustomCursor() {
     <>
       {/* Main cursor dot */}
       <motion.div
-        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-secondary mix-blend-screen md:block"
+        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-3 w-3 rounded-full bg-secondary mix-blend-screen md:block"
         animate={{
-          x: mousePosition.x,
-          y: mousePosition.y,
+          x: mousePosition.x - 6,
+          y: mousePosition.y - 6,
           scale: isHovering ? 0 : 1,
         }}
         transition={{ type: 'tween', ease: 'backOut', duration: 0.15 }}
       />
       {/* Cursor ring */}
       <motion.div
-        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-secondary/50 bg-secondary/10 backdrop-blur-[2px] md:block"
+        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-10 w-10 rounded-full border border-secondary/50 bg-secondary/10 backdrop-blur-[2px] md:block"
         animate={{
-          x: mousePosition.x,
-          y: mousePosition.y,
+          x: mousePosition.x - 20,
+          y: mousePosition.y - 20,
           scale: isHovering ? 1.5 : 1,
           borderColor: isHovering ? 'rgba(0, 212, 255, 0.8)' : 'rgba(0, 212, 255, 0.5)',
           backgroundColor: isHovering ? 'rgba(0, 212, 255, 0.2)' : 'rgba(0, 212, 255, 0.1)',
