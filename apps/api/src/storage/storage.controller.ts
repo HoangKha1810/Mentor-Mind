@@ -56,6 +56,8 @@ export class StorageController {
     const key = `${ownerId}/${filename}`;
     const { asset, path } = await this.storage.getPublicAvatar(key);
     response.setHeader('Content-Type', asset.mimeType);
+    response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    response.setHeader('Access-Control-Allow-Origin', '*');
     return response.sendFile(path);
   }
 
