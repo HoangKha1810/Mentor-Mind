@@ -20,10 +20,18 @@ describe('AuthService', () => {
       },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
-    const jwt = { signAsync: jest.fn().mockResolvedValueOnce('access').mockResolvedValueOnce('refresh') };
+    const jwt = {
+      signAsync: jest.fn().mockResolvedValueOnce('access').mockResolvedValueOnce('refresh'),
+    };
     const config = { get: jest.fn().mockReturnValue(undefined) };
+    const emailProvider = { send: jest.fn() };
     const response = { cookie: jest.fn() };
-    const service = new AuthService(prisma as never, jwt as unknown as JwtService, config as never);
+    const service = new AuthService(
+      prisma as never,
+      jwt as unknown as JwtService,
+      config as never,
+      emailProvider as never,
+    );
 
     const result = await service.register(
       { email: 'student@example.com', password: 'Password123!', fullName: 'Student Example' },

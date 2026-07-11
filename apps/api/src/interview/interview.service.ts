@@ -1,7 +1,19 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { InterviewCategory, InterviewMode, InterviewSessionStatus, Prisma, Role } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  InterviewCategory,
+  InterviewMode,
+  InterviewSessionStatus,
+  Prisma,
+  Role,
+} from '@prisma/client';
 import { z } from 'zod';
 import { AiService } from '../ai/ai.service';
+import { normalizeInterviewAnswer } from '../ai/interview-evaluation.policy';
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -13,8 +25,17 @@ const sessionSchema = z.object({
 });
 
 const answerSchema = z.object({
-  question: z.string().min(5),
-  answer: z.string().min(1),
+  questionId: z.string().cuid().optional(),
+  question: z
+    .string()
+    .max(2000)
+    .transform(normalizeInterviewAnswer)
+    .refine((value) => value.length >= 5, 'Câu hỏi phải có ít nhất 5 ký tự.'),
+  answer: z
+    .string()
+    .max(12_000)
+    .transform(normalizeInterviewAnswer)
+    .refine((value) => /[\p{L}\p{N}]/u.test(value), 'Câu trả lời phải có nội dung có nghĩa.'),
 });
 
 const questionSchema = z.object({
@@ -58,17 +79,40 @@ export class InterviewService {
     if (!session || session.studentId !== studentId) {
       throw new NotFoundException('Interview session not found');
     }
+    if (session.status !== InterviewSessionStatus.IN_PROGRESS) {
+      throw new BadRequestException('Phiên phỏng vấn đã kết thúc, không thể nộp thêm câu trả lời.');
+    }
+    const referenceQuestion = await this.prisma.interviewQuestion.findFirst({
+      where: {
+        id: body.questionId,
+        question: body.questionId ? undefined : body.question,
+        role: { contains: session.targetRole, mode: 'insensitive' },
+        level: session.level,
+        isActive: true,
+      },
+      select: {
+        question: true,
+        expectedPoints: true,
+        sampleAnswer: true,
+        commonMistakes: true,
+      },
+    });
+    if (body.questionId && !referenceQuestion) {
+      throw new BadRequestException('Câu hỏi không thuộc phiên phỏng vấn hiện tại.');
+    }
+    const question = referenceQuestion?.question ?? body.question;
     const evaluation = await this.ai.evaluateInterviewAnswer(studentId, {
       targetRole: session.targetRole,
       level: session.level,
       mode: session.mode,
-      question: body.question,
+      question,
       answer: body.answer,
+      referenceContext: referenceQuestion,
     });
     return this.prisma.interviewAnswer.create({
       data: {
         sessionId,
-        question: body.question,
+        question,
         answer: body.answer,
         score: evaluation.score,
         feedback: evaluation,
@@ -86,15 +130,20 @@ export class InterviewService {
       throw new NotFoundException('Interview session not found');
     }
     const overallScore = session.answers.length
-      ? Math.round(session.answers.reduce((sum, answer) => sum + answer.score, 0) / session.answers.length)
+      ? Math.round(
+          session.answers.reduce((sum, answer) => sum + answer.score, 0) / session.answers.length,
+        )
       : 0;
     return this.prisma.interviewSession.update({
       where: { id: sessionId },
       data: {
         overallScore,
         feedback: {
-          summary: 'Hãy xem lại các câu có điểm thấp trước, sau đó luyện một câu chuyện ví dụ mạnh hơn.',
-          weakAreas: session.answers.filter((answer) => answer.score < 7).map((answer) => answer.question),
+          summary:
+            'Hãy xem lại các câu có điểm thấp trước, sau đó luyện một câu chuyện ví dụ mạnh hơn.',
+          weakAreas: session.answers
+            .filter((answer) => answer.score < 7)
+            .map((answer) => answer.question),
         },
         completedAt: new Date(),
         status: InterviewSessionStatus.COMPLETED,

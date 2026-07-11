@@ -1,6 +1,8 @@
 const { existsSync } = require('node:fs');
 const { resolve } = require('node:path');
 
+process.chdir(__dirname);
+
 const candidates = ['dist/main.js', 'dist/src/main.js', 'dist/apps/api/src/main.js'];
 const entry = candidates.find((candidate) => existsSync(resolve(__dirname, candidate)));
 

@@ -10,6 +10,8 @@
     "lint": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
+    "interview:smoke": "tsx --env-file-if-exists=.env scripts/interview-grading-smoke.ts",
+    "interview:repair-scores": "tsx --env-file-if-exists=.env scripts/repair-interview-scores.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",

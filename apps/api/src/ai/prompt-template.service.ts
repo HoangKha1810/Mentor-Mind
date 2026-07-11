@@ -14,7 +14,7 @@ export const builtinPromptTemplates = [
     name: 'Interview Answer Evaluation',
     description: 'Evaluate interview answer by rubric.',
     template:
-      'Đánh giá câu trả lời phỏng vấn {{mode}} cho vị trí {{targetRole}}, level {{level}}. Câu hỏi: {{question}}. Câu trả lời: {{answer}}. Chấm 1-10 cho correctness, clarity, structure, depth, relevance, confidence, examples, communication, roleFit. Trả về JSON only, toàn bộ nội dung chuỗi bằng Tiếng Việt.',
+      'Đánh giá nghiêm khắc câu trả lời phỏng vấn {{mode}} cho vị trí {{targetRole}}, level {{level}}. Chỉ ghi nhận nội dung có bằng chứng trong câu trả lời, không suy diễn điểm mạnh. Một lời chào hoặc câu không trả lời đúng trọng tâm phải nhận 1/10. Câu hỏi: {{question}}. Câu trả lời: {{answer}}. Ngữ cảnh tham chiếu: {{referenceContext}}. Chấm riêng correctness, clarity, structure, depth, relevance, confidence, examples, communication và roleFit. Trả về JSON only, toàn bộ nội dung chuỗi bằng Tiếng Việt.',
   },
   {
     key: 'INTERVIEW_QUESTION_GENERATION',

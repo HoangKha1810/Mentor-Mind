@@ -436,13 +436,16 @@ export function InterviewSessionPanel({ id }: { id: string }) {
     setMessage('');
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const submittedQuestion = String(form.get('question') ?? '').trim();
+    const questionId = questions.find((question) => question.question === submittedQuestion)?.id;
     try {
       await apiFetch(`/ai/interview/sessions/${id}/answer`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({
-          question: form.get('question'),
-          answer: form.get('answer'),
+          questionId,
+          question: submittedQuestion,
+          answer: String(form.get('answer') ?? ''),
         }),
       });
       formElement.reset();

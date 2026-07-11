@@ -1,12 +1,23 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { AIMessage, AIUsageStatus, Prisma, PromptTemplate } from '@prisma/client';
 import { z } from 'zod';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AIProvider } from './ai-provider.interface';
-import { MockAIProvider } from './mock-ai.provider';
 import { PromptTemplateService } from './prompt-template.service';
 import { AIUsageService } from './ai-usage.service';
+import {
+  INTERVIEW_EVALUATION_SYSTEM_PROMPT,
+  buildInterviewEvaluationPrompt,
+  createInterviewEvaluationFallback,
+  normalizeInterviewAnswer,
+  normalizeInterviewEvaluation,
+} from './interview-evaluation.policy';
 import { codingHintSchema, codeReviewSchema } from './schemas/code-review.schema';
 import { cvReviewSchema } from './schemas/cv-review.schema';
 import {
@@ -71,11 +82,16 @@ type MemoryExtraction = {
   rememberedFacts: Array<{ label: string; value: string }>;
 };
 
+type RunJsonOptions = {
+  systemPrompt?: string;
+  temperature?: number;
+  buildPrompt?: (renderedTemplate: string) => string;
+};
+
 @Injectable()
 export class AiService {
   constructor(
     @Inject(AI_PROVIDER) private readonly provider: AIProvider,
-    private readonly mockProvider: MockAIProvider,
     private readonly prompts: PromptTemplateService,
     private readonly usage: AIUsageService,
     private readonly prisma: PrismaService,
@@ -94,33 +110,24 @@ export class AiService {
   }
 
   async evaluateInterviewAnswer(userId: string, input: Record<string, unknown>) {
-    return this.runJson(
+    const answer = normalizeInterviewAnswer(input.answer);
+    const question = typeof input.question === 'string' ? input.question.trim() : '';
+    const variables = { ...input, answer };
+    const evaluation = await this.runJson(
       'INTERVIEW_ANSWER_EVALUATION',
       'INTERVIEW_ANSWER_EVALUATION',
-      input,
+      variables,
       interviewEvaluationSchema,
-      {
-        score: 7,
-        strengths: ['Mục tiêu trả lời rõ ràng', 'Có dùng từ vựng kỹ thuật liên quan'],
-        weaknesses: ['Cần bổ sung ví dụ cụ thể', 'Nên nêu rõ các đánh đổi kỹ thuật hơn'],
-        betterAnswer:
-          'Câu trả lời tốt hơn nên định nghĩa ý chính, giải thích vì sao nó quan trọng, rồi liên hệ với một dự án cụ thể và các đánh đổi đã cân nhắc.',
-        nextPracticeSuggestion:
-          'Luyện trả lời theo cấu trúc Tình huống, Hành động, Kết quả và thêm một chi tiết kỹ thuật.',
-        rubric: {
-          correctness: 7,
-          clarity: 7,
-          structure: 6,
-          depth: 6,
-          relevance: 7,
-          confidence: 7,
-          examples: 5,
-          communication: 7,
-          roleFit: 7,
-        },
-      },
+      createInterviewEvaluationFallback(answer, question),
       userId,
+      {
+        systemPrompt: INTERVIEW_EVALUATION_SYSTEM_PROMPT,
+        temperature: 0,
+        buildPrompt: () => buildInterviewEvaluationPrompt(variables),
+      },
     );
+
+    return normalizeInterviewEvaluation(answer, evaluation);
   }
 
   async generateInterviewQuestions(userId: string, input: Record<string, unknown>) {
@@ -468,21 +475,16 @@ Trả về JSON đúng dạng:
       });
       extracted = this.mergeMemoryExtraction(heuristic, this.parseMemoryExtraction(result.data));
     } catch (error) {
-      const safe = await this.mockProvider.generateJson({
-        prompt,
-        schema: memoryExtractionSchema,
-        fallback: heuristic,
-      });
       await this.usage.log({
         userId,
         feature: 'LEARNING_ASSISTANT_CONTEXT',
-        provider: this.mockProvider,
-        usage: safe.usage,
+        provider: this.provider,
+        usage: { promptTokens: 0, completionTokens: 0 },
         status: AIUsageStatus.FALLBACK,
         errorMessage: error instanceof Error ? error.message : String(error),
-        latencyMs: safe.latencyMs,
+        latencyMs: 0,
       });
-      extracted = this.parseMemoryExtraction(safe.data);
+      extracted = heuristic;
     }
 
     const normalized = this.normalizeMemoryExtraction(extracted);
@@ -847,15 +849,27 @@ Trả về JSON đúng dạng:
     schema: z.ZodSchema<T>,
     fallback: T,
     userId?: string,
+    options: RunJsonOptions = {},
   ): Promise<T> {
     await this.ensureFeatureAllowed(feature, userId);
     const template = await this.prompts.getActiveTemplate(promptKey);
-    const prompt = `${this.prompts.render(template, variables)}
+    const renderedTemplate = this.prompts.render(template, variables);
+    const taskPrompt = options.buildPrompt
+      ? options.buildPrompt(renderedTemplate)
+      : renderedTemplate;
+    const prompt = `${taskPrompt}
 
 Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu output là JSON, mọi chuỗi trong JSON phải là Tiếng Việt, giữ nguyên key theo schema.`;
+    const startedAt = Date.now();
 
     try {
-      const result = await this.provider.generateJson({ prompt, schema, fallback });
+      const result = await this.provider.generateJson({
+        prompt,
+        schema,
+        fallback,
+        systemPrompt: options.systemPrompt,
+        temperature: options.temperature,
+      });
       await this.usage.log({
         userId,
         feature,
@@ -871,6 +885,8 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
           prompt: `${prompt}\n\nPhản hồi trước không đúng định dạng. Chỉ trả về JSON hợp lệ đúng schema, không thêm markdown.`,
           schema,
           fallback,
+          systemPrompt: options.systemPrompt,
+          temperature: options.temperature,
         });
         await this.usage.log({
           userId,
@@ -882,17 +898,23 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
         });
         return retry.data;
       } catch (retryError) {
-        const safe = await this.mockProvider.generateJson({ prompt, schema, fallback });
         await this.usage.log({
           userId,
           feature,
-          provider: this.mockProvider,
-          usage: safe.usage,
-          status: AIUsageStatus.FALLBACK,
-          errorMessage: retryError instanceof Error ? retryError.message : String(error),
-          latencyMs: safe.latencyMs,
+          provider: this.provider,
+          usage: { promptTokens: 0, completionTokens: 0 },
+          status: AIUsageStatus.FAILED,
+          errorMessage:
+            retryError instanceof Error
+              ? retryError.message
+              : error instanceof Error
+                ? error.message
+                : String(retryError),
+          latencyMs: Date.now() - startedAt,
         });
-        return safe.data;
+        throw new ServiceUnavailableException(
+          'Hệ thống AI chưa thể xử lý yêu cầu lúc này. Không có kết quả tạm nào được lưu; vui lòng thử lại.',
+        );
       }
     }
   }
