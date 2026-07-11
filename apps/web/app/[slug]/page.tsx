@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArrowRight, CheckCircle2, SearchCheck } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
+import { SeoTopicLinks } from '@/components/seo/seo-topic-links';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { seoLandingPages, siteUrl } from '@/lib/seo-content';
@@ -71,6 +72,24 @@ export default function SeoLandingPage({ params }: PageProps) {
             text: item.answer,
           },
         })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${siteUrl}/${page.slug}#breadcrumb`,
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'MentorMind',
+            item: siteUrl,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: page.eyebrow,
+            item: `${siteUrl}/${page.slug}`,
+          },
+        ],
       },
     ],
   };
@@ -163,6 +182,7 @@ export default function SeoLandingPage({ params }: PageProps) {
             </div>
           </section>
         </section>
+        <SeoTopicLinks currentSlug={page.slug} limit={6} />
       </main>
     </PageShell>
   );

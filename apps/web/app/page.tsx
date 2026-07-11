@@ -13,6 +13,7 @@ import {
 import { HomeHero } from '@/components/home/home-hero';
 import { PageShell } from '@/components/layout/page-shell';
 import { PackageBrowser } from '@/components/packages/package-browser';
+import { SeoTopicLinks } from '@/components/seo/seo-topic-links';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StaggerContainer, StaggerItem } from '@/components/ui/motion';
@@ -138,6 +139,8 @@ export default function HomePage() {
           </StaggerContainer>
         </ScrollReveal>
       </section>
+
+      <SeoTopicLinks limit={12} />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
