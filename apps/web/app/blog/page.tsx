@@ -21,8 +21,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/blog' },
   openGraph: {
     title: 'Blog học lập trình MentorMind',
-    description:
-      'Roadmap, hướng dẫn học, CV, phỏng vấn và deploy cho người học lập trình đi làm.',
+    description: 'Roadmap, hướng dẫn học, CV, phỏng vấn và deploy cho người học lập trình đi làm.',
     url: '/blog',
     images: [{ url: '/blog/opengraph-image', width: 1200, height: 630 }],
   },
@@ -80,8 +79,12 @@ export default function BlogPage() {
 
           <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {blogArticles.map((article) => (
-              <Link key={article.slug} href={`/blog/${article.slug}`} className="group block h-full">
-                <Card className="h-full transition duration-300 group-hover:-translate-y-1 group-hover:border-secondary/30">
+              <Link
+                key={article.slug}
+                href={`/blog/${article.slug}`}
+                className="group block h-full"
+              >
+                <Card interactive reveal className="h-full group-hover:border-secondary/30">
                   <CardHeader>
                     <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-300">
                       <span className="rounded-full border border-secondary/20 bg-secondary/10 px-3 py-1 text-secondary">

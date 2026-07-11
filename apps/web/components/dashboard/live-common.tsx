@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, Loader2, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatStatus } from '@/lib/format';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function AuthRequiredCard({ message = 'Đăng nhập để xem dữ liệu của tài khoản này.' }) {
   return (
@@ -23,10 +24,15 @@ export function AuthRequiredCard({ message = 'Đăng nhập để xem dữ liệ
 
 export function LoadingCard({ label = 'Đang tải dữ liệu thật từ tài khoản...' }) {
   return (
-    <Card>
-      <div className="flex items-center gap-3 text-sm text-slate-200">
-        <Loader2 className="h-4 w-4 animate-spin text-secondary" />
-        {label}
+    <Card interactive={false} reveal={false} role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">{label}</span>
+      <div className="grid gap-4 sm:grid-cols-[3rem_minmax(0,1fr)]">
+        <Skeleton className="h-12 w-12 rounded-xl" />
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-2/5" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-4/5" />
+        </div>
       </div>
     </Card>
   );

@@ -76,7 +76,9 @@ export function InterviewOverviewPanel() {
 
   const sessions = query.data ?? [];
   const latest = sessions.slice(0, 3);
-  const completed = sessions.filter((session) => session.status === 'COMPLETED' || session.completedAt).length;
+  const completed = sessions.filter(
+    (session) => session.status === 'COMPLETED' || session.completedAt,
+  ).length;
   const averageScore = averageInterviewScore(sessions);
   const modes = [
     {
@@ -111,21 +113,38 @@ export function InterviewOverviewPanel() {
             <CardHeader className="mb-0 mt-4">
               <CardTitle className="text-2xl">Luyện phỏng vấn theo phiên thật</CardTitle>
               <CardDescription>
-                Chọn mode, trả lời bằng text hoặc voice, AI chấm từng câu và lưu lịch sử theo tài khoản.
+                Chọn mode, trả lời bằng text hoặc voice, AI chấm từng câu và lưu lịch sử theo tài
+                khoản.
               </CardDescription>
             </CardHeader>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <InterviewMetric icon={<MessageSquarePlus className="h-4 w-4" />} label="Tổng phiên" value={String(sessions.length)} />
-            <InterviewMetric icon={<CheckCircle2 className="h-4 w-4" />} label="Hoàn tất" value={String(completed)} />
-            <InterviewMetric icon={<BarChart3 className="h-4 w-4" />} label="Điểm TB" value={averageScore} />
+            <InterviewMetric
+              icon={<MessageSquarePlus className="h-4 w-4" />}
+              label="Tổng phiên"
+              value={String(sessions.length)}
+            />
+            <InterviewMetric
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              label="Hoàn tất"
+              value={String(completed)}
+            />
+            <InterviewMetric
+              icon={<BarChart3 className="h-4 w-4" />}
+              label="Điểm TB"
+              value={averageScore}
+            />
           </div>
         </div>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
         {modes.map((item) => (
-          <Link key={item.mode} href={`/dashboard/interview/new?mode=${item.mode}`} className="group block">
+          <Link
+            key={item.mode}
+            href={`/dashboard/interview/new?mode=${item.mode}`}
+            className="group block"
+          >
             <div
               className={`relative min-h-[15rem] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.accent} p-5 shadow-soft transition duration-300 group-hover:-translate-y-1 group-hover:border-white/20`}
             >
@@ -193,7 +212,8 @@ export function NewInterviewForm({ initialMode = 'TECHNICAL' }: { initialMode?: 
         <CardHeader className="mb-0">
           <CardTitle className="text-2xl">Tạo phiên phỏng vấn mới</CardTitle>
           <CardDescription>
-            Session sẽ được lưu trong tài khoản, các câu trả lời sau đó được AI chấm điểm và gợi ý cải thiện.
+            Session sẽ được lưu trong tài khoản, các câu trả lời sau đó được AI chấm điểm và gợi ý
+            cải thiện.
           </CardDescription>
         </CardHeader>
       </div>
@@ -483,8 +503,8 @@ export function InterviewSessionPanel({ id }: { id: string }) {
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-[linear-gradient(90deg,#57b846,#00d4ff)] transition-all"
-                style={{ width: `${progressPercent}%` }}
+                className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#57b846,#00d4ff)] transition-transform duration-500"
+                style={{ transform: `scaleX(${progressPercent / 100})` }}
               />
             </div>
           </div>
@@ -627,7 +647,15 @@ export function InterviewSessionPanel({ id }: { id: string }) {
   );
 }
 
-function InterviewMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function InterviewMetric({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-normal text-mutedText">

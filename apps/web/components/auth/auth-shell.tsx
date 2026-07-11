@@ -25,13 +25,16 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <main className="auth-gradient relative flex min-h-screen items-center justify-center px-4 py-8 text-slate-900 sm:px-6">
+    <main className="auth-gradient relative flex min-h-[100dvh] items-center justify-center px-4 py-8 text-slate-900 sm:px-6">
       <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
         <ThemeToggle />
       </div>
       <section className="auth-card auth-card-shadow grid w-full max-w-5xl overflow-hidden rounded-lg bg-white lg:grid-cols-[1.05fr_0.95fr]">
         <div className="auth-visual-panel relative hidden min-h-[620px] flex-col justify-between overflow-hidden bg-[#f8fbff] px-12 py-12 lg:flex">
-          <Link href="/" className="flex w-fit items-center gap-3 text-sm font-semibold text-slate-700">
+          <Link
+            href="/"
+            className="flex w-fit items-center gap-3 text-sm font-semibold text-slate-700"
+          >
             <BrandMark className="h-10 w-10" priority />
             MentorMind
           </Link>
@@ -55,7 +58,10 @@ export function AuthShell({
 
           <div className="grid gap-3">
             {['Lộ trình cá nhân hóa', 'Mentor theo sát', 'AI hỗ trợ luyện tập'].map((item) => (
-              <div key={item} className="flex items-center gap-3 rounded-full bg-white px-4 py-3 text-sm font-medium text-slate-600 shadow-soft">
+              <div
+                key={item}
+                className="flex items-center gap-3 rounded-full bg-white px-4 py-3 text-sm font-medium text-slate-600 shadow-soft"
+              >
                 <CheckCircle2 className="h-4 w-4 text-[#57b846]" />
                 {item}
               </div>
@@ -64,14 +70,20 @@ export function AuthShell({
         </div>
 
         <div className="auth-form-panel flex min-h-[620px] flex-col justify-center px-6 py-10 sm:px-10 lg:px-14">
-          <Link href="/" className="mb-10 flex w-fit items-center gap-3 text-sm font-semibold text-slate-700 lg:hidden">
+          <Link
+            href="/"
+            className="mb-10 flex w-fit items-center gap-3 text-sm font-semibold text-slate-700 lg:hidden"
+          >
             <BrandMark className="h-10 w-10" priority />
             MentorMind
           </Link>
           {children}
           <p className="mt-10 text-center text-sm text-slate-500">
             {switchText}{' '}
-            <Link href={switchHref} className="font-semibold text-[#57b846] transition hover:text-slate-900">
+            <Link
+              href={switchHref}
+              className="font-semibold text-[#57b846] transition hover:text-slate-900"
+            >
               {switchLabel}
             </Link>
           </p>

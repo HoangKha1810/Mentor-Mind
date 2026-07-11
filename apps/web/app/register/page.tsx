@@ -7,6 +7,7 @@ import { LockKeyhole, Mail, Target, UserRound } from 'lucide-react';
 import { apiFetch, setAccessToken } from '@/lib/api';
 import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
+import { FormMessage } from '@/components/ui/form-message';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -53,11 +54,15 @@ export default function RegisterPage() {
           <AuthInput icon={UserRound} name="fullName" placeholder="Họ và tên" required />
           <AuthInput icon={Mail} name="email" type="email" placeholder="Email" required />
           <AuthInput icon={Target} name="targetRole" placeholder="Vai trò mục tiêu" />
-          <AuthInput icon={LockKeyhole} name="password" type="password" placeholder="Mật khẩu tối thiểu 8 ký tự" required />
+          <AuthInput
+            icon={LockKeyhole}
+            name="password"
+            type="password"
+            placeholder="Mật khẩu tối thiểu 8 ký tự"
+            required
+          />
         </div>
-        {error ? (
-          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-        ) : null}
+        <FormMessage message={error} />
         <Button className="mt-6 h-[50px] w-full">Tạo tài khoản</Button>
       </form>
     </AuthShell>

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   BarChart3,
   Bell,
@@ -28,9 +29,9 @@ import { BrandMark } from '@/components/brand/brand-mark';
 import { LearningAssistantWidget } from '@/components/dashboard/learning-assistant-widget';
 import { WalletWidget } from '@/components/payments/wallet-widget';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { PageTransition } from '../ui/motion';
 import { logoutSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { motionDuration, motionEase, motionSpring } from '@/lib/motion-system';
 
 type NavItem = [label: string, href: string, icon: LucideIcon];
 
@@ -115,16 +116,67 @@ export function DashboardShell({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickSearch, setQuickSearch] = useState('');
-  const activeItemIndex = Math.max(0, items.findIndex(([, href]) => isNavActive(pathname, href)));
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  const activeItemIndex = Math.max(
+    0,
+    items.findIndex(([, href]) => isNavActive(pathname, href)),
+  );
   const activeItem = items[activeItemIndex];
   const ActiveHeroIcon = activeItem?.[2] ?? BarChart3;
-  const heroTone = dashboardHeroTones[
-    (activeItemIndex + roleToneOffset[role]) % dashboardHeroTones.length
-  ] ?? dashboardHeroTones[0];
+  const heroTone =
+    dashboardHeroTones[(activeItemIndex + roleToneOffset[role]) % dashboardHeroTones.length] ??
+    dashboardHeroTones[0];
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const previousActive =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusFrame = window.requestAnimationFrame(() => drawerRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab' || !drawerRef.current) return;
+      const focusable = Array.from(
+        drawerRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute('hidden'));
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      (previousActive ?? menuButtonRef.current)?.focus();
+    };
+  }, [mobileMenuOpen]);
 
   function logout() {
     void logoutSession();
@@ -141,7 +193,7 @@ export function DashboardShell({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-background">
       <div className="dashboard-backdrop" aria-hidden="true" />
       <div className="dashboard-topbar fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#07111f]/[0.82] shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
         <div className="flex h-20 items-center justify-between px-5 lg:px-8">
@@ -172,6 +224,7 @@ export function DashboardShell({
             <ThemeToggle />
             {role === 'student' ? <WalletWidget /> : null}
             <button
+              ref={menuButtonRef}
               type="button"
               aria-label="Mở menu dashboard"
               aria-expanded={mobileMenuOpen}
@@ -199,7 +252,7 @@ export function DashboardShell({
                 key={href}
                 href={href}
                 className={cn(
-                  'dashboard-nav-link group flex min-h-[3.65rem] items-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition-all duration-300 active:scale-[0.98]',
+                  'dashboard-nav-link group flex min-h-[3.65rem] items-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-300 active:scale-[0.98]',
                   isActive
                     ? 'border-secondary/30 bg-secondary/[0.12] text-white shadow-[0_12px_38px_rgba(0,212,255,0.14)]'
                     : 'border-white/[0.07] bg-white/[0.025] text-slate-300 hover:border-white/[0.14] hover:bg-white/[0.065] hover:text-white hover:shadow-soft',
@@ -224,111 +277,136 @@ export function DashboardShell({
           })}
         </nav>
       </aside>
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            aria-label="Đóng menu"
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <aside className="dashboard-sidebar absolute inset-y-0 left-0 flex w-[min(88vw,23rem)] flex-col border-r border-white/[0.12] bg-[#07111f]/[0.98] shadow-[24px_0_80px_rgba(0,0,0,0.42)]">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-              <Link href="/" className="flex min-w-0 items-center gap-3">
-                <BrandMark className="h-11 w-11 rounded-xl" priority />
-                <div className="min-w-0">
-                  <div className="truncate text-lg font-semibold text-white">MentorMind</div>
-                  <div className="text-xs font-medium text-secondary">{workspaceLabels[role]}</div>
-                </div>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.05] px-3 text-sm font-semibold text-white transition hover:border-secondary/40 hover:bg-secondary/[0.10]"
-              >
-                <X className="h-4 w-4" />
-                Đóng
-              </button>
-            </div>
-            <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
-              {items.map(([label, href, Icon]) => {
-                const isActive = isNavActive(pathname, href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      'group flex min-h-12 items-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition-all duration-200 active:scale-[0.98]',
-                      isActive
-                        ? 'border-secondary/35 bg-secondary/[0.14] text-white shadow-[0_10px_32px_rgba(0,212,255,0.16)]'
-                        : 'border-white/[0.08] bg-white/[0.025] text-slate-300 hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white',
-                    )}
-                  >
-                    <span
+      <AnimatePresence initial={false}>
+        {mobileMenuOpen ? (
+          <motion.div
+            className="fixed inset-0 z-50 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Điều hướng dashboard"
+          >
+            <motion.button
+              type="button"
+              aria-label="Đóng menu"
+              data-motion="none"
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: motionDuration.standard, ease: motionEase.standard }}
+            />
+            <motion.aside
+              ref={drawerRef}
+              tabIndex={-1}
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={motionSpring.panel}
+              className="dashboard-sidebar absolute inset-y-0 left-0 flex w-[min(88vw,23rem)] flex-col border-r border-white/[0.12] bg-[#07111f]/[0.98] shadow-[24px_0_80px_rgba(0,0,0,0.42)] outline-none"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+                <Link href="/" className="flex min-w-0 items-center gap-3">
+                  <BrandMark className="h-11 w-11 rounded-xl" priority />
+                  <div className="min-w-0">
+                    <div className="truncate text-lg font-semibold text-white">MentorMind</div>
+                    <div className="text-xs font-medium text-secondary">
+                      {workspaceLabels[role]}
+                    </div>
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.05] px-3 text-sm font-semibold text-white transition hover:border-secondary/40 hover:bg-secondary/[0.10]"
+                >
+                  <X className="h-4 w-4" />
+                  Đóng
+                </button>
+              </div>
+              <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
+                {items.map(([label, href, Icon]) => {
+                  const isActive = isNavActive(pathname, href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
                       className={cn(
-                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition',
+                        'group flex min-h-12 items-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-200 active:scale-[0.98]',
                         isActive
-                          ? 'bg-secondary/[0.18] text-secondary'
-                          : 'bg-white/[0.05] text-slate-400',
+                          ? 'border-secondary/35 bg-secondary/[0.14] text-white shadow-[0_10px_32px_rgba(0,212,255,0.16)]'
+                          : 'border-white/[0.08] bg-white/[0.025] text-slate-300 hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white',
                       )}
                     >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">{label}</span>
-                    {isActive && <span className="h-2 w-2 shrink-0 rounded-full bg-secondary" />}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="space-y-2 border-t border-white/10 p-4">
-              <Link
-                href="/"
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 text-sm font-semibold text-slate-200 transition hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white"
-              >
-                <Home className="h-4 w-4 text-secondary" />
-                Về trang chủ
-              </Link>
-              <button
-                type="button"
-                onClick={logout}
-                className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-red-300/20 bg-red-500/10 px-4 text-left text-sm font-semibold text-red-100 transition hover:border-red-300/35 hover:bg-red-500/16"
-              >
-                <LogOut className="h-4 w-4" />
-                Đăng xuất
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+                      <span
+                        className={cn(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition',
+                          isActive
+                            ? 'bg-secondary/[0.18] text-secondary'
+                            : 'bg-white/[0.05] text-slate-400',
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">{label}</span>
+                      {isActive && <span className="h-2 w-2 shrink-0 rounded-full bg-secondary" />}
+                    </Link>
+                  );
+                })}
+              </nav>
+              <div className="space-y-2 border-t border-white/10 p-4">
+                <Link
+                  href="/"
+                  className="flex min-h-11 items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 text-sm font-semibold text-slate-200 transition hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-white"
+                >
+                  <Home className="h-4 w-4 text-secondary" />
+                  Về trang chủ
+                </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-red-300/20 bg-red-500/10 px-4 text-left text-sm font-semibold text-red-100 transition hover:border-red-300/35 hover:bg-red-500/16"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Đăng xuất
+                </button>
+              </div>
+            </motion.aside>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <main className="theme-adaptive relative z-10 px-4 pb-14 pt-28 lg:ml-72 lg:px-10">
         <div className="mx-auto max-w-7xl">
-          <PageTransition>
-            <div className={cn('dashboard-hero theme-on-color mb-8 rounded-2xl px-5 py-6 sm:px-7 sm:py-8', heroTone)}>
-              <div className="relative z-10 grid min-h-[9rem] items-center gap-6 sm:grid-cols-[minmax(0,1fr)_9rem]">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-white/78">
-                    <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1">
-                      {workspaceLabels[role]}
-                    </span>
-                    <span className="rounded-full border border-white/16 bg-black/10 px-3 py-1">
-                      Dữ liệu đồng bộ
-                    </span>
-                  </div>
-                  <h1 className="mt-4 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-                    {title}
-                  </h1>
-                  <p className="mt-3 max-w-3xl text-sm leading-6 text-white/78">{subtitle}</p>
+          <div
+            className={cn(
+              'dashboard-hero theme-on-color mb-8 rounded-2xl px-5 py-6 sm:px-7 sm:py-8',
+              heroTone,
+            )}
+          >
+            <div className="relative z-10 grid min-h-[9rem] items-center gap-6 sm:grid-cols-[minmax(0,1fr)_9rem]">
+              <div>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-white/78">
+                  <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1">
+                    {workspaceLabels[role]}
+                  </span>
+                  <span className="rounded-full border border-white/16 bg-black/10 px-3 py-1">
+                    Dữ liệu đồng bộ
+                  </span>
                 </div>
-                <div
-                  className="hidden h-32 w-32 items-center justify-center justify-self-end rounded-2xl border border-white/18 bg-white/12 text-white shadow-[0_22px_55px_rgba(0,0,0,0.18)] backdrop-blur-sm sm:flex"
-                  aria-hidden="true"
-                >
-                  <ActiveHeroIcon className="h-14 w-14" strokeWidth={1.6} />
-                </div>
+                <h1 className="mt-4 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+                  {title}
+                </h1>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/78">{subtitle}</p>
+              </div>
+              <div
+                className="hidden h-32 w-32 items-center justify-center justify-self-end rounded-2xl border border-white/18 bg-white/12 text-white shadow-[0_22px_55px_rgba(0,0,0,0.18)] backdrop-blur-sm sm:flex"
+                aria-hidden="true"
+              >
+                <ActiveHeroIcon className="h-14 w-14" strokeWidth={1.6} />
               </div>
             </div>
-            {children}
-          </PageTransition>
+          </div>
+          {children}
         </div>
       </main>
       {role === 'student' ? <LearningAssistantWidget /> : null}

@@ -10,12 +10,17 @@ export const metadata: Metadata = {
   title: 'Khóa học lập trình online theo mục tiêu đi làm',
   description:
     'Danh sách khóa học MentorMind: Frontend React, Backend NodeJS/NestJS, Fullstack Next.js/NestJS và AI Machine Learning ứng dụng.',
-  keywords: ['khóa học lập trình online', 'khóa học frontend', 'khóa học backend', 'khóa học fullstack', 'khóa học AI online'],
+  keywords: [
+    'khóa học lập trình online',
+    'khóa học frontend',
+    'khóa học backend',
+    'khóa học fullstack',
+    'khóa học AI online',
+  ],
   alternates: { canonical: '/khoa-hoc' },
   openGraph: {
     title: 'Khóa học lập trình online MentorMind',
-    description:
-      'Các khóa học có roadmap, mentor, AI, bài tập, portfolio, CV và mock interview.',
+    description: 'Các khóa học có roadmap, mentor, AI, bài tập, portfolio, CV và mock interview.',
     url: '/khoa-hoc',
     images: [{ url: '/khoa-hoc/opengraph-image', width: 1200, height: 630 }],
   },
@@ -73,8 +78,12 @@ export default function CoursesPage() {
 
           <div className="mt-10 grid gap-5 lg:grid-cols-2">
             {seoCourses.map((course) => (
-              <Link key={course.slug} href={`/khoa-hoc/${course.slug}`} className="group block h-full">
-                <Card className="h-full transition duration-300 group-hover:-translate-y-1 group-hover:border-secondary/30">
+              <Link
+                key={course.slug}
+                href={`/khoa-hoc/${course.slug}`}
+                className="group block h-full"
+              >
+                <Card interactive reveal className="h-full group-hover:border-secondary/30">
                   <CardHeader>
                     <div className="mb-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-300">
                       <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.055] px-3 py-1">

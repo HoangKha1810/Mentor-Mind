@@ -195,7 +195,7 @@ export default function AiAssistantPage() {
       title="Trợ lý học tập AI"
       subtitle="Chat như với mentor cá nhân. Khi bạn chia sẻ mục tiêu, lương kỳ vọng, địa điểm hoặc lịch rảnh, trợ lý sẽ ghi nhớ vào ngữ cảnh riêng của bạn."
     >
-      <div className="grid min-h-[calc(100vh-12rem)] gap-4 xl:grid-cols-[17rem_minmax(0,1fr)_19rem]">
+      <div className="grid min-h-[calc(100dvh-12rem)] gap-4 xl:grid-cols-[17rem_minmax(0,1fr)_19rem]">
         <aside className="glass hidden overflow-hidden rounded-xl xl:flex xl:flex-col">
           <div className="border-b border-white/10 p-4">
             <Button className="w-full" onClick={startNewConversation}>
@@ -418,8 +418,8 @@ function UsagePanel({ entitlements }: { entitlements?: EntitlementsSummary | nul
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-[linear-gradient(90deg,#57b846,#00d4ff)] transition-all"
-            style={{ width: `${chatPercent}%` }}
+            className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#57b846,#00d4ff)] transition-transform duration-500"
+            style={{ transform: `scaleX(${chatPercent / 100})` }}
           />
         </div>
         <p className="mt-3 text-xs leading-5 text-mutedText">

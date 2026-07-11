@@ -35,7 +35,7 @@ export function StatCard({
         </div>
       </div>
       <div className="relative z-10 mt-4 h-1 overflow-hidden rounded-full bg-white/[0.08]">
-        <div className="h-full w-2/3 rounded-full bg-[linear-gradient(90deg,#00d4ff,#57b846)] opacity-70 transition-all duration-500 group-hover:w-full" />
+        <div className="h-full w-full origin-left scale-x-75 rounded-full bg-[linear-gradient(90deg,#00d4ff,#57b846)] opacity-70 transition-transform duration-500 group-hover:scale-x-100" />
       </div>
     </Card>
   );

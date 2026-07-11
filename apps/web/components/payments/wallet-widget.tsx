@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { formatCurrency } from '@mentormind/shared';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Plus, Wallet } from 'lucide-react';
 import { WalletSummary } from '@/lib/domain-types';
 import { useLiveQuery } from '@/lib/live-query';
@@ -14,6 +14,7 @@ type WalletUpdatedEvent = CustomEvent<{
 }>;
 
 export function WalletWidget() {
+  const reduceMotion = useReducedMotion();
   const query = useLiveQuery<WalletSummary>('/payments/wallet', { auth: true });
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
   const [delta, setDelta] = useState<number | null>(null);
@@ -42,7 +43,9 @@ export function WalletWidget() {
   }, [wallet]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => reloadRef.current(), 4000);
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') reloadRef.current();
+    }, 20000);
     const refreshOnFocus = () => {
       if (document.visibilityState === 'visible') reloadRef.current();
     };
@@ -95,9 +98,9 @@ export function WalletWidget() {
       <AnimatePresence>
         {delta !== null ? (
           <motion.div
-            initial={{ y: 8, opacity: 0, scale: 0.9 }}
+            initial={reduceMotion ? { opacity: 0 } : { y: 8, opacity: 0, scale: 0.9 }}
             animate={{ y: -8, opacity: 1, scale: 1 }}
-            exit={{ y: -18, opacity: 0, scale: 0.92 }}
+            exit={reduceMotion ? { opacity: 0 } : { y: -18, opacity: 0, scale: 0.92 }}
             className={`pointer-events-none absolute right-3 top-full mt-2 rounded-full border px-3 py-1 text-xs font-bold shadow-soft ${
               delta >= 0
                 ? 'border-success/30 bg-success/15 text-green-100'

@@ -4,16 +4,8 @@ import Link from 'next/link';
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createPortal } from 'react-dom';
-import {
-  BookOpen,
-  ExternalLink,
-  Lightbulb,
-  Loader2,
-  Route,
-  Send,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { BookOpen, ExternalLink, Lightbulb, Loader2, Route, Send, Sparkles, X } from 'lucide-react';
 import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import {
   excerpt,
@@ -34,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { motionSpring } from '@/lib/motion-system';
 
 const IDLE_TRIGGER_SECONDS = 40;
 const NUDGE_COOLDOWN_MS = 5 * 60 * 1000;
@@ -55,6 +48,7 @@ type AssistantNudge = {
 
 export function LearningAssistantWidget() {
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
   const accountQuery = useLiveQuery<Account>('/auth/me', { auth: true });
   const cvQuery = useLiveQuery<CvReview[]>('/ai/cv-review/me', { auth: true });
   const interviewQuery = useLiveQuery<InterviewSession[]>('/ai/interview/sessions/me', {
@@ -69,7 +63,6 @@ export function LearningAssistantWidget() {
   const [surfaceContext, setSurfaceContext] = useState<LearningAssistantContextSnapshot | null>(
     null,
   );
-  const [lastActivityAt, setLastActivityAt] = useState(Date.now());
   const [idleSeconds, setIdleSeconds] = useState(0);
   const [nudge, setNudge] = useState<AssistantNudge | null>(null);
   const [dismissedNudgeId, setDismissedNudgeId] = useState<string | null>(null);
@@ -78,6 +71,11 @@ export function LearningAssistantWidget() {
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const lastActivityAtRef = useRef(Date.now());
+  const idleSecondsRef = useRef(0);
+  const idleBucketRef = useRef(0);
+  const panelRef = useRef<HTMLElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
 
   const latestCvReview = cvQuery.data?.[0];
   const latestInterview = interviewQuery.data?.[0];
@@ -113,8 +111,12 @@ export function LearningAssistantWidget() {
 
   useEffect(() => {
     function markActivity() {
-      setLastActivityAt(Date.now());
-      setIdleSeconds(0);
+      lastActivityAtRef.current = Date.now();
+      idleSecondsRef.current = 0;
+      if (idleBucketRef.current !== 0) {
+        idleBucketRef.current = 0;
+        setIdleSeconds(0);
+      }
     }
 
     const events: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'scroll'];
@@ -122,26 +124,45 @@ export function LearningAssistantWidget() {
       window.addEventListener(eventName, markActivity, { passive: true }),
     );
     window.addEventListener('input', markActivity, { passive: true, capture: true });
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      const nextIdleSeconds = Math.floor((Date.now() - lastActivityAtRef.current) / 1000);
+      idleSecondsRef.current = nextIdleSeconds;
+      const nextBucket = nextIdleSeconds >= IDLE_TRIGGER_SECONDS ? IDLE_TRIGGER_SECONDS : 0;
+      if (nextBucket === idleBucketRef.current) return;
+      idleBucketRef.current = nextBucket;
+      setIdleSeconds(nextBucket);
+    }, 1000);
 
     return () => {
+      window.clearInterval(timer);
       events.forEach((eventName) => window.removeEventListener(eventName, markActivity));
       window.removeEventListener('input', markActivity, { capture: true });
     };
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setIdleSeconds(Math.floor((Date.now() - lastActivityAt) / 1000));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [lastActivityAt]);
-
-  useEffect(() => {
     messagesRef.current?.scrollTo({
       top: messagesRef.current.scrollHeight,
-      behavior: 'smooth',
+      behavior: reduceMotion ? 'auto' : 'smooth',
     });
-  }, [messages.length, sending, resources.length]);
+  }, [messages.length, reduceMotion, resources.length, sending]);
+
+  useEffect(() => {
+    if (!open) return;
+    const focusFrame = window.requestAnimationFrame(() => panelRef.current?.focus());
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', handleEscape);
+      launcherRef.current?.focus();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!candidateNudge || open || dismissedNudgeId === candidateNudge.id) return;
@@ -311,159 +332,185 @@ export function LearningAssistantWidget() {
 
   const widget = (
     <>
-      {nudge && !open ? (
-        <div className="assistant-viewport-nudge w-[min(calc(100vw-2rem),21rem)]">
-          <div className="relative overflow-hidden rounded-2xl border border-secondary/30 bg-[#07111f]/95 p-3.5 shadow-[0_24px_90px_rgba(0,0,0,0.55),0_0_44px_rgba(0,212,255,0.18)] backdrop-blur-2xl">
-            <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-secondary/70 to-transparent" />
-            <div className="flex items-start gap-3">
-              <AssistantAvatar className="mt-0.5 h-10 w-10 border-secondary/30 shadow-[0_0_30px_rgba(0,133,255,0.28)]" />
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
+      <AnimatePresence initial={false}>
+        {nudge && !open ? (
+          <motion.div
+            key={nudge.id}
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, y: 12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={motionSpring.panel}
+            className="assistant-viewport-nudge w-[min(calc(100vw-2rem),21rem)]"
+          >
+            <div className="relative overflow-hidden rounded-2xl border border-secondary/30 bg-[#07111f]/95 p-3.5 shadow-[0_24px_90px_rgba(0,0,0,0.55),0_0_44px_rgba(0,212,255,0.18)] backdrop-blur-2xl">
+              <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-secondary/70 to-transparent" />
+              <div className="flex items-start gap-3">
+                <AssistantAvatar className="mt-0.5 h-10 w-10 border-secondary/30 shadow-[0_0_30px_rgba(0,133,255,0.28)]" />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-secondary">
+                    <Lightbulb className="h-3.5 w-3.5" />
+                    Gợi ý nhanh
+                  </div>
+                  <p className="text-sm font-semibold text-white">{nudge.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-300">{nudge.body}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => handleNudgeAction(nudge)}>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {nudge.actionLabel}
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={dismissNudge}>
+                      Để sau
+                    </Button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Ẩn gợi ý"
+                  onClick={dismissNudge}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <span className="absolute -bottom-2 right-8 h-5 w-5 rotate-45 border-b border-r border-secondary/30 bg-[#07111f]/95" />
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.section
+            id="learning-assistant-panel"
+            ref={panelRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-label="Trợ lý học tập AI"
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
+            transition={motionSpring.panel}
+            className="assistant-viewport-panel flex h-[min(76dvh,44rem)] w-[min(calc(100vw-2rem),29rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#081321]/95 shadow-[0_28px_110px_rgba(0,0,0,0.48)] outline-none backdrop-blur-2xl"
+          >
+            <header className="border-b border-white/10 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <AssistantAvatar className="h-10 w-10 border-secondary/30 shadow-[0_0_30px_rgba(0,212,255,0.22)]" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">Trợ lý ngữ cảnh</p>
+                    <p className="truncate text-xs text-mutedText">{contextLabel(activeContext)}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Thu nhỏ trợ lý"
+                  onClick={() => setOpen(false)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </header>
+
+            <div ref={messagesRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              {!messages.length ? <WelcomeState context={activeContext} /> : null}
+              {messages.map((message) => (
+                <ChatBubble
+                  key={message.id ?? `${message.role}-${message.createdAt}`}
+                  message={message}
+                />
+              ))}
+              {resourceMessage || resourcesLoading || resources.length ? (
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                    {resourcesLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-secondary" />
+                    ) : (
+                      <BookOpen className="h-4 w-4 text-secondary" />
+                    )}
+                    Tài liệu gợi ý
+                  </div>
+                  {resourceMessage ? (
+                    <p className="mb-3 text-xs leading-5 text-mutedText">{resourceMessage}</p>
+                  ) : null}
+                  <div className="space-y-2">
+                    {resources.map((resource, index) => (
+                      <ResourceMiniCard
+                        key={`${resource.url ?? resource.title}-${index}`}
+                        resource={resource}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="border-t border-white/10 p-3">
+              <div className="mb-3 grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void sendAssistantMessage(buildHintPrompt(activeContext), 'manual-hint')
+                  }
+                  className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
+                >
                   <Lightbulb className="h-3.5 w-3.5" />
-                  Gợi ý nhanh
-                </div>
-                <p className="text-sm font-semibold text-white">{nudge.title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-300">{nudge.body}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => handleNudgeAction(nudge)}>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {nudge.actionLabel}
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={dismissNudge}>
-                    Để sau
-                  </Button>
-                </div>
+                  Hint
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void searchResources()}
+                  className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Tài liệu
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void sendAssistantMessage(buildRoadmapPrompt(activeContext), 'roadmap')
+                  }
+                  className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
+                >
+                  <Route className="h-3.5 w-3.5" />
+                  Lộ trình
+                </button>
               </div>
-              <button
-                type="button"
-                aria-label="Ẩn gợi ý"
-                onClick={dismissNudge}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <span className="absolute -bottom-2 right-8 h-5 w-5 rotate-45 border-b border-r border-secondary/30 bg-[#07111f]/95" />
-          </div>
-        </div>
-      ) : null}
-
-      {open ? (
-        <section className="assistant-viewport-panel flex h-[min(76vh,44rem)] w-[min(calc(100vw-2rem),29rem)] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#081321]/95 shadow-[0_28px_110px_rgba(0,0,0,0.48)] backdrop-blur-2xl">
-          <header className="border-b border-white/10 px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <AssistantAvatar className="h-10 w-10 border-secondary/30 shadow-[0_0_30px_rgba(0,212,255,0.22)]" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">Trợ lý ngữ cảnh</p>
-                  <p className="truncate text-xs text-mutedText">{contextLabel(activeContext)}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                aria-label="Thu nhỏ trợ lý"
-                onClick={() => setOpen(false)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </header>
-
-          <div ref={messagesRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-            {!messages.length ? <WelcomeState context={activeContext} /> : null}
-            {messages.map((message) => (
-              <ChatBubble
-                key={message.id ?? `${message.role}-${message.createdAt}`}
-                message={message}
-              />
-            ))}
-            {resourceMessage || resourcesLoading || resources.length ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
-                  {resourcesLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-secondary" />
+              <form ref={formRef} onSubmit={submit} className="flex items-end gap-2">
+                <Textarea
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={handleComposerKeyDown}
+                  placeholder="Hỏi trợ lý theo màn hình hiện tại..."
+                  className="min-h-12 max-h-28 flex-1 resize-none rounded-2xl py-3 text-sm"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  aria-label="Gửi tin nhắn"
+                  disabled={!draft.trim() || sending}
+                  className="h-12 w-12"
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <BookOpen className="h-4 w-4 text-secondary" />
+                    <Send className="h-4 w-4" />
                   )}
-                  Tài liệu gợi ý
-                </div>
-                {resourceMessage ? (
-                  <p className="mb-3 text-xs leading-5 text-mutedText">{resourceMessage}</p>
-                ) : null}
-                <div className="space-y-2">
-                  {resources.map((resource, index) => (
-                    <ResourceMiniCard
-                      key={`${resource.url ?? resource.title}-${index}`}
-                      resource={resource}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="border-t border-white/10 p-3">
-            <div className="mb-3 grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  void sendAssistantMessage(buildHintPrompt(activeContext), 'manual-hint')
-                }
-                className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
-              >
-                <Lightbulb className="h-3.5 w-3.5" />
-                Hint
-              </button>
-              <button
-                type="button"
-                onClick={() => void searchResources()}
-                className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Tài liệu
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void sendAssistantMessage(buildRoadmapPrompt(activeContext), 'roadmap')
-                }
-                className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-slate-200 transition hover:border-secondary/35 hover:text-secondary"
-              >
-                <Route className="h-3.5 w-3.5" />
-                Lộ trình
-              </button>
+                </Button>
+              </form>
             </div>
-            <form ref={formRef} onSubmit={submit} className="flex items-end gap-2">
-              <Textarea
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={handleComposerKeyDown}
-                placeholder="Hỏi trợ lý theo màn hình hiện tại..."
-                className="min-h-12 max-h-28 flex-1 resize-none rounded-2xl py-3 text-sm"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                aria-label="Gửi tin nhắn"
-                disabled={!draft.trim() || sending}
-                className="h-12 w-12"
-              >
-                {sending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </form>
-          </div>
-        </section>
-      ) : null}
+          </motion.section>
+        ) : null}
+      </AnimatePresence>
 
       <button
+        ref={launcherRef}
         type="button"
         aria-label={open ? 'Ẩn trợ lý AI' : 'Mở trợ lý AI'}
         aria-expanded={open}
+        aria-controls="learning-assistant-panel"
         onClick={() => {
           setOpen((current) => !current);
           setNudge(null);

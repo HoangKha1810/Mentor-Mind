@@ -1,7 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ReactNode } from 'react';
+import { motionDistance, motionDuration, motionEase } from '@/lib/motion-system';
 
 interface ScrollRevealProps {
   children: ReactNode;
@@ -16,30 +17,28 @@ export function ScrollReveal({
   direction = 'up',
   className = '',
 }: ScrollRevealProps) {
+  const reduceMotion = useReducedMotion();
   const directionOffset = {
-    up: { y: 40, x: 0 },
-    down: { y: -40, x: 0 },
-    left: { x: 40, y: 0 },
-    right: { x: -40, y: 0 },
+    up: { y: motionDistance.reveal, x: 0 },
+    down: { y: -motionDistance.reveal, x: 0 },
+    left: { x: motionDistance.reveal, y: 0 },
+    right: { x: -motionDistance.reveal, y: 0 },
     none: { x: 0, y: 0 },
   };
 
   return (
     <motion.div
-      initial={{
-        opacity: 0,
-        ...directionOffset[direction],
-      }}
+      initial={reduceMotion ? false : { opacity: 0, ...directionOffset[direction] }}
       whileInView={{
         opacity: 1,
         x: 0,
         y: 0,
       }}
-      viewport={{ once: true, margin: '-50px' }}
+      viewport={{ once: true, amount: 0.18, margin: '0px 0px -48px' }}
       transition={{
-        duration: 0.8,
-        delay,
-        ease: [0.16, 1, 0.3, 1], // Custom cubic bezier for smooth futuristic ease out
+        duration: reduceMotion ? 0 : motionDuration.reveal,
+        delay: reduceMotion ? 0 : Math.min(delay, 0.32),
+        ease: motionEase.expressive,
       }}
       className={className}
     >

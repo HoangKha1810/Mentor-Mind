@@ -7,6 +7,7 @@ import { LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { apiFetch, setAccessToken } from '@/lib/api';
 import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
+import { FormMessage } from '@/components/ui/form-message';
 
 type LoginResponse =
   | {
@@ -24,9 +25,10 @@ type LoginResponse =
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState('');
-  const [twoFactor, setTwoFactor] = useState<Extract<LoginResponse, { requiresTwoFactor: true }> | null>(
-    null,
-  );
+  const [twoFactor, setTwoFactor] = useState<Extract<
+    LoginResponse,
+    { requiresTwoFactor: true }
+  > | null>(null);
 
   function routeAfterLogin(role: string) {
     router.push(
@@ -114,9 +116,7 @@ export default function LoginPage() {
             placeholder="Nhập mã 6 số"
             required
           />
-          {error ? (
-            <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-          ) : null}
+          <FormMessage message={error} />
           <Button className="mt-6 h-[50px] w-full">Xác thực và vào Admin</Button>
           <button
             type="button"
@@ -139,15 +139,22 @@ export default function LoginPage() {
           </div>
           <div className="space-y-3">
             <AuthInput icon={Mail} name="email" type="email" placeholder="Email" required />
-            <AuthInput icon={LockKeyhole} name="password" type="password" placeholder="Mật khẩu" required />
+            <AuthInput
+              icon={LockKeyhole}
+              name="password"
+              type="password"
+              placeholder="Mật khẩu"
+              required
+            />
           </div>
-          {error ? (
-            <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-          ) : null}
+          <FormMessage message={error} />
           <Button className="mt-6 h-[50px] w-full">Đăng nhập</Button>
           <p className="mt-5 text-center text-xs leading-6 text-slate-400">
             Quên mật khẩu?{' '}
-            <Link href="/forgot-password" className="font-medium text-slate-600 transition hover:text-[#57b846]">
+            <Link
+              href="/forgot-password"
+              className="font-medium text-slate-600 transition hover:text-[#57b846]"
+            >
               Đặt lại mật khẩu
             </Link>
           </p>

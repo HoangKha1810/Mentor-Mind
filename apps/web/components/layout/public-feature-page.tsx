@@ -23,7 +23,7 @@ export function PublicFeaturePage({
       <StaggerContainer className="mt-8 grid gap-4 md:grid-cols-3">
         {highlights.map((item) => (
           <StaggerItem key={item}>
-            <Card>
+            <Card interactive reveal={false}>
               <CheckCircle2 className="h-5 w-5 text-success" />
               <CardHeader className="mb-0 mt-4">
                 <CardTitle className="text-base">{item}</CardTitle>

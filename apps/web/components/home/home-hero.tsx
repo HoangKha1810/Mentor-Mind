@@ -10,10 +10,12 @@ import {
   Code2,
   FileCheck2,
   Mic2,
+  Pause,
+  Play,
   Route,
   Sparkles,
 } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +35,11 @@ const slides = [
     visualIcon: Route,
     visualTitle: 'Roadmap AI',
     visualSubtitle: 'Level scan → kế hoạch tuần → mentor duyệt',
-    visualRows: ['Mục tiêu: Frontend đi làm', '12 tuần học có checkpoint', 'Gợi ý tài nguyên theo level'],
+    visualRows: [
+      'Mục tiêu: Frontend đi làm',
+      '12 tuần học có checkpoint',
+      'Gợi ý tài nguyên theo level',
+    ],
     visualProgress: 84,
     visualTone: 'from-blue-500 via-cyan-500 to-indigo-600',
     visualGlow: 'bg-cyan-400/30',
@@ -127,14 +133,18 @@ const slides = [
 
 export function HomeHero() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [manuallyPaused, setManuallyPaused] = useState(false);
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
   const reduceMotion = useReducedMotion();
+  const paused = manuallyPaused || hoverPaused || focusPaused;
   const slide = slides[activeSlide] ?? slides[0];
   const VisualIcon = slide.visualIcon;
 
   useEffect(() => {
     if (paused || reduceMotion) return;
     const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
       setActiveSlide((current) => (current + 1) % slides.length);
     }, 7000);
     return () => window.clearInterval(timer);
@@ -153,31 +163,34 @@ export function HomeHero() {
       className="home-hero theme-on-color relative isolate h-[calc(100svh-6rem)] min-h-[33rem] max-h-[44rem] overflow-hidden"
       aria-roledescription="carousel"
       aria-label="Giới thiệu MentorMind"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={() => setPaused(false)}
+      onMouseEnter={() => setHoverPaused(true)}
+      onMouseLeave={() => setHoverPaused(false)}
+      onFocusCapture={() => setFocusPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setFocusPaused(false);
+      }}
     >
       <div className="absolute inset-0 bg-[#07111f]">
-        {slides.map((item, index) => (
+        <AnimatePresence initial={false} mode="sync">
           <motion.div
-            key={item.image}
+            key={slide.image}
             className="absolute inset-0"
-            initial={false}
-            animate={{ opacity: index === activeSlide ? 1 : 0, scale: index === activeSlide ? 1 : 1.035 }}
-            transition={{ duration: reduceMotion ? 0 : 0.85, ease: [0.22, 1, 0.36, 1] }}
-            aria-hidden={index !== activeSlide}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.025 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.015 }}
+            transition={{ duration: reduceMotion ? 0 : 0.68, ease: [0.22, 1, 0.36, 1] }}
           >
             <Image
-              src={item.image}
-              alt={index === activeSlide ? item.alt : ''}
+              src={slide.image}
+              alt={slide.alt}
               fill
-              priority={index === 0}
+              priority={activeSlide === 0}
               sizes="100vw"
               className="object-cover object-center"
             />
           </motion.div>
-        ))}
+        </AnimatePresence>
       </div>
       <motion.div
         key={slide.overlay}
@@ -260,7 +273,9 @@ export function HomeHero() {
           <div className="relative">
             <div className={cn('absolute -inset-8 rounded-[2rem] blur-3xl', slide.visualGlow)} />
             <div className="relative overflow-hidden rounded-[2rem] border border-white/18 bg-white/14 p-4 shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-              <div className={`rounded-[1.5rem] bg-gradient-to-br ${slide.visualTone} p-4 shadow-soft`}>
+              <div
+                className={`rounded-[1.5rem] bg-gradient-to-br ${slide.visualTone} p-4 shadow-soft`}
+              >
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-red-300" />
@@ -304,10 +319,10 @@ export function HomeHero() {
                     <div className="h-2 overflow-hidden rounded-full bg-white/12">
                       <motion.div
                         key={`${slide.image}-progress`}
-                        initial={{ width: '0%' }}
-                        animate={{ width: `${slide.visualProgress}%` }}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: slide.visualProgress / 100 }}
                         transition={{ duration: reduceMotion ? 0 : 0.8, ease: [0.22, 1, 0.36, 1] }}
-                        className="h-full rounded-full bg-white"
+                        className="h-full w-full origin-left rounded-full bg-white"
                       />
                     </div>
                   </div>
@@ -331,7 +346,7 @@ export function HomeHero() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/12 bg-black/20 backdrop-blur-md">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3 text-white">
+          <div className="hidden min-w-0 items-center gap-3 text-white sm:flex">
             <span className={cn('h-9 w-1 shrink-0 rounded-full', slide.accent)} />
             <div className="min-w-0">
               <p className="text-lg font-semibold leading-none sm:text-xl">{slide.metric}</p>
@@ -339,7 +354,17 @@ export function HomeHero() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-start sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setManuallyPaused((current) => !current)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-white/8 text-white transition hover:bg-white/18 focus:outline-none focus:ring-2 focus:ring-white/70"
+              aria-label={manuallyPaused ? 'Tiếp tục trình chiếu' : 'Tạm dừng trình chiếu'}
+              aria-pressed={manuallyPaused}
+              title={manuallyPaused ? 'Tiếp tục' : 'Tạm dừng'}
+            >
+              {manuallyPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            </button>
             <button
               type="button"
               onClick={showPrevious}
@@ -349,7 +374,11 @@ export function HomeHero() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <div className="flex h-10 items-center gap-1.5 px-1" role="tablist" aria-label="Chọn ảnh hero">
+            <div
+              className="flex h-10 items-center gap-1 px-1"
+              role="tablist"
+              aria-label="Chọn ảnh hero"
+            >
               {slides.map((item, index) => (
                 <button
                   key={item.image}
@@ -358,11 +387,17 @@ export function HomeHero() {
                   aria-selected={index === activeSlide}
                   aria-label={`Hiển thị ảnh ${index + 1}`}
                   onClick={() => setActiveSlide(index)}
-                  className={cn(
-                    'h-2.5 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/70',
-                    index === activeSlide ? 'w-8 bg-white' : 'w-2.5 bg-white/40 hover:bg-white/70',
-                  )}
-                />
+                  className="relative h-10 w-5 rounded-full focus:outline-none focus:ring-2 focus:ring-white/70"
+                >
+                  <span
+                    className={cn(
+                      'absolute left-1/2 top-1/2 h-2.5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-[background-color,transform] duration-300',
+                      index === activeSlide
+                        ? 'scale-x-100 bg-white'
+                        : 'scale-x-50 bg-white/40 hover:bg-white/70',
+                    )}
+                  />
+                </button>
               ))}
             </div>
             <button

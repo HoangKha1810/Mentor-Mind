@@ -1,33 +1,9 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { usePathname } from 'next/navigation';
+import { motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-
-const smoothEase = [0.22, 1, 0.36, 1] as const;
-
-export function PageTransition({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const pathname = usePathname();
-
-  return (
-    <motion.div
-      key={pathname}
-      initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ duration: 0.42, ease: smoothEase }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
+import { motionDuration, motionEase } from '@/lib/motion-system';
 
 export function StaggerContainer({
   children,
@@ -36,14 +12,16 @@ export function StaggerContainer({
   children: ReactNode;
   className?: string;
 }) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <motion.div
-      initial="hidden"
+      initial={reduceMotion ? false : 'hidden'}
       whileInView="visible"
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: true, amount: 0.18, margin: '0px 0px -48px' }}
       variants={{
         hidden: {},
-        visible: { transition: { staggerChildren: 0.08 } },
+        visible: { transition: { staggerChildren: reduceMotion ? 0 : 0.065 } },
       }}
       className={className}
     >
@@ -53,11 +31,20 @@ export function StaggerContainer({
 }
 
 export function StaggerItem({ children, className }: { children: ReactNode; className?: string }) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 18 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: smoothEase } },
+        hidden: reduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 },
+        visible: {
+          opacity: 1,
+          y: 0,
+          transition: {
+            duration: reduceMotion ? 0 : motionDuration.reveal,
+            ease: motionEase.expressive,
+          },
+        },
       }}
       className={cn('h-full', className)}
     >

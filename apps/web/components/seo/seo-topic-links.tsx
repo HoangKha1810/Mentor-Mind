@@ -32,7 +32,7 @@ export function SeoTopicLinks({ currentSlug, limit }: SeoTopicLinksProps) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {pages.map((page) => (
           <Link key={page.slug} href={`/${page.slug}`} className="group block h-full">
-            <Card className="h-full transition duration-300 group-hover:-translate-y-1 group-hover:border-secondary/30">
+            <Card interactive reveal className="h-full group-hover:border-secondary/30">
               <CardHeader>
                 <p className="text-xs font-semibold uppercase tracking-normal text-secondary">
                   {page.eyebrow}

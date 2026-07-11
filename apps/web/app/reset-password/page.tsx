@@ -7,12 +7,35 @@ import { LockKeyhole } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { AuthInput, AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
+import { FormMessage } from '@/components/ui/form-message';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ResetPasswordFallback />}>
       <ResetPasswordContent />
     </Suspense>
+  );
+}
+
+function ResetPasswordFallback() {
+  return (
+    <AuthShell
+      eyebrow="Bảo mật tài khoản"
+      title="Tạo mật khẩu mới"
+      subtitle="Đang kiểm tra link đặt lại mật khẩu an toàn."
+      switchText="Đã có mật khẩu mới?"
+      switchLabel="Đăng nhập"
+      switchHref="/login"
+    >
+      <div className="mx-auto w-full max-w-sm" role="status" aria-live="polite">
+        <span className="sr-only">Đang tải form đặt lại mật khẩu...</span>
+        <Skeleton className="mx-auto mb-8 h-7 w-52" />
+        <Skeleton className="h-[50px] rounded-full" />
+        <Skeleton className="mt-3 h-[50px] rounded-full" />
+        <Skeleton className="mt-6 h-[50px] rounded-full" />
+      </div>
+    </AuthShell>
   );
 }
 
@@ -67,9 +90,7 @@ function ResetPasswordContent() {
           </p>
         </div>
         {!token ? (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            Link đặt lại mật khẩu không hợp lệ hoặc thiếu token.
-          </p>
+          <FormMessage message="Link đặt lại mật khẩu không hợp lệ hoặc thiếu token." />
         ) : (
           <>
             <div className="space-y-3">
@@ -90,14 +111,8 @@ function ResetPasswordContent() {
                 required
               />
             </div>
-            {message ? (
-              <p className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                {message}
-              </p>
-            ) : null}
-            {error ? (
-              <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-            ) : null}
+            <FormMessage message={message} tone="success" />
+            <FormMessage message={error} />
             <Button className="mt-6 h-[50px] w-full" disabled={loading}>
               {loading ? 'Đang lưu...' : 'Đặt lại mật khẩu'}
             </Button>
@@ -105,7 +120,10 @@ function ResetPasswordContent() {
         )}
         <p className="mt-5 text-center text-xs leading-6 text-slate-400">
           Link hết hạn?{' '}
-          <Link href="/forgot-password" className="font-medium text-slate-600 transition hover:text-[#57b846]">
+          <Link
+            href="/forgot-password"
+            className="font-medium text-slate-600 transition hover:text-[#57b846]"
+          >
             Gửi lại link reset
           </Link>
         </p>

@@ -63,8 +63,10 @@ export function SeoGrowthHub() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {hubs.map((hub) => (
           <Link key={hub.href} href={hub.href} className="group block h-full">
-            <Card className="h-full transition duration-300 group-hover:-translate-y-1 group-hover:border-secondary/30">
-              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${hub.accent}`} />
+            <Card interactive reveal className="h-full group-hover:border-secondary/30">
+              <div
+                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${hub.accent}`}
+              />
               <CardHeader className="relative">
                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.06] text-secondary">
                   <hub.icon className="h-5 w-5" />

@@ -148,14 +148,27 @@ export function CvReviewPanel() {
             <CardHeader className="mb-0 mt-4">
               <CardTitle className="text-2xl">Sửa CV bằng AI theo mục tiêu ứng tuyển</CardTitle>
               <CardDescription>
-                Upload PDF/DOC/DOCX hoặc dán nội dung. Kết quả phân tích sẽ được lưu vào context riêng để trợ lý AI tư vấn chính xác hơn.
+                Upload PDF/DOC/DOCX hoặc dán nội dung. Kết quả phân tích sẽ được lưu vào context
+                riêng để trợ lý AI tư vấn chính xác hơn.
               </CardDescription>
             </CardHeader>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <WorkflowStep icon={<UploadCloud className="h-4 w-4" />} title="1. Tải CV/JD" text="File hoặc nội dung dán tay." />
-            <WorkflowStep icon={<Brain className="h-4 w-4" />} title="2. AI phân tích" text="ATS, keyword, rủi ro phỏng vấn." />
-            <WorkflowStep icon={<Sparkles className="h-4 w-4" />} title="3. Kế hoạch sửa" text="Bullet, dự án, lộ trình tiếp." />
+            <WorkflowStep
+              icon={<UploadCloud className="h-4 w-4" />}
+              title="1. Tải CV/JD"
+              text="File hoặc nội dung dán tay."
+            />
+            <WorkflowStep
+              icon={<Brain className="h-4 w-4" />}
+              title="2. AI phân tích"
+              text="ATS, keyword, rủi ro phỏng vấn."
+            />
+            <WorkflowStep
+              icon={<Sparkles className="h-4 w-4" />}
+              title="3. Kế hoạch sửa"
+              text="Bullet, dự án, lộ trình tiếp."
+            />
           </div>
         </div>
       </section>
@@ -201,7 +214,8 @@ export function CvReviewPanel() {
               Phân tích CV
             </Button>
             <span className="text-xs leading-5 text-mutedText">
-              Sau khi phân tích, trợ lý AI có thể dùng kết quả này khi bạn chat về lộ trình, phỏng vấn và mức lương.
+              Sau khi phân tích, trợ lý AI có thể dùng kết quả này khi bạn chat về lộ trình, phỏng
+              vấn và mức lương.
             </span>
           </div>
         </form>
@@ -288,8 +302,8 @@ function CvReviewCard({ review }: { review: CvReview }) {
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-[linear-gradient(90deg,#f59e0b,#57b846,#00d4ff)] transition-all"
-            style={{ width: `${score}%` }}
+            className="h-full w-full origin-left rounded-full bg-[linear-gradient(90deg,#f59e0b,#57b846,#00d4ff)] transition-transform duration-500"
+            style={{ transform: `scaleX(${score / 100})` }}
           />
         </div>
       </div>

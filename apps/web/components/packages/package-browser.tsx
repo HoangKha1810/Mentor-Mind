@@ -57,7 +57,7 @@ export function PackageBrowser({ compact = false }: { compact?: boolean }) {
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
           {packages.map((pack) => (
-            <Card key={pack.id}>
+            <Card key={pack.id} interactive reveal>
               <div className="flex items-center justify-between gap-3">
                 <Badge>{packageCategoryLabel(pack.category)}</Badge>
                 <span className="text-sm text-mutedText">{pack.durationWeeks} tuần</span>
