@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { formatCurrency } from '@mentormind/shared';
+import { formatCurrency, toCurrencyNumber } from '@mentormind/shared';
 import { CreditCard, Send } from 'lucide-react';
 import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import { PackageItem, WalletSummary } from '@/lib/domain-types';
@@ -54,6 +54,15 @@ export function PackageDetail({ slug }: { slug: string }) {
       setMessage('Vui lòng đăng nhập để mua gói học bằng số dư.');
       return;
     }
+    const price = toCurrencyNumber(query.data.price);
+    if (
+      price > 0 &&
+      !window.confirm(
+        `Mua gói "${query.data.title}" sẽ trừ ${formatCurrency(price, query.data.currency)} từ ví của bạn. Bạn muốn tiếp tục?`,
+      )
+    ) {
+      return;
+    }
 
     setPurchasing(true);
     setMessage('');
@@ -88,6 +97,7 @@ export function PackageDetail({ slug }: { slug: string }) {
   const outcomes = toStringArray(query.data.outcomes);
   const skills = toStringArray(query.data.skills);
   const tools = toStringArray(query.data.includedAiTools);
+  const packagePrice = toCurrencyNumber(query.data.price);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -116,7 +126,7 @@ export function PackageDetail({ slug }: { slug: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>{formatCurrency(Number(query.data.price), query.data.currency)}</CardTitle>
+          <CardTitle>{formatCurrency(packagePrice, query.data.currency)}</CardTitle>
           <CardDescription>
             Gửi yêu cầu tư vấn để đội ngũ xác nhận mục tiêu và lịch học.
           </CardDescription>

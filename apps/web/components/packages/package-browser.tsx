@@ -73,7 +73,7 @@ export function PackageBrowser({ compact = false }: { compact?: boolean }) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-2xl font-semibold text-white">
-                  {formatCurrency(Number(pack.price), pack.currency)}
+                  {formatCurrency(pack.price, pack.currency)}
                 </span>
                 <Link href={`/packages/${pack.slug}`}>
                   <Button>Xem chi tiết</Button>

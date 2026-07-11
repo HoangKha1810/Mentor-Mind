@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { codingLanguageStarterCode } from '@mentormind/shared';
+import { codingLanguageStarterCode, toCurrencyNumber } from '@mentormind/shared';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, FilePenLine, Plus, RefreshCcw, Save, Send, Trash2 } from 'lucide-react';
@@ -768,7 +768,7 @@ export function AdminPackagesPanel() {
                       type="number"
                       min="0"
                       step="0.01"
-                      defaultValue={Number(item.price)}
+                      defaultValue={toCurrencyNumber(item.price)}
                     />
                   </label>
                   <label className="space-y-1">

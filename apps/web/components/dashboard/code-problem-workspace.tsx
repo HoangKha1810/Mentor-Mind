@@ -5,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Badge } from '@/components/ui/badge';
 import { CodeProblem } from '@/lib/domain-types';
 import { useLiveQuery } from '@/lib/live-query';
-import { formatCurrency } from '@mentormind/shared';
+import { formatCurrency, toCurrencyNumber } from '@mentormind/shared';
 import { ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
 export function CodeProblemWorkspace({ slug }: { slug: string }) {
@@ -14,6 +14,7 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
   if (query.loading) return <LoadingCard label="Đang tải đề bài thật..." />;
   if (query.error) return <ErrorCard message={query.error} onRetry={query.reload} />;
   if (!query.data) return null;
+  const unlockPrice = toCurrencyNumber(query.data.unlockPrice ?? 20_000, 20_000);
 
   return (
     <>
@@ -23,7 +24,7 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
           <Badge>{query.data.category}</Badge>
           {query.data.isPremium ? (
             <Badge className="border-secondary/30 bg-secondary/10 text-secondary">
-              Bài đặc biệt · {formatCurrency(Number(query.data.unlockPrice ?? 20_000), 'VND')}
+              Bài đặc biệt · {formatCurrency(unlockPrice, 'VND')}
             </Badge>
           ) : null}
           {query.data.timeLimitMs ? <Badge>{query.data.timeLimitMs}ms</Badge> : null}
@@ -78,7 +79,7 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
         }}
         starterCode={query.data.starterCode}
         isPremium={query.data.isPremium}
-        unlockPrice={Number(query.data.unlockPrice ?? 20_000)}
+        unlockPrice={unlockPrice}
       />
     </>
   );

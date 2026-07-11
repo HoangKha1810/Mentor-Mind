@@ -107,6 +107,15 @@ export type Mentor = {
   } | null;
 };
 
+export type MoneyValue =
+  | string
+  | number
+  | {
+      s?: number;
+      e?: number;
+      d?: number[];
+    };
+
 export type CodeProblem = {
   id: string;
   title: string;
@@ -123,7 +132,7 @@ export type CodeProblem = {
   timeLimitMs?: number;
   memoryLimitMb?: number;
   isPremium?: boolean;
-  unlockPrice?: string | number;
+  unlockPrice?: MoneyValue;
   testCases?: Array<{ id: string; input: string; expectedOutput: string; order: number }>;
 };
 
@@ -275,7 +284,7 @@ export type SubscriptionPlan = {
   name: string;
   eyebrow: string;
   description: string;
-  price: number;
+  price: MoneyValue;
   currency: string;
   interval: 'free' | 'month' | 'year';
   durationDays: number;
@@ -310,7 +319,7 @@ export type PackageItem = {
   skills?: unknown;
   includedAiTools?: unknown;
   mentorType: string;
-  price: string | number;
+  price: MoneyValue;
   currency: string;
   status?: string;
   featured?: boolean;

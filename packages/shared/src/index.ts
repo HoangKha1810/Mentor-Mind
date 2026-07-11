@@ -189,7 +189,7 @@ export const codingLanguageStarterCode = {
   JAVASCRIPT: `const fs = require('fs');
 
 function solve(input) {
-  // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+  // Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.
   return '';
 }
 
@@ -200,7 +200,7 @@ declare const process: { stdout: { write(value: string): void } };
 const fs = require('fs');
 
 function solve(input: string): string {
-  // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+  // Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.
   return '';
 }
 
@@ -208,7 +208,7 @@ process.stdout.write(String(solve(fs.readFileSync(0, 'utf8'))));`,
   PYTHON: `import sys
 
 def solve(data: str) -> str:
-    # Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+    # Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.
     return ""
 
 if __name__ == "__main__":
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
 public class Main {
     static String solve(String input) {
-        // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+        // Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.
         return "";
     }
 
@@ -233,7 +233,7 @@ public class Main {
 using namespace std;
 
 string solve(const string& input) {
-    // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+    // Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.
     return "";
 }
 
@@ -245,12 +245,49 @@ int main() {
 }`,
 } as const satisfies Record<CodingLanguage, string>;
 
-export const formatCurrency = (amount: number, currency = 'USD') =>
+export type CurrencyAmount =
+  | number
+  | string
+  | {
+      s?: number;
+      e?: number;
+      d?: number[];
+      toString?: () => string;
+    };
+
+export const toCurrencyNumber = (amount: CurrencyAmount | null | undefined, fallback = 0) => {
+  if (typeof amount === 'number') return Number.isFinite(amount) ? amount : fallback;
+  if (typeof amount === 'string') {
+    const parsed = Number(amount.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  if (!amount || typeof amount !== 'object') return fallback;
+
+  if (Array.isArray(amount.d) && amount.d.length > 0) {
+    const digits = amount.d
+      .map((chunk, index) => (index === 0 ? String(chunk) : String(chunk).padStart(7, '0')))
+      .join('');
+    const integerLength = typeof amount.e === 'number' ? amount.e + 1 : digits.length;
+    const normalized =
+      integerLength <= 0
+        ? `0.${'0'.repeat(Math.abs(integerLength))}${digits}`
+        : integerLength >= digits.length
+          ? `${digits}${'0'.repeat(integerLength - digits.length)}`
+          : `${digits.slice(0, integerLength)}.${digits.slice(integerLength)}`;
+    const parsed = Number(`${amount.s === -1 ? '-' : ''}${normalized}`);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  const parsed = Number(amount.toString?.());
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+export const formatCurrency = (amount: CurrencyAmount | null | undefined, currency = 'USD') =>
   new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(toCurrencyNumber(amount));
 
 export const slugify = (value: string) =>
   value

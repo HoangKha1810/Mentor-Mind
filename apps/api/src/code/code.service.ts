@@ -319,5 +319,15 @@ function withLanguageStarterFallbacks(value: Prisma.JsonValue) {
           }),
         )
       : {};
-  return { ...codingLanguageStarterCode, ...stored };
+  const normalizedStored = Object.fromEntries(
+    Object.entries(stored).map(([language, code]) => [language, normalizeStarterComment(code)]),
+  );
+  return { ...codingLanguageStarterCode, ...normalizedStored };
+}
+
+function normalizeStarterComment(code: string) {
+  return code.replaceAll(
+    'Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.',
+    'Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.',
+  );
 }

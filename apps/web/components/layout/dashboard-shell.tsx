@@ -193,7 +193,7 @@ export function DashboardShell({
   }
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-background">
+    <div className="relative min-h-[100dvh] bg-background lg:h-[100dvh] lg:overflow-hidden">
       <div className="dashboard-backdrop" aria-hidden="true" />
       <div className="dashboard-topbar fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#07111f]/[0.82] shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
         <div className="flex h-20 items-center justify-between px-5 lg:px-8">
@@ -237,7 +237,7 @@ export function DashboardShell({
           </div>
         </div>
       </div>
-      <aside className="dashboard-sidebar fixed bottom-0 left-0 top-20 z-30 hidden w-72 border-r border-white/10 bg-[#07111f]/[0.64] p-5 shadow-[18px_0_80px_rgba(0,0,0,0.18)] backdrop-blur-2xl lg:block">
+      <aside className="dashboard-sidebar fixed bottom-0 left-0 top-20 z-30 hidden w-72 overflow-y-auto overscroll-contain border-r border-white/10 bg-[#07111f]/[0.64] p-5 shadow-[18px_0_80px_rgba(0,0,0,0.18)] backdrop-blur-2xl lg:block">
         <div className="mb-5 rounded-xl border border-white/[0.08] bg-white/[0.035] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
             Workspace
@@ -375,7 +375,7 @@ export function DashboardShell({
           </motion.div>
         ) : null}
       </AnimatePresence>
-      <main className="theme-adaptive relative z-10 px-4 pb-14 pt-28 lg:ml-72 lg:px-10">
+      <main className="theme-adaptive relative z-10 px-4 pb-14 pt-28 lg:fixed lg:bottom-0 lg:left-72 lg:right-0 lg:top-0 lg:ml-0 lg:overflow-y-auto lg:overscroll-contain lg:px-10 lg:pb-14 lg:pt-28">
         <div className="mx-auto max-w-7xl">
           <div
             className={cn(

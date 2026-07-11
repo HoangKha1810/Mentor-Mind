@@ -164,6 +164,12 @@ export function CodeEditorPanel({
       setOutput({ status: 'error', action, message });
       return;
     }
+    if (isPremium && action !== 'hint' && unlockPrice > 0) {
+      const accepted = window.confirm(
+        `Bài đặc biệt có phí mở khóa ${formatCurrency(unlockPrice, 'VND')}. Nếu tài khoản chưa có gói Pro/Premium hoặc chưa mở khóa bài này, ví sẽ bị trừ khi chạy/nộp bài. Bạn muốn tiếp tục?`,
+      );
+      if (!accepted) return;
+    }
 
     setOutput({ status: 'loading', action });
     const path = `/code/problems/${problemId}/${action === 'hint' ? 'ai-hint' : action}`;

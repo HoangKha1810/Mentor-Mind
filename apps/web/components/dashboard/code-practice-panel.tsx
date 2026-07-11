@@ -189,7 +189,7 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
                 {problem.isPremium ? (
                   <Badge className="gap-1.5 border-secondary/30 bg-secondary/10 text-secondary">
                     <Crown className="h-3.5 w-3.5" />
-                    Đặc biệt {formatCurrency(Number(problem.unlockPrice ?? 20_000), 'VND')}
+                    Đặc biệt {formatCurrency(problem.unlockPrice ?? 20_000, 'VND')}
                   </Badge>
                 ) : null}
               </div>

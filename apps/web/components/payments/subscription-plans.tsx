@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { formatCurrency } from '@mentormind/shared';
+import { formatCurrency, toCurrencyNumber } from '@mentormind/shared';
 import { CheckCircle2, Crown, Loader2, Sparkles, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { apiFetch, authHeaders } from '@/lib/api';
@@ -33,7 +33,15 @@ export function SubscriptionPlans() {
       window.location.href = '/login';
       return;
     }
-    if (plan.price <= 0) return;
+    const planPrice = toCurrencyNumber(plan.price);
+    if (planPrice <= 0) return;
+    if (
+      !window.confirm(
+        `Mua gói "${plan.name}" sẽ trừ ${formatCurrency(planPrice, plan.currency)} từ ví của bạn. Bạn muốn tiếp tục?`,
+      )
+    ) {
+      return;
+    }
 
     setMessage('');
     setPendingSlug(plan.slug);
@@ -110,8 +118,9 @@ export function SubscriptionPlans() {
       <div className="grid gap-4 lg:grid-cols-4">
         {plans.map((plan) => {
           const isActive = activePlan?.slug === plan.slug;
-          const canAfford = (wallet?.balance ?? 0) >= plan.price;
-          const isPaid = plan.price > 0;
+          const planPrice = toCurrencyNumber(plan.price);
+          const canAfford = (wallet?.balance ?? 0) >= planPrice;
+          const isPaid = planPrice > 0;
           return (
             <Card
               key={plan.slug}
@@ -139,7 +148,7 @@ export function SubscriptionPlans() {
               <div className="mt-5">
                 <div className="flex items-end gap-1">
                   <span className="text-3xl font-semibold text-white">
-                    {plan.price === 0 ? '0đ' : formatCurrency(plan.price, plan.currency)}
+                    {planPrice === 0 ? '0đ' : formatCurrency(planPrice, plan.currency)}
                   </span>
                   <span className="pb-1 text-sm text-mutedText">
                     {plan.interval === 'month' ? '/tháng' : plan.interval === 'year' ? '/năm' : ''}
