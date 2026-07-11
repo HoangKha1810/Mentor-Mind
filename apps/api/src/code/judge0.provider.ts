@@ -39,6 +39,8 @@ type Judge0Submission = {
   status?: { id?: number; description?: string } | null;
 };
 
+type Judge0EncodingMode = 'base64' | 'plain';
+
 type TestExecution = {
   test: JudgeTestCase;
   verdict: CodeVerdict;
@@ -124,39 +126,65 @@ export class Judge0Provider implements CodeJudgeProvider {
     test: JudgeTestCase,
     languageId: number,
   ): Promise<TestExecution> {
-    try {
-      const initial = await this.requestJson(
-        `${this.baseUrl}/submissions?base64_encoded=true&wait=true`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            language_id: languageId,
-            source_code: encodeBase64(input.code),
-            stdin: encodeBase64(test.input),
-            expected_output: encodeBase64(test.expectedOutput),
-            cpu_time_limit: Math.max(0.1, Math.round(input.timeLimitMs) / 1000),
-            wall_time_limit: Math.max(1, Math.ceil(input.timeLimitMs / 1000) + 1),
-            memory_limit: input.memoryLimitMb * 1024,
-          }),
-        },
-      );
-      const submission = await this.waitForResult(initial);
-      return this.normalizeExecution(test, submission);
-    } catch (error) {
-      const message = sanitizeText(error instanceof Error ? error.message : String(error));
-      return {
-        test,
-        verdict: CodeVerdict.INTERNAL_ERROR,
-        statusDescription: 'Judge0 Internal Error',
-        runtimeMs: 0,
-        memoryKb: 0,
-        stdout: '',
-        errorMessage: message || 'Judge0 không thể chạy test case này.',
-      };
+    let lastMessage = '';
+    for (const encoding of judge0EncodingOrder()) {
+      try {
+        const execution = await this.submitAndNormalize(input, test, languageId, encoding);
+        if (shouldRetryWithAlternateEncoding(execution)) {
+          lastMessage = execution.errorMessage ?? execution.statusDescription ?? '';
+          continue;
+        }
+        return execution;
+      } catch (error) {
+        const message = sanitizeText(error instanceof Error ? error.message : String(error));
+        lastMessage = message;
+        if (shouldRetryMessageWithAlternateEncoding(message)) {
+          continue;
+        }
+        break;
+      }
     }
+
+    return {
+      test,
+      verdict: CodeVerdict.INTERNAL_ERROR,
+      statusDescription: 'Judge0 Internal Error',
+      runtimeMs: 0,
+      memoryKb: 0,
+      stdout: '',
+      errorMessage: lastMessage || 'Judge0 không thể chạy test case này.',
+    };
   }
 
-  private async waitForResult(initial: Judge0Submission): Promise<Judge0Submission> {
+  private async submitAndNormalize(
+    input: JudgeRequest,
+    test: JudgeTestCase,
+    languageId: number,
+    encoding: Judge0EncodingMode,
+  ) {
+    const initial = await this.requestJson(
+      `${this.baseUrl}/submissions${submissionQuery(encoding)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          language_id: languageId,
+          source_code: encodeJudgeField(input.code, encoding),
+          stdin: encodeJudgeField(test.input, encoding),
+          expected_output: encodeJudgeField(test.expectedOutput, encoding),
+          cpu_time_limit: Math.max(0.1, Math.round(input.timeLimitMs) / 1000),
+          wall_time_limit: Math.max(1, Math.ceil(input.timeLimitMs / 1000) + 1),
+          memory_limit: input.memoryLimitMb * 1024,
+        }),
+      },
+    );
+    const submission = await this.waitForResult(initial, encoding);
+    return this.normalizeExecution(test, submission, encoding);
+  }
+
+  private async waitForResult(
+    initial: Judge0Submission,
+    encoding: Judge0EncodingMode,
+  ): Promise<Judge0Submission> {
     if (isTerminal(initial)) {
       return initial;
     }
@@ -170,7 +198,7 @@ export class Judge0Provider implements CodeJudgeProvider {
       }
       const result = await this.requestJson(
         `${this.baseUrl}/submissions/${encodeURIComponent(initial.token)}` +
-          '?base64_encoded=true&fields=token,stdout,stderr,compile_output,message,time,memory,status',
+          resultQuery(encoding),
         { method: 'GET' },
       );
       if (isTerminal(result)) {
@@ -181,14 +209,19 @@ export class Judge0Provider implements CodeJudgeProvider {
     throw new Error('Judge0 quá thời gian chờ xử lý submission. Vui lòng chạy lại.');
   }
 
-  private normalizeExecution(test: JudgeTestCase, submission: Judge0Submission): TestExecution {
+  private normalizeExecution(
+    test: JudgeTestCase,
+    submission: Judge0Submission,
+    encoding: Judge0EncodingMode,
+  ): TestExecution {
     const statusId = submission.status?.id ?? 13;
     const verdict = verdictMap[statusId] ?? CodeVerdict.INTERNAL_ERROR;
     const statusDescription = optionalSanitized(submission.status?.description);
-    const stdout = decodeJudge0Text(submission.stdout) ?? '';
-    const stderr = decodeJudge0Text(submission.stderr);
-    const compileOutput = decodeJudge0Text(submission.compile_output);
-    const message = decodeJudge0Text(submission.message);
+    const responseEncoded = encoding === 'base64';
+    const stdout = decodeJudge0Text(submission.stdout, responseEncoded) ?? '';
+    const stderr = decodeJudge0Text(submission.stderr, responseEncoded);
+    const compileOutput = decodeJudge0Text(submission.compile_output, responseEncoded);
+    const message = decodeJudge0Text(submission.message, responseEncoded);
 
     return {
       test,
@@ -316,13 +349,33 @@ function isTerminal(submission: Judge0Submission) {
   return typeof statusId === 'number' && !pendingStatusIds.has(statusId);
 }
 
+function judge0EncodingOrder(): Judge0EncodingMode[] {
+  return ['plain', 'base64'];
+}
+
+function submissionQuery(encoding: Judge0EncodingMode) {
+  return encoding === 'base64' ? '?base64_encoded=true&wait=true' : '?wait=true';
+}
+
+function resultQuery(encoding: Judge0EncodingMode) {
+  const fields = 'fields=token,stdout,stderr,compile_output,message,time,memory,status';
+  return encoding === 'base64' ? `?base64_encoded=true&${fields}` : `?${fields}`;
+}
+
+function encodeJudgeField(value: string, encoding: Judge0EncodingMode) {
+  return encoding === 'base64' ? encodeBase64(value) : value;
+}
+
 function encodeBase64(value: string) {
   return Buffer.from(value, 'utf8').toString('base64');
 }
 
-function decodeJudge0Text(value: string | null | undefined) {
+function decodeJudge0Text(value: string | null | undefined, encoded: boolean) {
   if (value == null || value === '') {
     return undefined;
+  }
+  if (!encoded) {
+    return optionalSanitized(value);
   }
 
   const compact = value.replace(/\s/g, '');
@@ -341,6 +394,27 @@ function decodeJudge0Text(value: string | null | undefined) {
   } catch {
     return optionalSanitized(value);
   }
+}
+
+function shouldRetryWithAlternateEncoding(result: TestExecution) {
+  if (result.verdict !== CodeVerdict.INTERNAL_ERROR) {
+    return false;
+  }
+  const detail = [
+    result.errorMessage,
+    result.stderr,
+    result.compileOutput,
+    result.statusDescription,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  return shouldRetryMessageWithAlternateEncoding(detail);
+}
+
+function shouldRetryMessageWithAlternateEncoding(detail: string) {
+  return /rb_sysopen|No such file or directory.*\/box\/script|\/box\/script\.[a-z0-9]+/i.test(
+    detail,
+  );
 }
 
 function optionalSanitized(value: string | null | undefined) {

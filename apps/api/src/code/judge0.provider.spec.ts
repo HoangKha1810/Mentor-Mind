@@ -32,7 +32,7 @@ describe('Judge0Provider', () => {
     async (option) => {
       fetchMock.mockResolvedValue(
         judgeResponse({
-          stdout: base64('hello'),
+          stdout: 'hello',
           time: '0.014',
           memory: 2048,
           status: { id: 3, description: 'Accepted' },
@@ -47,8 +47,11 @@ describe('Judge0Provider', () => {
       });
 
       const [, init] = fetchMock.mock.calls[0] ?? [];
-      const body = JSON.parse(String(init?.body)) as { language_id: number };
+      const [url] = fetchMock.mock.calls[0] ?? [];
+      const body = JSON.parse(String(init?.body)) as { language_id: number; source_code: string };
+      expect(String(url)).not.toContain('base64_encoded=true');
       expect(body.language_id).toBe(option.judge0Id);
+      expect(body.source_code).toBe(codingLanguageStarterCode[option.value]);
       expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
       expect(result.publicResults?.[0]).toMatchObject({
         actualOutput: 'hello',
@@ -73,7 +76,7 @@ describe('Judge0Provider', () => {
       .mockResolvedValueOnce(
         judgeResponse({
           token: 'submission-token',
-          stdout: base64('hello'),
+          stdout: 'hello',
           status: { id: 3, description: 'Accepted' },
         }),
       );
@@ -90,8 +93,8 @@ describe('Judge0Provider', () => {
     fetchMock.mockResolvedValue(
       judgeResponse({
         stdout: null,
-        stderr: base64('compiler stderr'),
-        compile_output: base64('\u001b[31mMain.java:4: error: missing return\u001b[0m'),
+        stderr: 'compiler stderr',
+        compile_output: '\u001b[31mMain.java:4: error: missing return\u001b[0m',
         status: { id: 6, description: 'Compilation Error' },
       }),
     );
@@ -113,7 +116,7 @@ describe('Judge0Provider', () => {
   it('exposes a decoded Judge0 internal error instead of an empty result', async () => {
     fetchMock.mockResolvedValue(
       judgeResponse({
-        message: base64('Sandbox worker is temporarily unavailable'),
+        message: 'Sandbox worker is temporarily unavailable',
         status: { id: 13, description: 'Internal Error' },
       }),
     );
@@ -125,6 +128,74 @@ describe('Judge0Provider', () => {
     expect(result.publicResults?.[0]?.errorMessage).toBe(
       'Sandbox worker is temporarily unavailable',
     );
+  });
+
+  it('uses plain text payload by default for Python scripts', async () => {
+    fetchMock.mockResolvedValue(
+      judgeResponse({
+        stdout: 'hello',
+        time: '0.011',
+        memory: 1024,
+        status: { id: 3, description: 'Accepted' },
+      }),
+    );
+
+    const result = await createProvider().run({
+      ...request,
+      language: CodeLanguage.PYTHON,
+      code: 'print(input().strip())',
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    const body = JSON.parse(String(init?.body)) as { source_code: string; stdin: string };
+    expect(String(url)).not.toContain('base64_encoded=true');
+    expect(body.source_code).toBe('print(input().strip())');
+    expect(body.stdin).toBe('hello\n');
+    expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
+    expect(result.publicResults?.[0]).toMatchObject({
+      actualOutput: 'hello',
+      passed: true,
+      runtimeMs: 11,
+      memoryKb: 1024,
+    });
+  });
+
+  it('retries with base64 payload when a Judge0 instance rejects plain script files', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        judgeResponse({
+          message: 'No such file or directory @ rb_sysopen - /box/script.py',
+          status: { id: 13, description: 'Internal Error' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        judgeResponse({
+          stdout: base64('hello'),
+          time: '0.011',
+          memory: 1024,
+          status: { id: 3, description: 'Accepted' },
+        }),
+      );
+
+    const result = await createProvider().run({
+      ...request,
+      language: CodeLanguage.PYTHON,
+      code: 'print(input().strip())',
+    });
+
+    const [plainUrl] = fetchMock.mock.calls[0] ?? [];
+    const [base64Url, base64Init] = fetchMock.mock.calls[1] ?? [];
+    const base64Body = JSON.parse(String(base64Init?.body)) as { source_code: string };
+    expect(String(plainUrl)).not.toContain('base64_encoded=true');
+    expect(String(base64Url)).toContain('base64_encoded=true');
+    expect(base64Body.source_code).toBe(base64('print(input().strip())'));
+    expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
+    expect(result.publicResults?.[0]).toMatchObject({
+      actualOutput: 'hello',
+      passed: true,
+      runtimeMs: 11,
+      memoryKb: 1024,
+    });
   });
 
   it('returns a structured result when the Judge0 HTTP request fails', async () => {
@@ -144,10 +215,10 @@ describe('Judge0Provider', () => {
   it('does not expose hidden test input or output in public results', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        judgeResponse({ stdout: base64('hello'), status: { id: 3, description: 'Accepted' } }),
+        judgeResponse({ stdout: 'hello', status: { id: 3, description: 'Accepted' } }),
       )
       .mockResolvedValueOnce(
-        judgeResponse({ stdout: base64('secret'), status: { id: 4, description: 'Wrong Answer' } }),
+        judgeResponse({ stdout: 'secret', status: { id: 4, description: 'Wrong Answer' } }),
       );
 
     const result = await createProvider().run({

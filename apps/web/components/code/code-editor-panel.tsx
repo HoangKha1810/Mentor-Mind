@@ -540,11 +540,18 @@ function findStarter(
   language: CodeLanguage,
 ) {
   if (typeof starterCode === 'string') {
-    return language === 'JAVASCRIPT' ? starterCode : undefined;
+    return language === 'JAVASCRIPT' ? normalizeStarterText(starterCode) : undefined;
   }
   if (!starterCode) return undefined;
   const match = Object.entries(starterCode).find(([key]) => key.toUpperCase() === language);
-  return match?.[1]?.trim() ? match[1] : undefined;
+  return match?.[1]?.trim() ? normalizeStarterText(match[1]) : undefined;
+}
+
+function normalizeStarterText(value: string) {
+  return value.replaceAll(
+    'Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.',
+    'Viết lời giải ở đây. Trả về chuỗi kết quả cuối cùng.',
+  );
 }
 
 function normalizeJudgeResult(value: unknown): JudgeResult | null {

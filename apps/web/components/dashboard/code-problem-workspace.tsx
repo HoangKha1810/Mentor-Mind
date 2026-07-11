@@ -8,49 +8,68 @@ import { useLiveQuery } from '@/lib/live-query';
 import { formatCurrency, toCurrencyNumber } from '@mentormind/shared';
 import { ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
-export function CodeProblemWorkspace({ slug }: { slug: string }) {
-  const query = useLiveQuery<CodeProblem>(`/code/problems/${slug}`, { deps: [slug] });
+export function CodeProblemWorkspace({
+  slug,
+  problem,
+  loading,
+  error,
+  onRetry,
+}: {
+  slug: string;
+  problem?: CodeProblem | null;
+  loading?: boolean;
+  error?: string;
+  onRetry?: () => void;
+}) {
+  const shouldLoad = problem === undefined;
+  const query = useLiveQuery<CodeProblem>(shouldLoad ? `/code/problems/${slug}` : null, {
+    deps: [slug],
+  });
+  const data = shouldLoad ? query.data : problem;
+  const isLoading = shouldLoad ? query.loading : Boolean(loading);
+  const errorMessage = shouldLoad ? query.error : (error ?? '');
+  const retry = shouldLoad ? query.reload : onRetry;
 
-  if (query.loading) return <LoadingCard label="Đang tải đề bài thật..." />;
-  if (query.error) return <ErrorCard message={query.error} onRetry={query.reload} />;
-  if (!query.data) return null;
-  const unlockPrice = toCurrencyNumber(query.data.unlockPrice ?? 20_000, 20_000);
+  if (isLoading) return <LoadingCard label="Đang tải đề bài thật..." />;
+  if (errorMessage) return <ErrorCard message={errorMessage} onRetry={retry} />;
+  if (!data) return null;
+  const unlockPrice = toCurrencyNumber(data.unlockPrice ?? 20_000, 20_000);
 
   return (
     <>
       <Card className="mb-4">
         <div className="mb-3 flex flex-wrap gap-2">
-          <StatusBadge value={query.data.difficulty} />
-          <Badge>{query.data.category}</Badge>
-          {query.data.isPremium ? (
+          <StatusBadge value={data.difficulty} />
+          <Badge>{data.category}</Badge>
+          {data.isPremium ? (
             <Badge className="border-secondary/30 bg-secondary/10 text-secondary">
               Bài đặc biệt · {formatCurrency(unlockPrice, 'VND')}
             </Badge>
           ) : null}
-          {query.data.timeLimitMs ? <Badge>{query.data.timeLimitMs}ms</Badge> : null}
-          {query.data.memoryLimitMb ? <Badge>{query.data.memoryLimitMb}MB</Badge> : null}
+          {data.timeLimitMs ? <Badge>{data.timeLimitMs}ms</Badge> : null}
+          {data.memoryLimitMb ? <Badge>{data.memoryLimitMb}MB</Badge> : null}
         </div>
         <CardHeader>
-          <CardTitle>{query.data.title}</CardTitle>
-          <CardDescription>{query.data.statement}</CardDescription>
+          <CardTitle>{data.title}</CardTitle>
+          <CardDescription>{data.statement}</CardDescription>
         </CardHeader>
         <div className="grid gap-3 text-sm text-mutedText md:grid-cols-2">
           <div>
             <p className="font-medium text-slate-200">Input</p>
-            <p>{query.data.inputFormat}</p>
+            <p>{data.inputFormat}</p>
           </div>
           <div>
             <p className="font-medium text-slate-200">Output</p>
-            <p>{query.data.outputFormat}</p>
+            <p>{data.outputFormat}</p>
           </div>
         </div>
-        {query.data.constraintsText ? (
-          <p className="mt-3 text-sm text-mutedText">Ràng buộc: {query.data.constraintsText}</p>
+        {data.constraintsText ? (
+          <p className="mt-3 text-sm text-mutedText">Ràng buộc: {data.constraintsText}</p>
         ) : null}
-        {query.data.testCases?.length ? (
+        {data.testCases?.length ? (
           <div className="mt-4 space-y-2">
             <p className="text-sm font-medium text-white">Test mẫu</p>
-            {query.data.testCases.map((test) => (
+            {data.testCases.map((test) => (
               <pre
                 key={test.id}
                 className="overflow-auto rounded-md border border-white/8 bg-black/20 p-3 text-xs text-slate-200"
@@ -63,22 +82,22 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
         ) : null}
       </Card>
       <CodeEditorPanel
-        key={query.data.id}
-        problemId={query.data.id}
+        key={data.id}
+        problemId={data.id}
         problemContext={{
-          id: query.data.id,
-          slug: query.data.slug,
-          title: query.data.title,
-          difficulty: query.data.difficulty,
-          category: query.data.category,
-          statement: query.data.statement,
-          inputFormat: query.data.inputFormat,
-          outputFormat: query.data.outputFormat,
-          constraintsText: query.data.constraintsText,
-          examples: query.data.testCases,
+          id: data.id,
+          slug: data.slug,
+          title: data.title,
+          difficulty: data.difficulty,
+          category: data.category,
+          statement: data.statement,
+          inputFormat: data.inputFormat,
+          outputFormat: data.outputFormat,
+          constraintsText: data.constraintsText,
+          examples: data.testCases,
         }}
-        starterCode={query.data.starterCode}
-        isPremium={query.data.isPremium}
+        starterCode={data.starterCode}
+        isPremium={data.isPremium}
         unlockPrice={unlockPrice}
       />
     </>
