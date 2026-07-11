@@ -942,49 +942,76 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
 
   private fallbackRoadmap(input: Record<string, unknown>): RoadmapDraft {
     const role = String(input.targetRole ?? 'Software Developer');
-    const goal = String(input.goal ?? `Become job-ready for ${role}`);
+    const goal = String(input.goal ?? `Sẵn sàng ứng tuyển vị trí ${role}`);
+    const weekThemes = [
+      'Củng cố nền tảng',
+      'Thực hành có hướng dẫn',
+      'Xây dựng tính năng chính',
+      'Hoàn thiện dự án',
+      'Chuẩn bị phỏng vấn',
+      'Rà soát hồ sơ ứng tuyển',
+    ];
     return {
-      title: `${role} Personalized 1-on-1 Roadmap`,
-      summary: `A mentor-reviewed plan focused on ${goal}, weekly practice, portfolio output and interview readiness.`,
-      targetOutcome: `Confidently apply for ${role} roles with a reviewed portfolio and practiced interview stories.`,
+      title: `Lộ trình ${role} cá nhân hóa 1-1`,
+      summary: `Lộ trình được mentor rà soát, tập trung vào mục tiêu ${goal}, luyện tập hằng tuần, dự án portfolio và kỹ năng phỏng vấn.`,
+      targetOutcome: `Tự tin ứng tuyển vị trí ${role} với portfolio đã được góp ý và các câu trả lời phỏng vấn đã luyện tập.`,
       durationWeeks: 12,
       level: String(input.currentLevel ?? 'FOUNDATION'),
       weeklyPlan: Array.from({ length: 6 }, (_, index) => ({
         weekNumber: index + 1,
-        title: `Week ${index + 1}: ${index < 2 ? 'Foundation' : index < 4 ? 'Build' : 'Interview polish'}`,
-        objectives: ['Clarify concepts', 'Practice deliberately', 'Review with mentor'],
-        topics: ['Core fundamentals', 'Project architecture', 'Debugging and communication'],
-        practiceTasks: ['Solve 3 focused coding problems', 'Write a short learning reflection'],
-        projectTasks: ['Ship one portfolio increment with README notes'],
-        interviewTasks: ['Answer two role-specific questions and review feedback'],
+        title: weekThemes[index] ?? 'Thực hành theo mục tiêu',
+        objectives: [
+          'Làm rõ các khái niệm trọng tâm',
+          'Luyện tập có chủ đích',
+          'Rà soát kết quả cùng mentor',
+        ],
+        topics: ['Kiến thức nền tảng', 'Kiến trúc dự án', 'Debug và giao tiếp kỹ thuật'],
+        practiceTasks: [
+          'Giải 3 bài code tập trung đúng chủ đề',
+          'Viết ghi chú ngắn về phần đã học',
+        ],
+        projectTasks: ['Hoàn thiện một phần portfolio và cập nhật README'],
+        interviewTasks: ['Trả lời 2 câu hỏi theo vị trí mục tiêu và xem lại phản hồi'],
         recommendedSessionCount: 2,
       })),
-      milestones: ['Foundation check', 'Portfolio review', 'Mock interview', 'Final action plan'],
+      milestones: [
+        'Kiểm tra nền tảng',
+        'Review portfolio',
+        'Phỏng vấn thử',
+        'Chốt kế hoạch ứng tuyển',
+      ],
       recommendedSessions: 12,
       recommendedAiTools: [
-        'AI Learning Assistant',
-        'AI Interview',
-        'AI Code Review',
-        'Resource Search',
+        'Trợ lý học tập AI',
+        'Phỏng vấn AI',
+        'Review code bằng AI',
+        'Tìm tài nguyên học tập',
       ],
-      practiceSchedule: ['3 coding sessions/week', '1 project block/week', '1 reflection/week'],
-      interviewPrepSchedule: ['Weekly mock question set', 'Bi-weekly mentor mock interview'],
+      practiceSchedule: [
+        '3 buổi luyện code mỗi tuần',
+        '1 buổi làm dự án mỗi tuần',
+        '1 lần tổng kết kiến thức mỗi tuần',
+      ],
+      interviewPrepSchedule: [
+        'Luyện bộ câu hỏi phỏng vấn hằng tuần',
+        'Phỏng vấn thử với mentor mỗi 2 tuần',
+      ],
       projectSuggestions: [
-        'Role-focused portfolio project',
-        'API integration feature',
-        'Testing and deployment pass',
+        'Dự án portfolio sát vị trí mục tiêu',
+        'Tính năng tích hợp API thực tế',
+        'Bổ sung kiểm thử và triển khai production',
       ],
       recommendedResources: [
         {
           title: 'MDN JavaScript Guide',
           type: 'DOCUMENTATION',
-          reason: 'Reliable reference for web fundamentals.',
+          reason: 'Tài liệu tham khảo đáng tin cậy cho kiến thức web nền tảng.',
           url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide',
         },
       ],
       risks: [
-        'Timeline may need adjustment if weekly hours drop',
-        'Portfolio scope should stay focused',
+        'Cần điều chỉnh tiến độ nếu thời gian học mỗi tuần giảm',
+        'Phạm vi portfolio cần được giữ vừa sức và đúng mục tiêu',
       ],
     };
   }

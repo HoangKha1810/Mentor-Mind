@@ -1,11 +1,4 @@
-const javascriptStarter = `const fs = require('fs');
-
-function solve(input) {
-  // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
-  return '';
-}
-
-process.stdout.write(String(solve(fs.readFileSync(0, 'utf8'))));`;
+import { codingLanguageStarterCode } from '@mentormind/shared';
 
 export type CatalogCodeProblem = {
   title: string;
@@ -28,9 +21,7 @@ export type CatalogCodeProblem = {
   testCases: Array<{ input: string; expectedOutput: string; isHidden: boolean; order: number }>;
 };
 
-const starterCode = {
-  JAVASCRIPT: javascriptStarter,
-};
+const starterCode: Record<string, string> = { ...codingLanguageStarterCode };
 
 const handWrittenCodeProblems: CatalogCodeProblem[] = [
   {

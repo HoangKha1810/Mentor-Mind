@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CodeLanguage, CodeProblemStatus, Prisma, Role } from '@prisma/client';
-import { slugify } from '@mentormind/shared';
+import { codingLanguageStarterCode, slugify } from '@mentormind/shared';
 import { z } from 'zod';
 import { AiService } from '../ai/ai.service';
 import { AuthUser } from '../common/decorators/current-user.decorator';
@@ -32,7 +32,7 @@ const problemSchema = z.object({
   outputFormat: z.string(),
   constraintsText: z.string(),
   examples: z.array(z.record(z.unknown())).default([]),
-  starterCode: z.record(z.string()).default({}),
+  starterCode: z.record(z.string()).default({ ...codingLanguageStarterCode }),
   solutionExplanation: z.string().default('Admin-only explanation'),
   timeLimitMs: z.number().int().positive().default(1000),
   memoryLimitMb: z.number().int().positive().default(128),
@@ -104,7 +104,11 @@ export class CodeService {
     if (!problem) {
       throw new NotFoundException('Problem not found');
     }
-    return { ...problem, solutionExplanation: undefined };
+    return {
+      ...problem,
+      starterCode: withLanguageStarterFallbacks(problem.starterCode),
+      solutionExplanation: undefined,
+    };
   }
 
   async adminProblems(query: Record<string, string | undefined>) {
@@ -135,7 +139,7 @@ export class CodeService {
     if (!problem) {
       throw new NotFoundException('Problem not found');
     }
-    return problem;
+    return { ...problem, starterCode: withLanguageStarterFallbacks(problem.starterCode) };
   }
 
   async run(studentId: string, problemId: string, input: unknown, includeHidden: boolean) {
@@ -304,4 +308,16 @@ export class CodeService {
   deleteProblem(id: string) {
     return this.prisma.codeProblem.delete({ where: { id } });
   }
+}
+
+function withLanguageStarterFallbacks(value: Prisma.JsonValue) {
+  const stored =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(
+          Object.entries(value).filter((entry): entry is [string, string] => {
+            return typeof entry[1] === 'string';
+          }),
+        )
+      : {};
+  return { ...codingLanguageStarterCode, ...stored };
 }

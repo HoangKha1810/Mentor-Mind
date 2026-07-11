@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { codingLanguageStarterCode } from '@mentormind/shared';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, FilePenLine, Plus, RefreshCcw, Save, Send, Trash2 } from 'lucide-react';
@@ -1223,7 +1224,7 @@ const codeProblemTemplate = {
   outputFormat: 'Two indices separated by space.',
   constraintsText: '2 <= nums.length <= 10000',
   examples: [{ input: '9\\n2,7,11,15', output: '0 1' }],
-  starterCode: { JAVASCRIPT: 'function solve(input) {\\n  return input;\\n}' },
+  starterCode: { ...codingLanguageStarterCode },
   solutionExplanation: 'Use a hash map from value to index.',
   timeLimitMs: 1000,
   memoryLimitMb: 128,

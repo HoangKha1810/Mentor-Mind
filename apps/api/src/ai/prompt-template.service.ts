@@ -7,7 +7,7 @@ export const builtinPromptTemplates = [
     name: 'Roadmap Generation',
     description: 'Create realistic 1-on-1 tutoring roadmap as strict JSON.',
     template:
-      'Act as a senior learning consultant and mentor. Create a realistic 1-on-1 tutoring roadmap for {{targetRole}}. Current level: {{currentLevel}}. Goal: {{goal}}. Weekly hours: {{weeklyHours}}. Weak areas: {{weakAreas}}. Avoid overpromising. Include weekly plan, mentor sessions, coding practice, interview practice, resources, risks. Output JSON only.',
+      'Bạn là chuyên gia tư vấn học tập và mentor senior. Hãy tạo lộ trình học 1-1 thực tế cho vị trí {{targetRole}}. Trình độ hiện tại: {{currentLevel}}. Mục tiêu: {{goal}}. Thời gian mỗi tuần: {{weeklyHours}} giờ. Điểm yếu: {{weakAreas}}. Không hứa hẹn quá mức. Bao gồm kế hoạch từng tuần, buổi mentor, luyện code, luyện phỏng vấn, tài nguyên và rủi ro. Chỉ trả về JSON đúng schema, toàn bộ nội dung chuỗi bằng Tiếng Việt.',
   },
   {
     key: 'INTERVIEW_ANSWER_EVALUATION',

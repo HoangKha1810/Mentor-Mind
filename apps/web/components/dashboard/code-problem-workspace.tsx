@@ -15,11 +15,6 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
   if (query.error) return <ErrorCard message={query.error} onRetry={query.reload} />;
   if (!query.data) return null;
 
-  const starter =
-    query.data.starterCode?.JAVASCRIPT ??
-    query.data.starterCode?.javascript ??
-    'function solve(input) {\n  return input;\n}';
-
   return (
     <>
       <Card className="mb-4">
@@ -67,6 +62,7 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
         ) : null}
       </Card>
       <CodeEditorPanel
+        key={query.data.id}
         problemId={query.data.id}
         problemContext={{
           id: query.data.id,
@@ -80,7 +76,7 @@ export function CodeProblemWorkspace({ slug }: { slug: string }) {
           constraintsText: query.data.constraintsText,
           examples: query.data.testCases,
         }}
-        starterCode={starter}
+        starterCode={query.data.starterCode}
         isPremium={query.data.isPremium}
         unlockPrice={Number(query.data.unlockPrice ?? 20_000)}
       />

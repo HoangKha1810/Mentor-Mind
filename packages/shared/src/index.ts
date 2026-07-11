@@ -146,12 +146,104 @@ export const featuredPackages: PublicTutoringPackage[] = [
 ];
 
 export const codingLanguageOptions = [
-  { label: 'JavaScript', value: 'JAVASCRIPT', judge0Id: 63 },
-  { label: 'TypeScript', value: 'TYPESCRIPT', judge0Id: 74 },
-  { label: 'Python', value: 'PYTHON', judge0Id: 71 },
-  { label: 'Java', value: 'JAVA', judge0Id: 62 },
-  { label: 'C++', value: 'CPP', judge0Id: 54 },
+  {
+    label: 'JavaScript',
+    value: 'JAVASCRIPT',
+    judge0Id: 63,
+    editorLanguage: 'javascript',
+    fileName: 'main.js',
+  },
+  {
+    label: 'TypeScript',
+    value: 'TYPESCRIPT',
+    judge0Id: 74,
+    editorLanguage: 'typescript',
+    fileName: 'main.ts',
+  },
+  {
+    label: 'Python',
+    value: 'PYTHON',
+    judge0Id: 71,
+    editorLanguage: 'python',
+    fileName: 'main.py',
+  },
+  {
+    label: 'Java',
+    value: 'JAVA',
+    judge0Id: 62,
+    editorLanguage: 'java',
+    fileName: 'Main.java',
+  },
+  {
+    label: 'C++',
+    value: 'CPP',
+    judge0Id: 54,
+    editorLanguage: 'cpp',
+    fileName: 'main.cpp',
+  },
 ] as const;
+
+export type CodingLanguage = (typeof codingLanguageOptions)[number]['value'];
+
+export const codingLanguageStarterCode = {
+  JAVASCRIPT: `const fs = require('fs');
+
+function solve(input) {
+  // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+  return '';
+}
+
+process.stdout.write(String(solve(fs.readFileSync(0, 'utf8'))));`,
+  TYPESCRIPT: `declare function require(name: string): any;
+declare const process: { stdout: { write(value: string): void } };
+
+const fs = require('fs');
+
+function solve(input: string): string {
+  // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+  return '';
+}
+
+process.stdout.write(String(solve(fs.readFileSync(0, 'utf8'))));`,
+  PYTHON: `import sys
+
+def solve(data: str) -> str:
+    # Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+    return ""
+
+if __name__ == "__main__":
+    sys.stdout.write(str(solve(sys.stdin.read())))`,
+  JAVA: `import java.nio.charset.StandardCharsets;
+
+public class Main {
+    static String solve(String input) {
+        // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+        return "";
+    }
+
+    public static void main(String[] args) throws Exception {
+        String input = new String(System.in.readAllBytes(), StandardCharsets.UTF_8);
+        System.out.print(solve(input));
+    }
+}`,
+  CPP: `#include <iostream>
+#include <sstream>
+#include <string>
+
+using namespace std;
+
+string solve(const string& input) {
+    // Viet loi giai o day. Tra ve chuoi ket qua cuoi cung.
+    return "";
+}
+
+int main() {
+    ostringstream buffer;
+    buffer << cin.rdbuf();
+    cout << solve(buffer.str());
+    return 0;
+}`,
+} as const satisfies Record<CodingLanguage, string>;
 
 export const formatCurrency = (amount: number, currency = 'USD') =>
   new Intl.NumberFormat('vi-VN', {

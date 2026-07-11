@@ -21,12 +21,26 @@ export type JudgeResult = {
   passedTests: number;
   totalTests: number;
   errorMessage?: string;
-  publicResults?: Array<{
-    input: string;
-    expectedOutput: string;
-    actualOutput: string;
-    passed: boolean;
-  }>;
+  statusDescription?: string;
+  stdout?: string;
+  stderr?: string;
+  compileOutput?: string;
+  publicResults?: JudgePublicResult[];
+};
+
+export type JudgePublicResult = {
+  input: string;
+  expectedOutput: string;
+  actualOutput: string;
+  passed: boolean;
+  verdict: CodeVerdict;
+  statusDescription?: string;
+  runtimeMs: number;
+  memoryKb: number;
+  errorMessage?: string;
+  stdout?: string;
+  stderr?: string;
+  compileOutput?: string;
 };
 
 export interface CodeJudgeProvider {
