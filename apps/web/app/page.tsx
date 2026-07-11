@@ -13,6 +13,7 @@ import {
 import { HomeHero } from '@/components/home/home-hero';
 import { PageShell } from '@/components/layout/page-shell';
 import { PackageBrowser } from '@/components/packages/package-browser';
+import { SeoGrowthHub } from '@/components/seo/seo-growth-hub';
 import { SeoTopicLinks } from '@/components/seo/seo-topic-links';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -139,6 +140,8 @@ export default function HomePage() {
           </StaggerContainer>
         </ScrollReveal>
       </section>
+
+      <SeoGrowthHub />
 
       <SeoTopicLinks limit={12} />
 

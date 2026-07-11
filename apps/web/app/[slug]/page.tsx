@@ -32,6 +32,7 @@ export function generateMetadata({ params }: PageProps): Metadata {
       siteName: 'MentorMind',
       type: 'website',
       locale: 'vi_VN',
+      images: [{ url: `/${page.slug}/opengraph-image`, width: 1200, height: 630 }],
     },
   };
 }
