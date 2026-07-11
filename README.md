@@ -82,10 +82,14 @@ Web variables live in `apps/web/.env`:
 - Judge0 CE can be self-hosted locally instead of using RapidAPI:
 
 ```bash
+pnpm judge0:preflight
 docker compose --profile judge0 up -d judge0-server judge0-worker judge0-db judge0-redis
+pnpm judge0:smoke
 ```
 
-Then keep `JUDGE0_BASE_URL=http://localhost:2358`.
+The pinned Judge0 1.13.1 image requires a Linux amd64 Docker host with cgroup v1.
+See [`infra/judge0/README.md`](infra/judge0/README.md) before deploying or repairing
+the worker. Then keep `JUDGE0_BASE_URL=http://localhost:2358`.
 - Use an OpenAI-compatible chat completions endpoint for production AI, then tune prompt templates in `/admin/ai/prompts`.
 - Use Judge0 or another sandboxed executor for production. Do not execute user code inside the API process.
 - Use pgvector-backed embeddings through `ResourceEmbedding` and `ContentEmbedding`; the schema is ready for vector columns.

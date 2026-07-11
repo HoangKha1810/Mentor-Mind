@@ -21,12 +21,12 @@ services:
     volumes:
       - redis-data:/data
   judge0-server:
-    image: judge0/judge0:latest
+    image: judge0/judge0:1.13.1@sha256:6b5d6a66aa19a8e878a52ea3c6a560afc1086734d96e2885b561fd5c6018f082
     container_name: mentormind-judge0-server
     profiles: ["judge0"]
     privileged: true
     ports:
-      - "2358:2358"
+      - "127.0.0.1:2358:2358"
     volumes:
       - ./infra/judge0/judge0.conf:/judge0.conf:ro
     depends_on:
@@ -34,7 +34,7 @@ services:
       - judge0-redis
     restart: unless-stopped
   judge0-worker:
-    image: judge0/judge0:latest
+    image: judge0/judge0:1.13.1@sha256:6b5d6a66aa19a8e878a52ea3c6a560afc1086734d96e2885b561fd5c6018f082
     container_name: mentormind-judge0-worker
     profiles: ["judge0"]
     command: ["./scripts/workers"]

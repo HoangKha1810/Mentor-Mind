@@ -9,6 +9,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
+    "judge0:preflight": "bash infra/judge0/check-host.sh",
+    "judge0:smoke": "node infra/judge0/smoke.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css,prisma}\"",
     "db:migrate": "pnpm --filter @mentormind/api prisma:migrate",
     "db:seed": "pnpm --filter @mentormind/api prisma:seed",

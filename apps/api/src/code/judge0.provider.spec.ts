@@ -32,7 +32,7 @@ describe('Judge0Provider', () => {
     async (option) => {
       fetchMock.mockResolvedValue(
         judgeResponse({
-          stdout: 'hello',
+          stdout: base64('hello'),
           time: '0.014',
           memory: 2048,
           status: { id: 3, description: 'Accepted' },
@@ -48,10 +48,17 @@ describe('Judge0Provider', () => {
 
       const [, init] = fetchMock.mock.calls[0] ?? [];
       const [url] = fetchMock.mock.calls[0] ?? [];
-      const body = JSON.parse(String(init?.body)) as { language_id: number; source_code: string };
-      expect(String(url)).not.toContain('base64_encoded=true');
+      const body = JSON.parse(String(init?.body)) as {
+        language_id: number;
+        source_code: string;
+        stdin: string;
+        expected_output: string;
+      };
+      expect(String(url)).toContain('base64_encoded=true');
       expect(body.language_id).toBe(option.judge0Id);
-      expect(body.source_code).toBe(codingLanguageStarterCode[option.value]);
+      expect(fromBase64(body.source_code)).toBe(codingLanguageStarterCode[option.value]);
+      expect(fromBase64(body.stdin)).toBe(request.testCases[0]?.input);
+      expect(fromBase64(body.expected_output)).toBe(request.testCases[0]?.expectedOutput);
       expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
       expect(result.publicResults?.[0]).toMatchObject({
         actualOutput: 'hello',
@@ -76,7 +83,7 @@ describe('Judge0Provider', () => {
       .mockResolvedValueOnce(
         judgeResponse({
           token: 'submission-token',
-          stdout: 'hello',
+          stdout: base64('hello'),
           status: { id: 3, description: 'Accepted' },
         }),
       );
@@ -85,6 +92,7 @@ describe('Judge0Provider', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[1]?.[0]).toContain('/submissions/submission-token');
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('base64_encoded=true');
     expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
     expect(result.publicResults?.[0]?.actualOutput).toBe('hello');
   });
@@ -93,8 +101,8 @@ describe('Judge0Provider', () => {
     fetchMock.mockResolvedValue(
       judgeResponse({
         stdout: null,
-        stderr: 'compiler stderr',
-        compile_output: '\u001b[31mMain.java:4: error: missing return\u001b[0m',
+        stderr: base64('compiler stderr'),
+        compile_output: base64('\u001b[31mMain.java:4: error: missing return\u001b[0m'),
         status: { id: 6, description: 'Compilation Error' },
       }),
     );
@@ -116,7 +124,7 @@ describe('Judge0Provider', () => {
   it('exposes a decoded Judge0 internal error instead of an empty result', async () => {
     fetchMock.mockResolvedValue(
       judgeResponse({
-        message: 'Sandbox worker is temporarily unavailable',
+        message: base64('Sandbox worker is temporarily unavailable'),
         status: { id: 13, description: 'Internal Error' },
       }),
     );
@@ -130,10 +138,10 @@ describe('Judge0Provider', () => {
     );
   });
 
-  it('uses plain text payload by default for Python scripts', async () => {
+  it('preserves unicode source and input through base64 transport', async () => {
     fetchMock.mockResolvedValue(
       judgeResponse({
-        stdout: 'hello',
+        stdout: base64('xin chào'),
         time: '0.011',
         memory: 1024,
         status: { id: 3, description: 'Accepted' },
@@ -143,58 +151,60 @@ describe('Judge0Provider', () => {
     const result = await createProvider().run({
       ...request,
       language: CodeLanguage.PYTHON,
-      code: 'print(input().strip())',
+      code: 'print(input().strip())  # tiếng Việt',
+      testCases: [{ input: 'xin chào\n', expectedOutput: 'xin chào', isHidden: false }],
     });
 
     const [url, init] = fetchMock.mock.calls[0] ?? [];
-    const body = JSON.parse(String(init?.body)) as { source_code: string; stdin: string };
-    expect(String(url)).not.toContain('base64_encoded=true');
-    expect(body.source_code).toBe('print(input().strip())');
-    expect(body.stdin).toBe('hello\n');
+    const body = JSON.parse(String(init?.body)) as {
+      source_code: string;
+      stdin: string;
+      expected_output: string;
+    };
+    expect(String(url)).toContain('base64_encoded=true');
+    expect(fromBase64(body.source_code)).toBe('print(input().strip())  # tiếng Việt');
+    expect(fromBase64(body.stdin)).toBe('xin chào\n');
+    expect(fromBase64(body.expected_output)).toBe('xin chào');
     expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
     expect(result.publicResults?.[0]).toMatchObject({
-      actualOutput: 'hello',
+      actualOutput: 'xin chào',
       passed: true,
       runtimeMs: 11,
       memoryKb: 1024,
     });
   });
 
-  it('retries with base64 payload when a Judge0 instance rejects plain script files', async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        judgeResponse({
-          message: 'No such file or directory @ rb_sysopen - /box/script.py',
-          status: { id: 13, description: 'Internal Error' },
-        }),
-      )
-      .mockResolvedValueOnce(
-        judgeResponse({
-          stdout: base64('hello'),
-          time: '0.011',
-          memory: 1024,
-          status: { id: 3, description: 'Accepted' },
-        }),
-      );
+  it.each([
+    [CodeLanguage.JAVASCRIPT, 'script.js'],
+    [CodeLanguage.TYPESCRIPT, 'script.ts'],
+    [CodeLanguage.PYTHON, 'script.py'],
+    [CodeLanguage.JAVA, 'Main.java'],
+    [CodeLanguage.CPP, 'main.cpp'],
+  ])('reports a %s sandbox initialization failure without retrying', async (language, fileName) => {
+    fetchMock.mockResolvedValue(
+      judgeResponse({
+        message: base64(`No such file or directory @ rb_sysopen - /box/${fileName}`),
+        status: { id: 13, description: 'Internal Error' },
+      }),
+    );
 
     const result = await createProvider().run({
       ...request,
-      language: CodeLanguage.PYTHON,
-      code: 'print(input().strip())',
+      language,
+      code: codingLanguageStarterCode[language],
     });
 
-    const [plainUrl] = fetchMock.mock.calls[0] ?? [];
-    const [base64Url, base64Init] = fetchMock.mock.calls[1] ?? [];
-    const base64Body = JSON.parse(String(base64Init?.body)) as { source_code: string };
-    expect(String(plainUrl)).not.toContain('base64_encoded=true');
-    expect(String(base64Url)).toContain('base64_encoded=true');
-    expect(base64Body.source_code).toBe(base64('print(input().strip())'));
-    expect(result.verdict).toBe(CodeVerdict.ACCEPTED);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.verdict).toBe(CodeVerdict.INTERNAL_ERROR);
+    expect(result.statusDescription).toBe('Judge0 Sandbox Unavailable');
+    expect(result.errorMessage).toBe(
+      'Máy chấm không thể khởi tạo môi trường chạy code. Vui lòng thử lại sau.',
+    );
     expect(result.publicResults?.[0]).toMatchObject({
-      actualOutput: 'hello',
-      passed: true,
-      runtimeMs: 11,
-      memoryKb: 1024,
+      actualOutput: '',
+      passed: false,
+      verdict: CodeVerdict.INTERNAL_ERROR,
+      statusDescription: 'Judge0 Sandbox Unavailable',
     });
   });
 
@@ -215,10 +225,21 @@ describe('Judge0Provider', () => {
   it('does not expose hidden test input or output in public results', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        judgeResponse({ stdout: 'hello', status: { id: 3, description: 'Accepted' } }),
+        judgeResponse({ stdout: base64('hello'), status: { id: 3, description: 'Accepted' } }),
       )
       .mockResolvedValueOnce(
-        judgeResponse({ stdout: 'secret', status: { id: 4, description: 'Wrong Answer' } }),
+        judgeResponse({
+          stdout: base64('secret'),
+          stderr: base64('leaked hidden-input'),
+          compile_output: base64('leaked hidden-output'),
+          status: { id: 7, description: 'Runtime Error (NZEC)' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        judgeResponse({
+          stdout: base64('public-wrong'),
+          status: { id: 4, description: 'Wrong Answer' },
+        }),
       );
 
     const result = await createProvider().run({
@@ -226,14 +247,20 @@ describe('Judge0Provider', () => {
       testCases: [
         ...request.testCases,
         { input: 'hidden-input', expectedOutput: 'hidden-output', isHidden: true },
+        { input: 'public-input-2', expectedOutput: 'public-output-2', isHidden: false },
       ],
     });
 
-    expect(result.totalTests).toBe(2);
+    expect(result.totalTests).toBe(3);
     expect(result.passedTests).toBe(1);
-    expect(result.publicResults).toHaveLength(1);
+    expect(result.verdict).toBe(CodeVerdict.RUNTIME_ERROR);
+    expect(result.errorMessage).toBe('Chương trình gặp lỗi khi chạy test ẩn.');
+    expect(result.stderr).toBeUndefined();
+    expect(result.compileOutput).toBeUndefined();
+    expect(result.publicResults).toHaveLength(2);
     expect(JSON.stringify(result.publicResults)).not.toContain('hidden-input');
     expect(JSON.stringify(result.publicResults)).not.toContain('hidden-output');
+    expect(JSON.stringify(result)).not.toContain('leaked');
   });
 
   it('reports missing Judge0 configuration without making a request', async () => {
@@ -268,4 +295,8 @@ function judgeResponse(body: object, status = 201) {
 
 function base64(value: string) {
   return Buffer.from(value, 'utf8').toString('base64');
+}
+
+function fromBase64(value: string) {
+  return Buffer.from(value, 'base64').toString('utf8');
 }

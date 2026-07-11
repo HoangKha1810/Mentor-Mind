@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CodeLanguage, CodeVerdict } from '@prisma/client';
 import { codingLanguageOptions } from '@mentormind/shared';
@@ -27,6 +27,8 @@ const verdictMap: Record<number, CodeVerdict> = {
 
 const pendingStatusIds = new Set([1, 2]);
 const maxDiagnosticLength = 16_000;
+const sandboxUnavailableMessage =
+  'Máy chấm không thể khởi tạo môi trường chạy code. Vui lòng thử lại sau.';
 
 type Judge0Submission = {
   token?: string;
@@ -38,8 +40,6 @@ type Judge0Submission = {
   memory?: string | number | null;
   status?: { id?: number; description?: string } | null;
 };
-
-type Judge0EncodingMode = 'base64' | 'plain';
 
 type TestExecution = {
   test: JudgeTestCase;
@@ -56,6 +56,7 @@ type TestExecution = {
 @Injectable()
 export class Judge0Provider implements CodeJudgeProvider {
   readonly name = 'judge0';
+  private readonly logger = new Logger(Judge0Provider.name);
   private readonly baseUrl?: string;
   private readonly apiKey?: string;
   private readonly authHeader: string;
@@ -99,10 +100,12 @@ export class Judge0Provider implements CodeJudgeProvider {
       input.testCases.map((test) => this.executeTest(input, test, languageId)),
     );
     const firstFailed = results.find((result) => result.verdict !== CodeVerdict.ACCEPTED);
+    const publicFailure = results.find(
+      (result) => !result.test.isHidden && result.verdict !== CodeVerdict.ACCEPTED,
+    );
+    const visibleFirstFailure = firstFailed?.test.isHidden ? undefined : firstFailed;
     const representative = firstFailed ?? results[0];
-    const publicRepresentative =
-      results.find((result) => !result.test.isHidden && result.verdict !== CodeVerdict.ACCEPTED) ??
-      results.find((result) => !result.test.isHidden);
+    const publicRepresentative = publicFailure ?? results.find((result) => !result.test.isHidden);
 
     return {
       verdict: firstFailed?.verdict ?? CodeVerdict.ACCEPTED,
@@ -110,11 +113,13 @@ export class Judge0Provider implements CodeJudgeProvider {
       memoryKb: Math.max(0, ...results.map((result) => result.memoryKb)),
       passedTests: results.filter((result) => result.verdict === CodeVerdict.ACCEPTED).length,
       totalTests: input.testCases.length,
-      errorMessage: firstFailed?.errorMessage,
+      errorMessage:
+        visibleFirstFailure?.errorMessage ??
+        (firstFailed?.test.isHidden ? hiddenTestErrorMessage(firstFailed.verdict) : undefined),
       statusDescription: representative?.statusDescription,
       stdout: publicRepresentative?.stdout,
-      stderr: firstFailed?.stderr,
-      compileOutput: firstFailed?.compileOutput,
+      stderr: visibleFirstFailure?.stderr,
+      compileOutput: visibleFirstFailure?.compileOutput,
       publicResults: results
         .filter((result) => !result.test.isHidden)
         .map((result) => this.toPublicResult(result)),
@@ -126,65 +131,49 @@ export class Judge0Provider implements CodeJudgeProvider {
     test: JudgeTestCase,
     languageId: number,
   ): Promise<TestExecution> {
-    let lastMessage = '';
-    for (const encoding of judge0EncodingOrder()) {
-      try {
-        const execution = await this.submitAndNormalize(input, test, languageId, encoding);
-        if (shouldRetryWithAlternateEncoding(execution)) {
-          lastMessage = execution.errorMessage ?? execution.statusDescription ?? '';
-          continue;
-        }
-        return execution;
-      } catch (error) {
-        const message = sanitizeText(error instanceof Error ? error.message : String(error));
-        lastMessage = message;
-        if (shouldRetryMessageWithAlternateEncoding(message)) {
-          continue;
-        }
-        break;
+    try {
+      return await this.submitAndNormalize(input, test, languageId);
+    } catch (error) {
+      const message = sanitizeText(error instanceof Error ? error.message : String(error));
+      const sandboxFailure = isSandboxInitializationFailure(message);
+      if (sandboxFailure) {
+        this.logger.error(`Judge0 sandbox initialization failed: ${message}`);
       }
+      return {
+        test,
+        verdict: CodeVerdict.INTERNAL_ERROR,
+        statusDescription: sandboxFailure ? 'Judge0 Sandbox Unavailable' : 'Judge0 Internal Error',
+        runtimeMs: 0,
+        memoryKb: 0,
+        stdout: '',
+        errorMessage: sandboxFailure
+          ? sandboxUnavailableMessage
+          : message || 'Judge0 không thể chạy test case này.',
+      };
     }
-
-    return {
-      test,
-      verdict: CodeVerdict.INTERNAL_ERROR,
-      statusDescription: 'Judge0 Internal Error',
-      runtimeMs: 0,
-      memoryKb: 0,
-      stdout: '',
-      errorMessage: lastMessage || 'Judge0 không thể chạy test case này.',
-    };
   }
 
-  private async submitAndNormalize(
-    input: JudgeRequest,
-    test: JudgeTestCase,
-    languageId: number,
-    encoding: Judge0EncodingMode,
-  ) {
+  private async submitAndNormalize(input: JudgeRequest, test: JudgeTestCase, languageId: number) {
     const initial = await this.requestJson(
-      `${this.baseUrl}/submissions${submissionQuery(encoding)}`,
+      `${this.baseUrl}/submissions?base64_encoded=true&wait=true`,
       {
         method: 'POST',
         body: JSON.stringify({
           language_id: languageId,
-          source_code: encodeJudgeField(input.code, encoding),
-          stdin: encodeJudgeField(test.input, encoding),
-          expected_output: encodeJudgeField(test.expectedOutput, encoding),
+          source_code: encodeBase64(input.code),
+          stdin: encodeBase64(test.input),
+          expected_output: encodeBase64(test.expectedOutput),
           cpu_time_limit: Math.max(0.1, Math.round(input.timeLimitMs) / 1000),
           wall_time_limit: Math.max(1, Math.ceil(input.timeLimitMs / 1000) + 1),
           memory_limit: input.memoryLimitMb * 1024,
         }),
       },
     );
-    const submission = await this.waitForResult(initial, encoding);
-    return this.normalizeExecution(test, submission, encoding);
+    const submission = await this.waitForResult(initial);
+    return this.normalizeExecution(test, submission);
   }
 
-  private async waitForResult(
-    initial: Judge0Submission,
-    encoding: Judge0EncodingMode,
-  ): Promise<Judge0Submission> {
+  private async waitForResult(initial: Judge0Submission): Promise<Judge0Submission> {
     if (isTerminal(initial)) {
       return initial;
     }
@@ -198,7 +187,7 @@ export class Judge0Provider implements CodeJudgeProvider {
       }
       const result = await this.requestJson(
         `${this.baseUrl}/submissions/${encodeURIComponent(initial.token)}` +
-          resultQuery(encoding),
+          '?base64_encoded=true&fields=token,stdout,stderr,compile_output,message,time,memory,status',
         { method: 'GET' },
       );
       if (isTerminal(result)) {
@@ -209,33 +198,35 @@ export class Judge0Provider implements CodeJudgeProvider {
     throw new Error('Judge0 quá thời gian chờ xử lý submission. Vui lòng chạy lại.');
   }
 
-  private normalizeExecution(
-    test: JudgeTestCase,
-    submission: Judge0Submission,
-    encoding: Judge0EncodingMode,
-  ): TestExecution {
+  private normalizeExecution(test: JudgeTestCase, submission: Judge0Submission): TestExecution {
     const statusId = submission.status?.id ?? 13;
     const verdict = verdictMap[statusId] ?? CodeVerdict.INTERNAL_ERROR;
     const statusDescription = optionalSanitized(submission.status?.description);
-    const responseEncoded = encoding === 'base64';
-    const stdout = decodeJudge0Text(submission.stdout, responseEncoded) ?? '';
-    const stderr = decodeJudge0Text(submission.stderr, responseEncoded);
-    const compileOutput = decodeJudge0Text(submission.compile_output, responseEncoded);
-    const message = decodeJudge0Text(submission.message, responseEncoded);
+    const stdout = decodeJudge0Text(submission.stdout) ?? '';
+    const stderr = decodeJudge0Text(submission.stderr);
+    const compileOutput = decodeJudge0Text(submission.compile_output);
+    const message = decodeJudge0Text(submission.message);
+    const diagnostic =
+      verdict === CodeVerdict.ACCEPTED
+        ? undefined
+        : diagnosticMessage(verdict, { statusDescription, stderr, compileOutput, message });
+    const sandboxFailure =
+      verdict === CodeVerdict.INTERNAL_ERROR && isSandboxInitializationFailure(diagnostic ?? '');
+
+    if (sandboxFailure) {
+      this.logger.error(`Judge0 sandbox initialization failed: ${diagnostic}`);
+    }
 
     return {
       test,
       verdict,
-      statusDescription,
+      statusDescription: sandboxFailure ? 'Judge0 Sandbox Unavailable' : statusDescription,
       runtimeMs: parseRuntimeMs(submission.time),
       memoryKb: parseNonNegativeNumber(submission.memory),
       stdout,
       stderr,
       compileOutput,
-      errorMessage:
-        verdict === CodeVerdict.ACCEPTED
-          ? undefined
-          : diagnosticMessage(verdict, { statusDescription, stderr, compileOutput, message }),
+      errorMessage: sandboxFailure ? sandboxUnavailableMessage : diagnostic,
     };
   }
 
@@ -349,33 +340,13 @@ function isTerminal(submission: Judge0Submission) {
   return typeof statusId === 'number' && !pendingStatusIds.has(statusId);
 }
 
-function judge0EncodingOrder(): Judge0EncodingMode[] {
-  return ['plain', 'base64'];
-}
-
-function submissionQuery(encoding: Judge0EncodingMode) {
-  return encoding === 'base64' ? '?base64_encoded=true&wait=true' : '?wait=true';
-}
-
-function resultQuery(encoding: Judge0EncodingMode) {
-  const fields = 'fields=token,stdout,stderr,compile_output,message,time,memory,status';
-  return encoding === 'base64' ? `?base64_encoded=true&${fields}` : `?${fields}`;
-}
-
-function encodeJudgeField(value: string, encoding: Judge0EncodingMode) {
-  return encoding === 'base64' ? encodeBase64(value) : value;
-}
-
 function encodeBase64(value: string) {
   return Buffer.from(value, 'utf8').toString('base64');
 }
 
-function decodeJudge0Text(value: string | null | undefined, encoded: boolean) {
+function decodeJudge0Text(value: string | null | undefined) {
   if (value == null || value === '') {
     return undefined;
-  }
-  if (!encoded) {
-    return optionalSanitized(value);
   }
 
   const compact = value.replace(/\s/g, '');
@@ -396,24 +367,14 @@ function decodeJudge0Text(value: string | null | undefined, encoded: boolean) {
   }
 }
 
-function shouldRetryWithAlternateEncoding(result: TestExecution) {
-  if (result.verdict !== CodeVerdict.INTERNAL_ERROR) {
-    return false;
-  }
-  const detail = [
-    result.errorMessage,
-    result.stderr,
-    result.compileOutput,
-    result.statusDescription,
-  ]
-    .filter(Boolean)
-    .join('\n');
-  return shouldRetryMessageWithAlternateEncoding(detail);
-}
-
-function shouldRetryMessageWithAlternateEncoding(detail: string) {
-  return /rb_sysopen|No such file or directory.*\/box\/script|\/box\/script\.[a-z0-9]+/i.test(
-    detail,
+function isSandboxInitializationFailure(detail: string) {
+  return (
+    /rb_sysopen[^\n]*\/box\//i.test(detail) ||
+    /No such file or directory[^\n]*\/box\//i.test(detail) ||
+    /chown:[^\n]*cannot access[^\n]*\/box/i.test(detail) ||
+    /Failed to create control group/i.test(detail) ||
+    /Cannot write \/sys\/fs\/cgroup/i.test(detail) ||
+    /Sandbox ID out of range/i.test(detail)
   );
 }
 
@@ -483,6 +444,18 @@ function diagnosticMessage(
     [CodeVerdict.INTERNAL_ERROR]: 'Judge0 gặp lỗi nội bộ khi chạy chương trình.',
   };
   return fields.statusDescription ?? fallbacks[verdict];
+}
+
+function hiddenTestErrorMessage(verdict: CodeVerdict) {
+  const messages: Record<CodeVerdict, string | undefined> = {
+    [CodeVerdict.ACCEPTED]: undefined,
+    [CodeVerdict.WRONG_ANSWER]: 'Một hoặc nhiều test ẩn chưa đạt.',
+    [CodeVerdict.TIME_LIMIT_EXCEEDED]: 'Chương trình vượt quá giới hạn thời gian ở test ẩn.',
+    [CodeVerdict.RUNTIME_ERROR]: 'Chương trình gặp lỗi khi chạy test ẩn.',
+    [CodeVerdict.COMPILATION_ERROR]: 'Mã nguồn không biên dịch được.',
+    [CodeVerdict.INTERNAL_ERROR]: 'Máy chấm gặp lỗi khi xử lý test ẩn.',
+  };
+  return messages[verdict];
 }
 
 function delay(milliseconds: number) {
