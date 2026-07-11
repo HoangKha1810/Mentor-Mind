@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { CursorHalo } from '@/components/ui/cursor-halo';
 import { MotionProvider } from '@/components/ui/motion-provider';
 import { coreSeoKeywords, siteName, siteUrl } from '@/lib/seo-content';
 
@@ -149,6 +150,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <MotionProvider>{children}</MotionProvider>
+        <CursorHalo />
       </body>
     </html>
   );
