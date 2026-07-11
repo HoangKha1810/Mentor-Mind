@@ -21,7 +21,12 @@ const packageSchema = z.object({
   includedAiTools: z.array(z.string()).min(1),
   mentorType: z.string().min(2),
   price: z.number().nonnegative(),
-  currency: z.string().default('USD'),
+  currency: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{3}$/)
+    .transform((value) => value.toUpperCase())
+    .default('USD'),
   status: z.nativeEnum(PackageStatus).default(PackageStatus.DRAFT),
   featured: z.boolean().default(false),
   heroConfig: z.record(z.unknown()).default({ accent: 'blue' }),
@@ -61,12 +66,14 @@ export class PackagesService {
       }),
       this.prisma.tutoringPackage.count({ where }),
     ]);
-    return { items, total, page, limit };
+    return { items: items.map((item) => this.serializePackage(item)), total, page, limit };
   }
 
   async detail(slug: string) {
-    const item = await this.prisma.tutoringPackage.findUnique({ where: { slug } });
-    if (!item || item.status === PackageStatus.ARCHIVED) {
+    const item = await this.prisma.tutoringPackage.findFirst({
+      where: { slug, status: PackageStatus.PUBLISHED },
+    });
+    if (!item) {
       throw new NotFoundException('Package not found');
     }
     const related = await this.prisma.tutoringPackage.findMany({
@@ -78,7 +85,10 @@ export class PackagesService {
       take: 3,
       orderBy: { featured: 'desc' },
     });
-    return { ...item, related };
+    return {
+      ...this.serializePackage(item),
+      related: related.map((relatedItem) => this.serializePackage(relatedItem)),
+    };
   }
 
   async detailById(id: string) {
@@ -86,7 +96,7 @@ export class PackagesService {
     if (!item) {
       throw new NotFoundException('Package not found');
     }
-    return item;
+    return this.serializePackage(item);
   }
 
   async requestConsultation(studentId: string, packageId: string, input: unknown) {
@@ -124,7 +134,7 @@ export class PackagesService {
       },
     });
     await this.audit(actorId, 'ADMIN_PACKAGE_CREATE', created.id);
-    return created;
+    return this.serializePackage(created);
   }
 
   async update(actorId: string, id: string, input: unknown) {
@@ -142,7 +152,7 @@ export class PackagesService {
       data,
     });
     await this.audit(actorId, 'ADMIN_PACKAGE_UPDATE', id);
-    return updated;
+    return this.serializePackage(updated);
   }
 
   async remove(actorId: string, id: string) {
@@ -155,5 +165,9 @@ export class PackagesService {
     await this.prisma.auditLog.create({
       data: { actorId, action, entityType: 'TutoringPackage', entityId, metadata: {} },
     });
+  }
+
+  private serializePackage<T extends { price: Prisma.Decimal | number | string }>(item: T) {
+    return { ...item, price: String(item.price) };
   }
 }

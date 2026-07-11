@@ -33,6 +33,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type CodeProblemAssistantContext = NonNullable<LearningAssistantContextSnapshot['problem']>;
 type CodeAction = 'run' | 'submit' | 'hint';
@@ -213,22 +214,28 @@ export function CodeEditorPanel({
             <Code2 className="h-4 w-4 text-secondary" />
             Trình soạn thảo
           </div>
-          <label className="flex items-center gap-2 text-xs font-medium text-mutedText">
-            Ngôn ngữ
-            <select
-              aria-label="Chọn ngôn ngữ lập trình"
+          <div className="flex items-center gap-2 text-xs font-medium text-mutedText">
+            <span>Ngôn ngữ</span>
+            <Select
               disabled={busy}
               value={language}
-              onChange={(event) => changeLanguage(event.target.value as CodeLanguage)}
-              className="h-9 min-w-36 rounded-md border border-white/12 bg-[#101a2b] px-3 text-sm font-semibold text-white outline-none transition-colors focus:border-secondary/60 focus:ring-2 focus:ring-secondary/20 disabled:cursor-not-allowed disabled:opacity-60"
+              onValueChange={(value) => changeLanguage(value as CodeLanguage)}
             >
-              {languageOptions.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger
+                aria-label="Chọn ngôn ngữ lập trình"
+                className="h-9 min-w-36 rounded-lg bg-[#101a2b] text-sm font-semibold"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {languageOptions.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <Editor
           height="564px"

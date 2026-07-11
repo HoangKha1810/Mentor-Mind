@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Bảng giá MentorMind - AI, luyện code và gói học',
+  title: { absolute: 'Bảng giá MentorMind - AI, luyện code và gói học' },
   description:
     'Bảng giá MentorMind cho quota AI, bài code đặc biệt, tính năng học tập nâng cao và các gói hỗ trợ học lập trình.',
   keywords: ['bảng giá học lập trình', 'giá mentor 1-1', 'gói AI học tập', 'MentorMind pricing'],

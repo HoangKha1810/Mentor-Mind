@@ -9,6 +9,13 @@ import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthRequiredCard, EmptyState, ErrorCard, LoadingCard } from './live-common';
 
@@ -93,17 +100,18 @@ export function NewBookingForm() {
           </CardDescription>
         </CardHeader>
         <form onSubmit={submit} className="space-y-4">
-          <select
-            name="mentorId"
-            required
-            className="h-11 w-full rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none"
-          >
-            {mentors.data.map((mentor) => (
-              <option key={mentor.id} value={mentor.id}>
-                {mentor.fullName}
-              </option>
-            ))}
-          </select>
+          <Select name="mentorId" required defaultValue={mentors.data[0]?.id}>
+            <SelectTrigger aria-label="Chọn mentor">
+              <SelectValue placeholder="Chọn mentor" />
+            </SelectTrigger>
+            <SelectContent>
+              {mentors.data.map((mentor) => (
+                <SelectItem key={mentor.id} value={mentor.id}>
+                  {mentor.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="grid gap-4 md:grid-cols-2">
             <Input name="startTime" type="datetime-local" defaultValue={startDefault} required />
             <Input name="endTime" type="datetime-local" defaultValue={endDefault} required />

@@ -22,6 +22,13 @@ import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthRequiredCard, EmptyState, ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
@@ -185,6 +192,16 @@ export function InterviewOverviewPanel() {
 export function NewInterviewForm({ initialMode = 'TECHNICAL' }: { initialMode?: string }) {
   const router = useRouter();
   const [message, setMessage] = useState('');
+  const safeInitialMode = [
+    'TECHNICAL',
+    'BEHAVIORAL',
+    'HR',
+    'PROJECT_DEFENSE',
+    'ENGLISH',
+    'MIXED',
+  ].includes(initialMode)
+    ? initialMode
+    : 'TECHNICAL';
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,18 +238,19 @@ export function NewInterviewForm({ initialMode = 'TECHNICAL' }: { initialMode?: 
         <div className="grid gap-4 md:grid-cols-3">
           <Input name="targetRole" placeholder="Vai trò mục tiêu" required />
           <Input name="level" placeholder="Level: Intern, Junior..." required />
-          <select
-            name="mode"
-            defaultValue={initialMode}
-            className="h-11 rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none"
-          >
-            <option value="TECHNICAL">Kỹ thuật</option>
-            <option value="BEHAVIORAL">Hành vi</option>
-            <option value="HR">HR</option>
-            <option value="PROJECT_DEFENSE">Bảo vệ dự án</option>
-            <option value="ENGLISH">Tiếng Anh</option>
-            <option value="MIXED">Tổng hợp</option>
-          </select>
+          <Select name="mode" defaultValue={safeInitialMode}>
+            <SelectTrigger aria-label="Hình thức phỏng vấn">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TECHNICAL">Kỹ thuật</SelectItem>
+              <SelectItem value="BEHAVIORAL">Hành vi</SelectItem>
+              <SelectItem value="HR">HR</SelectItem>
+              <SelectItem value="PROJECT_DEFENSE">Bảo vệ dự án</SelectItem>
+              <SelectItem value="ENGLISH">Tiếng Anh</SelectItem>
+              <SelectItem value="MIXED">Tổng hợp</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {message ? <p className="text-sm text-warning">{message}</p> : null}
         <Button>
@@ -563,9 +581,11 @@ export function InterviewSessionPanel({ id }: { id: string }) {
                 className="min-h-40 text-base leading-7"
               />
             </label>
-            <label className="space-y-2">
+            <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-medium text-slate-200">Câu trả lời của bạn</span>
+                <label htmlFor="interview-answer" className="text-sm font-medium text-slate-200">
+                  Câu trả lời của bạn
+                </label>
                 <div className="flex flex-wrap items-center gap-2">
                   {voiceSupported ? (
                     <span className="inline-flex items-center gap-1 rounded-full border border-success/25 bg-success/10 px-3 py-1 text-xs font-semibold text-success">
@@ -573,15 +593,22 @@ export function InterviewSessionPanel({ id }: { id: string }) {
                       Voice sẵn sàng
                     </span>
                   ) : null}
-                  <select
+                  <Select
                     value={voiceLang}
-                    onChange={(event) => setVoiceLang(event.target.value as 'vi-VN' | 'en-US')}
-                    className="h-9 rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs text-white outline-none"
+                    onValueChange={(value) => setVoiceLang(value as 'vi-VN' | 'en-US')}
                     disabled={isListening}
                   >
-                    <option value="vi-VN">Tiếng Việt</option>
-                    <option value="en-US">English</option>
-                  </select>
+                    <SelectTrigger
+                      aria-label="Ngôn ngữ nhập giọng nói"
+                      className="h-9 w-auto min-w-28 rounded-full px-3 text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vi-VN">Tiếng Việt</SelectItem>
+                      <SelectItem value="en-US">English</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button
                     type="button"
                     variant={isListening ? 'secondary' : 'outline'}
@@ -594,6 +621,7 @@ export function InterviewSessionPanel({ id }: { id: string }) {
                 </div>
               </div>
               <Textarea
+                id="interview-answer"
                 ref={answerRef}
                 name="answer"
                 value={answerDraft}
@@ -605,7 +633,7 @@ export function InterviewSessionPanel({ id }: { id: string }) {
               {voiceMessage ? (
                 <span className="block text-xs text-secondary">{voiceMessage}</span>
               ) : null}
-            </label>
+            </div>
           </div>
           {message ? <p className="text-sm text-secondary">{message}</p> : null}
           <div className="flex flex-wrap gap-2">

@@ -23,7 +23,7 @@ import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { coreSeoKeywords, seoLandingPages, siteName, siteUrl } from '@/lib/seo-content';
 
 export const metadata: Metadata = {
-  title: 'MentorMind - Học lập trình online, mentor 1-1, lộ trình AI',
+  title: { absolute: 'MentorMind - Học lập trình online, mentor 1-1, lộ trình AI' },
   description:
     'Học lập trình online với lộ trình AI cá nhân hóa, mentor 1-1, luyện code, luyện phỏng vấn AI, sửa CV ATS và tài nguyên học tập cho mục tiêu đi làm.',
   keywords: coreSeoKeywords,

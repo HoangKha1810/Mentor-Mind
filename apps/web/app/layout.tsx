@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { CursorHalo } from '@/components/ui/cursor-halo';
 import { MotionProvider } from '@/components/ui/motion-provider';
-import { coreSeoKeywords, siteName, siteUrl } from '@/lib/seo-content';
+import { coreSeoKeywords, siteIndexingEnabled, siteName, siteUrl } from '@/lib/seo-content';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-geist-sans' });
 const siteDescription =
@@ -31,7 +31,7 @@ const jsonLd = {
       inLanguage: 'vi-VN',
       potentialAction: {
         '@type': 'SearchAction',
-        target: `${siteUrl}/resources?search={search_term_string}`,
+        target: `${siteUrl}/resources?query={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
     },
@@ -62,12 +62,6 @@ export const metadata: Metadata = {
   creator: 'MentorMind',
   publisher: 'MentorMind',
   category: 'education',
-  alternates: {
-    canonical: '/',
-    languages: {
-      'vi-VN': '/',
-    },
-  },
   icons: {
     icon: [
       { url: '/icon.png', sizes: '32x32', type: 'image/png' },
@@ -80,7 +74,6 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   openGraph: {
     type: 'website',
-    url: '/',
     siteName,
     title: 'MentorMind - Dịch vụ học trực tuyến cá nhân hóa',
     description: siteDescription,
@@ -100,17 +93,26 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: ['/brand/mentormind-og.png'],
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-      'max-video-preview': -1,
-    },
-  },
+  robots: siteIndexingEnabled
+    ? {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+          'max-video-preview': -1,
+        },
+      }
+    : {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },

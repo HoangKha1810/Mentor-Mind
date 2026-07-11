@@ -9,6 +9,13 @@ import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthRequiredCard, EmptyState, ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
@@ -52,17 +59,22 @@ export function SupportCenter() {
         </CardHeader>
         <form onSubmit={submit} className="space-y-4">
           <Input name="subject" placeholder="Tiêu đề vấn đề" required />
-          <select
-            name="priority"
-            defaultValue="MEDIUM"
-            className="h-11 w-full rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none"
-          >
-            <option value="LOW">Thấp</option>
-            <option value="MEDIUM">Vừa</option>
-            <option value="HIGH">Cao</option>
-            <option value="URGENT">Khẩn cấp</option>
-          </select>
-          <Textarea name="message" placeholder="Mô tả chi tiết lỗi, trang đang dùng và điều bạn cần hỗ trợ" required />
+          <Select name="priority" defaultValue="MEDIUM">
+            <SelectTrigger aria-label="Mức độ ưu tiên">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="LOW">Thấp</SelectItem>
+              <SelectItem value="MEDIUM">Vừa</SelectItem>
+              <SelectItem value="HIGH">Cao</SelectItem>
+              <SelectItem value="URGENT">Khẩn cấp</SelectItem>
+            </SelectContent>
+          </Select>
+          <Textarea
+            name="message"
+            placeholder="Mô tả chi tiết lỗi, trang đang dùng và điều bạn cần hỗ trợ"
+            required
+          />
           {message ? <p className="text-sm text-secondary">{message}</p> : null}
           <Button>
             <Send className="h-4 w-4" />
@@ -89,7 +101,9 @@ export function SupportCenter() {
                   <h3 className="font-semibold text-white">{ticket.subject}</h3>
                 </div>
                 <p className="text-sm leading-6 text-mutedText">{ticket.message}</p>
-                <p className="mt-3 text-xs text-mutedText">Tạo lúc {formatDateTime(ticket.createdAt)}</p>
+                <p className="mt-3 text-xs text-mutedText">
+                  Tạo lúc {formatDateTime(ticket.createdAt)}
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <StatusBadge value={ticket.priority} />

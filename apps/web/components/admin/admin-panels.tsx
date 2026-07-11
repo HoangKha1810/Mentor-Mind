@@ -23,6 +23,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
   AuthRequiredCard,
@@ -424,16 +431,22 @@ export function AdminRoadmapRequestDetailPanel({ id }: { id: string }) {
             });
           }}
         >
-          <select
+          <Select
             name="mentorId"
-            className="h-12 rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white"
+            defaultValue={mentorOptions[0]?.id}
+            disabled={!mentorOptions.length}
           >
-            {mentorOptions.map((mentor) => (
-              <option key={mentor.id} value={mentor.id}>
-                {mentor.fullName}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger aria-label="Mentor tư vấn" className="h-12 rounded-full px-4">
+              <SelectValue placeholder="Chọn mentor" />
+            </SelectTrigger>
+            <SelectContent>
+              {mentorOptions.map((mentor) => (
+                <SelectItem key={mentor.id} value={mentor.id}>
+                  {mentor.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input name="timezone" defaultValue="Asia/Ho_Chi_Minh" />
           <Input name="startTime" type="datetime-local" defaultValue={startDefault} />
           <Input name="endTime" type="datetime-local" defaultValue={endDefault} />
@@ -454,16 +467,22 @@ export function AdminRoadmapRequestDetailPanel({ id }: { id: string }) {
             });
           }}
         >
-          <select
+          <Select
             name="mentorId"
-            className="h-12 flex-1 rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white"
+            defaultValue={mentorOptions[0]?.id}
+            disabled={!mentorOptions.length}
           >
-            {mentorOptions.map((mentor) => (
-              <option key={mentor.id} value={mentor.id}>
-                {mentor.fullName}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger aria-label="Mentor được phân" className="h-12 flex-1 rounded-full px-4">
+              <SelectValue placeholder="Chọn mentor" />
+            </SelectTrigger>
+            <SelectContent>
+              {mentorOptions.map((mentor) => (
+                <SelectItem key={mentor.id} value={mentor.id}>
+                  {mentor.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button variant="outline">Phân mentor</Button>
         </form>
       </Card>
@@ -664,9 +683,12 @@ export function AdminAiPromptsPanel() {
 }
 
 export function AdminPackagesPanel() {
-  const query = useLiveQuery<Paginated<PackageItem>>('/admin/packages?includeDrafts=true&limit=100', {
-    auth: true,
-  });
+  const query = useLiveQuery<Paginated<PackageItem>>(
+    '/admin/packages?includeDrafts=true&limit=100',
+    {
+      auth: true,
+    },
+  );
   const [message, setMessage] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
 
@@ -679,7 +701,9 @@ export function AdminPackagesPanel() {
         headers: authHeaders(),
         body: JSON.stringify({
           price: Number(form.get('price') ?? 0),
-          currency: String(form.get('currency') || 'VND').trim().toUpperCase(),
+          currency: String(form.get('currency') || 'VND')
+            .trim()
+            .toUpperCase(),
           status: form.get('status'),
           featured: form.get('featured') === 'on',
         }),
@@ -775,22 +799,35 @@ export function AdminPackagesPanel() {
                     <span className="text-xs font-semibold text-mutedText">Tiền tệ</span>
                     <Input name="currency" defaultValue={item.currency ?? 'VND'} />
                   </label>
-                  <label className="space-y-1">
-                    <span className="text-xs font-semibold text-mutedText">Trạng thái</span>
-                    <select
-                      name="status"
-                      defaultValue={item.status ?? 'DRAFT'}
-                      className="h-12 w-full rounded-full border border-white/10 bg-white/[0.055] px-4 text-sm text-white outline-none"
+                  <div className="space-y-1">
+                    <span
+                      id={`package-status-label-${item.id}`}
+                      className="block text-xs font-semibold text-mutedText"
                     >
-                      {['DRAFT', 'PUBLISHED', 'ARCHIVED'].map((status) => (
-                        <option key={status} value={status}>
-                          {formatStatus(status)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      Trạng thái<span className="sr-only"> gói {item.title}</span>
+                    </span>
+                    <Select name="status" defaultValue={item.status ?? 'DRAFT'}>
+                      <SelectTrigger
+                        aria-labelledby={`package-status-label-${item.id}`}
+                        className="h-12 rounded-full px-4"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['DRAFT', 'PUBLISHED', 'ARCHIVED'].map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {formatStatus(status)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-slate-200 md:col-span-3">
-                    <input name="featured" type="checkbox" defaultChecked={Boolean(item.featured)} />
+                    <input
+                      name="featured"
+                      type="checkbox"
+                      defaultChecked={Boolean(item.featured)}
+                    />
                     Hiển thị nổi bật trên trang gói học
                   </label>
                   <div className="flex flex-wrap gap-2 md:col-span-3">

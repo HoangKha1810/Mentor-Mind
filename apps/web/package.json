@@ -13,6 +13,7 @@
   "dependencies": {
     "@mentormind/shared": "workspace:*",
     "@monaco-editor/react": "^4.6.0",
+    "@radix-ui/react-select": "2.3.3",
     "@react-three/drei": "^9.114.3",
     "@react-three/fiber": "^8.17.10",
     "@tanstack/react-query": "^5.59.16",

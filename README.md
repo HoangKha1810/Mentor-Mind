@@ -74,6 +74,10 @@ Web variables live in `apps/web/.env`:
 
 - `NEXT_PUBLIC_API_URL=http://localhost:4000`
 - `NEXT_PUBLIC_APP_NAME=MentorMind AI`
+- `API_INTERNAL_URL=http://localhost:4000`, `PACKAGE_API_TIMEOUT_MS=2500`
+- `NEXT_PUBLIC_SITE_URL=https://mentormind.center`
+- `NEXT_PUBLIC_SITE_INDEXING=true` (phải bật rõ ràng khi build production)
+- `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (nếu xác minh Search Console bằng meta tag)
 
 ## Production Notes
 
@@ -90,6 +94,7 @@ pnpm judge0:smoke
 The pinned Judge0 1.13.1 image requires a Linux amd64 Docker host with cgroup v1.
 See [`infra/judge0/README.md`](infra/judge0/README.md) before deploying or repairing
 the worker. Then keep `JUDGE0_BASE_URL=http://localhost:2358`.
+
 - Use an OpenAI-compatible chat completions endpoint for production AI, then tune prompt templates in `/admin/ai/prompts`.
 - Use Judge0 or another sandboxed executor for production. Do not execute user code inside the API process.
 - Use pgvector-backed embeddings through `ResourceEmbedding` and `ContentEmbedding`; the schema is ready for vector columns.

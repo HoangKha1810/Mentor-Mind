@@ -1,4 +1,18 @@
-export const siteUrl = 'https://mentormind.center';
+const defaultSiteUrl = 'https://mentormind.center';
+
+function normalizeSiteUrl(value?: string) {
+  try {
+    const url = new URL(value?.trim() || defaultSiteUrl);
+    url.hostname = url.hostname.replace(/^www\./i, '');
+    return url.origin;
+  } catch {
+    return defaultSiteUrl;
+  }
+}
+
+export const siteUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+const indexingFlag = process.env.NEXT_PUBLIC_SITE_INDEXING?.trim().toLowerCase();
+export const siteIndexingEnabled = indexingFlag === 'true';
 export const siteName = 'MentorMind';
 
 export const coreSeoKeywords = [
@@ -415,8 +429,7 @@ export const seoLandingPages = [
     faq: [
       {
         question: 'NodeJS backend có phù hợp fresher không?',
-        answer:
-          'Có, đặc biệt nếu bạn đã học JavaScript/React và muốn đi fullstack nhanh hơn.',
+        answer: 'Có, đặc biệt nếu bạn đã học JavaScript/React và muốn đi fullstack nhanh hơn.',
       },
       {
         question: 'NestJS khác Express như thế nào?',

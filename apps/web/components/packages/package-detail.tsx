@@ -21,14 +21,21 @@ type PurchasePackageResponse = {
   wallet: WalletSummary;
 };
 
-export function PackageDetail({ slug }: { slug: string }) {
+export function PackageDetail({
+  slug,
+  initialData,
+}: {
+  slug: string;
+  initialData?: PackageDetailResponse;
+}) {
   const query = useLiveQuery<PackageDetailResponse>(`/packages/${slug}`, { deps: [slug] });
+  const packageData = query.data ?? initialData;
   const [message, setMessage] = useState('');
   const [purchasing, setPurchasing] = useState(false);
 
   async function requestConsultation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!query.data) return;
+    if (!packageData) return;
     if (!(await ensureAccessToken())) {
       setMessage('Vui lòng đăng nhập để gửi yêu cầu tư vấn.');
       return;
@@ -36,7 +43,7 @@ export function PackageDetail({ slug }: { slug: string }) {
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
-      await apiFetch(`/packages/${query.data.id}/request-consultation`, {
+      await apiFetch(`/packages/${packageData.id}/request-consultation`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ message: form.get('message') }),
@@ -49,16 +56,16 @@ export function PackageDetail({ slug }: { slug: string }) {
   }
 
   async function purchaseWithWallet() {
-    if (!query.data || purchasing) return;
+    if (!packageData || purchasing) return;
     if (!(await ensureAccessToken())) {
       setMessage('Vui lòng đăng nhập để mua gói học bằng số dư.');
       return;
     }
-    const price = toCurrencyNumber(query.data.price);
+    const price = toCurrencyNumber(packageData.price);
     if (
       price > 0 &&
       !window.confirm(
-        `Mua gói "${query.data.title}" sẽ trừ ${formatCurrency(price, query.data.currency)} từ ví của bạn. Bạn muốn tiếp tục?`,
+        `Mua gói "${packageData.title}" sẽ trừ ${formatCurrency(price, packageData.currency)} từ ví của bạn. Bạn muốn tiếp tục?`,
       )
     ) {
       return;
@@ -70,7 +77,7 @@ export function PackageDetail({ slug }: { slug: string }) {
       const result = await apiFetch<PurchasePackageResponse>('/payments/wallet/purchase-package', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ packageId: query.data.id }),
+        body: JSON.stringify({ packageId: packageData.id }),
       });
       window.dispatchEvent(
         new CustomEvent('mentormind:wallet-updated', { detail: { wallet: result.wallet } }),
@@ -83,9 +90,10 @@ export function PackageDetail({ slug }: { slug: string }) {
     }
   }
 
-  if (query.loading) return <LoadingCard label="Đang tải chi tiết gói học..." />;
-  if (query.error) return <ErrorCard message={query.error} onRetry={query.reload} />;
-  if (!query.data) {
+  if (query.loading && !packageData) return <LoadingCard label="Đang tải chi tiết gói học..." />;
+  if (query.error && !packageData)
+    return <ErrorCard message={query.error} onRetry={query.reload} />;
+  if (!packageData) {
     return (
       <EmptyState
         title="Không tìm thấy gói học"
@@ -94,30 +102,30 @@ export function PackageDetail({ slug }: { slug: string }) {
     );
   }
 
-  const outcomes = toStringArray(query.data.outcomes);
-  const skills = toStringArray(query.data.skills);
-  const tools = toStringArray(query.data.includedAiTools);
-  const packagePrice = toCurrencyNumber(query.data.price);
+  const outcomes = toStringArray(packageData.outcomes);
+  const skills = toStringArray(packageData.skills);
+  const tools = toStringArray(packageData.includedAiTools);
+  const packagePrice = toCurrencyNumber(packageData.price);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <Card>
         <div className="mb-4 flex flex-wrap gap-2">
-          <Badge>{packageCategoryLabel(query.data.category)}</Badge>
-          <Badge>{packageLevelLabel(query.data.level)}</Badge>
-          <Badge>{query.data.durationWeeks} tuần</Badge>
+          <Badge>{packageCategoryLabel(packageData.category)}</Badge>
+          <Badge>{packageLevelLabel(packageData.level)}</Badge>
+          <Badge>{packageData.durationWeeks} tuần</Badge>
         </div>
         <CardHeader>
-          <CardTitle>{query.data.title}</CardTitle>
+          <CardTitle>{packageData.title}</CardTitle>
           <CardDescription>
-            {query.data.longDescription ?? query.data.shortDescription}
+            {packageData.longDescription ?? packageData.shortDescription}
           </CardDescription>
         </CardHeader>
         <div className="grid gap-4 md:grid-cols-2">
-          <Info label="Vai trò mục tiêu" value={query.data.targetRole} />
-          <Info label="Mentor" value={query.data.mentorType} />
-          <Info label="Số buổi đề xuất" value={`${query.data.recommendedSessions} buổi`} />
-          <Info label="Thời lượng mỗi buổi" value={`${query.data.sessionDurationMinutes} phút`} />
+          <Info label="Vai trò mục tiêu" value={packageData.targetRole} />
+          <Info label="Mentor" value={packageData.mentorType} />
+          <Info label="Số buổi đề xuất" value={`${packageData.recommendedSessions} buổi`} />
+          <Info label="Thời lượng mỗi buổi" value={`${packageData.sessionDurationMinutes} phút`} />
         </div>
         <Section title="Kết quả đầu ra" items={outcomes} />
         <Section title="Kỹ năng trọng tâm" items={skills} />
@@ -126,7 +134,7 @@ export function PackageDetail({ slug }: { slug: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>{formatCurrency(packagePrice, query.data.currency)}</CardTitle>
+          <CardTitle>{formatCurrency(packagePrice, packageData.currency)}</CardTitle>
           <CardDescription>
             Gửi yêu cầu tư vấn để đội ngũ xác nhận mục tiêu và lịch học.
           </CardDescription>

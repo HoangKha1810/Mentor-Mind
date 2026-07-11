@@ -19,6 +19,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EmptyState, ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
 type SearchResponse = {
@@ -36,10 +43,7 @@ function extractMarkdownLinks(value: string) {
 }
 
 function stripMarkdownLinks(value: string) {
-  return value
-    .replace(markdownLinkPattern, '$1')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return value.replace(markdownLinkPattern, '$1').replace(/\s+/g, ' ').trim();
 }
 
 function formatResourceUrl(value: string) {
@@ -156,10 +160,14 @@ export function ResourceSearchPanel() {
             <CardHeader className="mb-0 mt-4">
               <CardTitle className="text-2xl">Tìm tài nguyên theo mục tiêu</CardTitle>
               <CardDescription>
-                Lọc kho nội bộ, Tavily và đề xuất AI theo vai trò, trình độ và lịch sử học của tài khoản.
+                Lọc kho nội bộ, Tavily và đề xuất AI theo vai trò, trình độ và lịch sử học của tài
+                khoản.
               </CardDescription>
             </CardHeader>
-            <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-[1.2fr_0.55fr] xl:grid-cols-[1.2fr_0.52fr_0.8fr_auto]">
+            <form
+              onSubmit={submit}
+              className="mt-5 grid gap-3 md:grid-cols-[1.2fr_0.55fr] xl:grid-cols-[1.2fr_0.52fr_0.8fr_auto]"
+            >
               <div className="relative">
                 <Search className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-mutedText" />
                 <Input
@@ -171,18 +179,18 @@ export function ResourceSearchPanel() {
                   required
                 />
               </div>
-              <select
-                name="level"
-                value={level}
-                onChange={(event) => setLevel(event.target.value)}
-                className="h-11 rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none transition focus:border-secondary/40"
-              >
-                <option value="BEGINNER">Người mới</option>
-                <option value="FOUNDATION">Nền tảng</option>
-                <option value="INTERMEDIATE">Trung cấp</option>
-                <option value="ADVANCED">Nâng cao</option>
-                <option value="JOB_READY">Sẵn sàng đi làm</option>
-              </select>
+              <Select name="level" value={level} onValueChange={setLevel}>
+                <SelectTrigger aria-label="Trình độ hiện tại">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BEGINNER">Người mới</SelectItem>
+                  <SelectItem value="FOUNDATION">Nền tảng</SelectItem>
+                  <SelectItem value="INTERMEDIATE">Trung cấp</SelectItem>
+                  <SelectItem value="ADVANCED">Nâng cao</SelectItem>
+                  <SelectItem value="JOB_READY">Sẵn sàng đi làm</SelectItem>
+                </SelectContent>
+              </Select>
               <Input
                 name="goal"
                 value={goal}
@@ -194,15 +202,29 @@ export function ResourceSearchPanel() {
             {message ? <p className="mt-3 text-sm text-secondary">{message}</p> : null}
           </div>
           <div className="relative z-10 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <Metric icon={<BookOpenCheck className="h-4 w-4" />} label="Tài nguyên đang xem" value={String(results.length)} />
-            <Metric icon={<Layers3 className="h-4 w-4" />} label="Nhóm nội dung" value={String(Math.max(categories.length - 1, 0))} />
-            <Metric icon={<GraduationCap className="h-4 w-4" />} label="Bộ lọc hiển thị" value={String(filteredResults.length)} />
+            <Metric
+              icon={<BookOpenCheck className="h-4 w-4" />}
+              label="Tài nguyên đang xem"
+              value={String(results.length)}
+            />
+            <Metric
+              icon={<Layers3 className="h-4 w-4" />}
+              label="Nhóm nội dung"
+              value={String(Math.max(categories.length - 1, 0))}
+            />
+            <Metric
+              icon={<GraduationCap className="h-4 w-4" />}
+              label="Bộ lọc hiển thị"
+              value={String(filteredResults.length)}
+            />
           </div>
         </div>
       </section>
 
       {curated.loading && !results.length ? <LoadingCard label="Đang tải tài nguyên..." /> : null}
-      {curated.error && !results.length ? <ErrorCard message={curated.error} onRetry={curated.reload} /> : null}
+      {curated.error && !results.length ? (
+        <ErrorCard message={curated.error} onRetry={curated.reload} />
+      ) : null}
       {!curated.loading && !curated.error && !results.length ? (
         <EmptyState
           title="Chưa có tài nguyên"
@@ -256,7 +278,9 @@ export function ResourceSearchPanel() {
                   <span className="text-xs text-mutedText">
                     {category === 'Tất cả'
                       ? results.length
-                      : results.filter((item) => item.category === category || item.type === category).length}
+                      : results.filter(
+                          (item) => item.category === category || item.type === category,
+                        ).length}
                   </span>
                 </button>
               ))}
@@ -266,88 +290,95 @@ export function ResourceSearchPanel() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           {filteredResults.map((resource, index) => {
-          const descriptionLinks = extractMarkdownLinks(resource.description);
-          const cleanDescription = stripMarkdownLinks(resource.description);
-          return (
-            <Card key={`${resource.url ?? resource.title}-${index}`} className="flex min-h-[25rem] flex-col">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <StatusBadge value={resource.difficulty} />
-                <Badge>{resource.type}</Badge>
-                {resource.isExternal ? <Badge>Nguồn ngoài</Badge> : <Badge>Nội bộ</Badge>}
-              </div>
-              <div className="mb-4 flex h-32 items-end overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(0,119,255,0.32),rgba(87,184,70,0.18),rgba(245,158,11,0.22))] p-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14 text-white shadow-soft">
-                  <BookOpenCheck className="h-6 w-6" />
+            const descriptionLinks = extractMarkdownLinks(resource.description);
+            const cleanDescription = stripMarkdownLinks(resource.description);
+            return (
+              <Card
+                key={`${resource.url ?? resource.title}-${index}`}
+                className="flex min-h-[25rem] flex-col"
+              >
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <StatusBadge value={resource.difficulty} />
+                  <Badge>{resource.type}</Badge>
+                  {resource.isExternal ? <Badge>Nguồn ngoài</Badge> : <Badge>Nội bộ</Badge>}
                 </div>
-              </div>
-              <CardHeader>
-                <CardTitle>{resource.title}</CardTitle>
-                <CardDescription>{cleanDescription}</CardDescription>
-              </CardHeader>
-              <p className="text-sm text-mutedText">
-                Nguồn: {resource.source}
-                {resource.author ? ` · ${resource.author}` : ''}
-              </p>
-              {resource.url ? (
-                <div className="mt-4 rounded-lg border border-secondary/20 bg-secondary/8 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-normal text-secondary">Link tài nguyên</p>
-                  <Link
-                    href={resource.url}
-                    target="_blank"
-                    className="mt-2 flex items-start gap-2 break-all text-sm font-medium leading-6 text-slate-100 transition hover:text-secondary"
-                  >
-                    <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                    {formatResourceUrl(resource.url)}
-                  </Link>
-                </div>
-              ) : null}
-              {descriptionLinks.length ? (
-                <div className="mt-3">
-                  <p className="text-xs font-semibold uppercase tracking-normal text-mutedText">Link trong mô tả</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {descriptionLinks.slice(0, 5).map((link) => (
-                      <Link
-                        key={`${link.url}-${link.label}`}
-                        href={link.url}
-                        target="_blank"
-                        className="inline-flex max-w-full items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-200 transition hover:border-secondary/40 hover:text-secondary"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{link.label}</span>
-                      </Link>
-                    ))}
+                <div className="mb-4 flex h-32 items-end overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(0,119,255,0.32),rgba(87,184,70,0.18),rgba(245,158,11,0.22))] p-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14 text-white shadow-soft">
+                    <BookOpenCheck className="h-6 w-6" />
                   </div>
                 </div>
-              ) : null}
-              {resource.whyRecommended ? (
-                <p className="mt-3 text-sm leading-6 text-slate-200">{resource.whyRecommended}</p>
-              ) : null}
-              {resource.tags?.length ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {resource.tags.slice(0, 6).map((tag) => (
-                    <Badge key={tag}>{tag}</Badge>
-                  ))}
-                </div>
-              ) : null}
-              <div className="mt-auto pt-4">
-                {resource.estimatedMinutes ? (
-                  <p className="mb-3 flex items-center gap-2 text-xs text-mutedText">
-                    <Clock3 className="h-3.5 w-3.5 text-secondary" />
-                    Ước tính {resource.estimatedMinutes} phút đọc/luyện
-                  </p>
+                <CardHeader>
+                  <CardTitle>{resource.title}</CardTitle>
+                  <CardDescription>{cleanDescription}</CardDescription>
+                </CardHeader>
+                <p className="text-sm text-mutedText">
+                  Nguồn: {resource.source}
+                  {resource.author ? ` · ${resource.author}` : ''}
+                </p>
+                {resource.url ? (
+                  <div className="mt-4 rounded-lg border border-secondary/20 bg-secondary/8 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-normal text-secondary">
+                      Link tài nguyên
+                    </p>
+                    <Link
+                      href={resource.url}
+                      target="_blank"
+                      className="mt-2 flex items-start gap-2 break-all text-sm font-medium leading-6 text-slate-100 transition hover:text-secondary"
+                    >
+                      <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                      {formatResourceUrl(resource.url)}
+                    </Link>
+                  </div>
                 ) : null}
-              {resource.url ? (
-                <Link href={resource.url} target="_blank" className="inline-flex">
-                  <Button variant="outline">
-                    Mở tài nguyên
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </Link>
-              ) : null}
-              </div>
-            </Card>
-          );
-        })}
+                {descriptionLinks.length ? (
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold uppercase tracking-normal text-mutedText">
+                      Link trong mô tả
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {descriptionLinks.slice(0, 5).map((link) => (
+                        <Link
+                          key={`${link.url}-${link.label}`}
+                          href={link.url}
+                          target="_blank"
+                          className="inline-flex max-w-full items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-200 transition hover:border-secondary/40 hover:text-secondary"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{link.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {resource.whyRecommended ? (
+                  <p className="mt-3 text-sm leading-6 text-slate-200">{resource.whyRecommended}</p>
+                ) : null}
+                {resource.tags?.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {resource.tags.slice(0, 6).map((tag) => (
+                      <Badge key={tag}>{tag}</Badge>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="mt-auto pt-4">
+                  {resource.estimatedMinutes ? (
+                    <p className="mb-3 flex items-center gap-2 text-xs text-mutedText">
+                      <Clock3 className="h-3.5 w-3.5 text-secondary" />
+                      Ước tính {resource.estimatedMinutes} phút đọc/luyện
+                    </p>
+                  ) : null}
+                  {resource.url ? (
+                    <Link href={resource.url} target="_blank" className="inline-flex">
+                      <Button variant="outline">
+                        Mở tài nguyên
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  ) : null}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -21,6 +21,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EmptyState, ErrorCard, LoadingCard, StatusBadge } from './live-common';
 
 export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boolean }) {
@@ -90,7 +97,8 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
             <CardHeader className="mb-0 mt-4">
               <CardTitle className="text-2xl">Luyện code theo lộ trình</CardTitle>
               <CardDescription>
-                Lọc nhanh bài theo chủ đề, độ khó, trạng thái đã giải và mở khóa bài đặc biệt bằng ví/gói học.
+                Lọc nhanh bài theo chủ đề, độ khó, trạng thái đã giải và mở khóa bài đặc biệt bằng
+                ví/gói học.
               </CardDescription>
             </CardHeader>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -109,9 +117,21 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <CodeMetric icon={<Code2 className="h-4 w-4" />} label="Tổng bài" value={String(data.length)} />
-            <CodeMetric icon={<CheckCircle2 className="h-4 w-4" />} label="Đã accepted" value={String(accepted.size)} />
-            <CodeMetric icon={<LockKeyhole className="h-4 w-4" />} label="Bài đặc biệt" value={String(premiumCount)} />
+            <CodeMetric
+              icon={<Code2 className="h-4 w-4" />}
+              label="Tổng bài"
+              value={String(data.length)}
+            />
+            <CodeMetric
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              label="Đã accepted"
+              value={String(accepted.size)}
+            />
+            <CodeMetric
+              icon={<LockKeyhole className="h-4 w-4" />}
+              label="Bài đặc biệt"
+              value={String(premiumCount)}
+            />
           </div>
         </div>
         <div className="relative z-10 mt-5 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -151,28 +171,30 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
               placeholder="Tìm theo tên bài, tag, chủ đề..."
             />
           </div>
-          <select
-            value={difficulty}
-            onChange={(event) => setDifficulty(event.target.value)}
-            className="h-11 rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none"
-          >
-            {difficulties.map((item) => (
-              <option key={item} value={item}>
-                {item === 'Tất cả' ? 'Mọi độ khó' : item}
-              </option>
-            ))}
-          </select>
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className="h-11 rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none"
-          >
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item === 'Tất cả' ? 'Mọi chủ đề' : item}
-              </option>
-            ))}
-          </select>
+          <Select value={difficulty} onValueChange={setDifficulty}>
+            <SelectTrigger aria-label="Lọc theo độ khó">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {difficulties.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item === 'Tất cả' ? 'Mọi độ khó' : item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger aria-label="Lọc theo chủ đề">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item === 'Tất cả' ? 'Mọi chủ đề' : item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <p className="mt-3 flex items-center gap-2 text-sm text-mutedText">
           <Filter className="h-4 w-4 text-secondary" />
@@ -203,7 +225,11 @@ export function CodePracticePanel({ requireAuth = false }: { requireAuth?: boole
                 <p className="mt-1 text-sm font-semibold text-white">{problem.category}</p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-secondary">
-                {accepted.has(problem.slug) ? <Trophy className="h-5 w-5" /> : <Code2 className="h-5 w-5" />}
+                {accepted.has(problem.slug) ? (
+                  <Trophy className="h-5 w-5" />
+                ) : (
+                  <Code2 className="h-5 w-5" />
+                )}
               </div>
             </div>
             <CardHeader className="mt-3">

@@ -1,21 +1,20 @@
 import type { MetadataRoute } from 'next';
-
-const siteUrl = 'https://mentormind.center';
+import { siteIndexingEnabled, siteUrl } from '@/lib/seo-content';
 
 export default function robots(): MetadataRoute.Robots {
+  if (!siteIndexingEnabled) {
+    return {
+      rules: {
+        userAgent: '*',
+        disallow: '/',
+      },
+    };
+  }
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: [
-        '/admin/',
-        '/dashboard/',
-        '/mentor/',
-        '/login',
-        '/register',
-        '/forgot-password',
-        '/reset-password',
-      ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,

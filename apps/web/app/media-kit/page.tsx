@@ -7,15 +7,19 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { siteUrl } from '@/lib/seo-content';
 
 export const metadata: Metadata = {
-  title: 'Media kit MentorMind cho báo chí, đối tác và backlink',
+  title: { absolute: 'Media kit MentorMind cho báo chí, đối tác và backlink' },
   description:
     'Media kit MentorMind: mô tả ngắn, anchor text gợi ý, trang đích SEO và nội dung trích dẫn cho đối tác, blog giáo dục và cộng đồng IT.',
-  keywords: ['MentorMind media kit', 'backlink học lập trình', 'đối tác giáo dục IT', 'học lập trình online MentorMind'],
+  keywords: [
+    'MentorMind media kit',
+    'backlink học lập trình',
+    'đối tác giáo dục IT',
+    'học lập trình online MentorMind',
+  ],
   alternates: { canonical: '/media-kit' },
   openGraph: {
     title: 'Media kit MentorMind',
-    description:
-      'Thông tin trích dẫn, anchor text và landing pages cho đối tác/blog/cộng đồng IT.',
+    description: 'Thông tin trích dẫn, anchor text và landing pages cho đối tác/blog/cộng đồng IT.',
     url: '/media-kit',
     images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
@@ -145,7 +149,10 @@ export default function MediaKitPage() {
               </CardHeader>
               <div className="space-y-3">
                 {outreachIdeas.map((idea) => (
-                  <div key={idea} className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-200">
+                  <div
+                    key={idea}
+                    className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-200"
+                  >
                     {idea}
                   </div>
                 ))}

@@ -21,7 +21,7 @@ export function generateMetadata({ params }: PageProps): Metadata {
   if (!course) return {};
 
   return {
-    title: `${course.title} | MentorMind`,
+    title: course.title,
     description: course.description,
     keywords: course.primaryKeywords,
     alternates: { canonical: `/khoa-hoc/${course.slug}` },
@@ -110,7 +110,9 @@ export default function CourseDetailPage({ params }: PageProps) {
               <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight text-white sm:text-5xl">
                 {course.title}
               </h1>
-              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">{course.description}</p>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">
+                {course.description}
+              </p>
               <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold text-slate-200">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2">
                   <Clock className="h-4 w-4 text-secondary" />
@@ -145,7 +147,10 @@ export default function CourseDetailPage({ params }: PageProps) {
               </CardHeader>
               <div className="space-y-3">
                 {course.outcomes.map((outcome) => (
-                  <div key={outcome} className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <div
+                    key={outcome}
+                    className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3"
+                  >
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                     <p className="text-sm leading-6 text-slate-200">{outcome}</p>
                   </div>
@@ -166,7 +171,10 @@ export default function CourseDetailPage({ params }: PageProps) {
                   </CardHeader>
                   <div className="space-y-2">
                     {module.lessons.map((lesson) => (
-                      <div key={lesson} className="rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 text-sm text-slate-200">
+                      <div
+                        key={lesson}
+                        className="rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 text-sm text-slate-200"
+                      >
                         {lesson}
                       </div>
                     ))}

@@ -21,7 +21,7 @@ export function generateMetadata({ params }: PageProps): Metadata {
   if (!page) return {};
 
   return {
-    title: `${page.title} | MentorMind`,
+    title: page.title,
     description: page.description,
     keywords: [...page.keywords],
     alternates: { canonical: `/${page.slug}` },
