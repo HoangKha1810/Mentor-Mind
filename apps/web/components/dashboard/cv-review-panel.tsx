@@ -1,12 +1,13 @@
 'use client';
 
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Brain,
   CheckCircle2,
   ClipboardCheck,
   FileText,
+  Loader2,
   Sparkles,
   UploadCloud,
 } from 'lucide-react';
@@ -24,6 +25,8 @@ import { AuthRequiredCard, EmptyState, ErrorCard, LoadingCard } from './live-com
 export function CvReviewPanel() {
   const query = useLiveQuery<CvReview[]>('/ai/cv-review/me', { auth: true });
   const [message, setMessage] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const analysisLockRef = useRef(false);
   const [draftContext, setDraftContext] = useState({
     targetRole: '',
     cvText: '',
@@ -98,6 +101,10 @@ export function CvReviewPanel() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (analysisLockRef.current) return;
+
+    analysisLockRef.current = true;
+    setAnalyzing(true);
     setMessage('');
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
@@ -131,6 +138,9 @@ export function CvReviewPanel() {
       query.reload();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Không phân tích được CV');
+    } finally {
+      analysisLockRef.current = false;
+      setAnalyzing(false);
     }
   }
 
@@ -209,9 +219,13 @@ export function CvReviewPanel() {
           </p>
           {message ? <p className="text-sm text-secondary">{message}</p> : null}
           <div className="flex flex-wrap items-center gap-3">
-            <Button>
-              <Sparkles className="h-4 w-4" />
-              Phân tích CV
+            <Button type="submit" disabled={analyzing} aria-busy={analyzing}>
+              {analyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {analyzing ? 'Đang phân tích...' : 'Phân tích CV'}
             </Button>
             <span className="text-xs leading-5 text-mutedText">
               Sau khi phân tích, trợ lý AI có thể dùng kết quả này khi bạn chat về lộ trình, phỏng

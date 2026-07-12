@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   ArrowRight,
   BarChart3,
@@ -17,6 +18,9 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CircularProgress } from '@/components/ui/circular-progress';
+import { GlowingCard } from '@/components/ui/glowing-card';
+import { StaggerContainer, StaggerItem } from '@/components/ui/motion';
 import { StatCard } from '@/components/ui/stat-card';
 import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import {
@@ -25,10 +29,21 @@ import {
   CodeSubmission,
   InterviewSession,
   NotificationItem,
+  RoadmapDetail,
   RoadmapRequest,
 } from '@/lib/domain-types';
-import { formatDateTime, formatPercent } from '@/lib/format';
+import { formatDateTime, formatPercent, formatStatus } from '@/lib/format';
 import { AuthRequiredCard, EmptyState, ErrorCard, LoadingCard, StatusBadge } from './live-common';
+
+const PerformanceChart = dynamic(
+  () => import('./performance-chart').then((module) => module.PerformanceChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[25rem] animate-pulse rounded-lg border border-white/10 bg-white/[0.035]" />
+    ),
+  },
+);
 
 type DashboardPayload = {
   account: Account;
@@ -37,6 +52,7 @@ type DashboardPayload = {
   submissions: CodeSubmission[];
   interviews: InterviewSession[];
   notifications: NotificationItem[];
+  latestRoadmapDetail: RoadmapDetail | null;
 };
 
 function uniqueAcceptedSubmissions(submissions: CodeSubmission[]) {
@@ -47,18 +63,14 @@ function uniqueAcceptedSubmissions(submissions: CodeSubmission[]) {
   ).size;
 }
 
-function roadmapProgress(roadmaps: RoadmapRequest[]) {
-  if (!roadmaps.length) return 0;
-  const scoreByStatus: Record<string, number> = {
-    PENDING_ADMIN_REVIEW: 35,
-    NEEDS_STUDENT_INFO: 20,
-    DRAFT_AI: 45,
-    APPROVED: 75,
-    ACTIVE: 85,
-    COMPLETED: 100,
-    REJECTED: 0,
-  };
-  return Math.max(...roadmaps.map((roadmap) => scoreByStatus[roadmap.status] ?? 25));
+function roadmapProgress(detail: RoadmapDetail | null) {
+  const roadmap = detail?.finalRoadmap ?? detail?.aiDraft;
+  const milestones = (roadmap?.items ?? []).filter((item) => item.status !== 'SKIPPED');
+  if (!milestones.length) {
+    return detail?.request.status === 'COMPLETED' ? 100 : null;
+  }
+  const completed = milestones.filter((item) => item.status === 'DONE').length;
+  return (completed / milestones.length) * 100;
 }
 
 function interviewAverage(sessions: InterviewSession[]) {
@@ -134,7 +146,20 @@ async function loadDashboard(): Promise<DashboardPayload> {
     apiFetch<InterviewSession[]>('/ai/interview/sessions/me', { headers }),
     apiFetch<NotificationItem[]>('/notifications/me', { headers }),
   ]);
-  return { account, roadmaps, bookings, submissions, interviews, notifications };
+  const latestRoadmapDetail = roadmaps[0]
+    ? await apiFetch<RoadmapDetail>(`/roadmap-requests/${roadmaps[0].id}`, { headers }).catch(
+        () => null,
+      )
+    : null;
+  return {
+    account,
+    roadmaps,
+    bookings,
+    submissions,
+    interviews,
+    notifications,
+    latestRoadmapDetail,
+  };
 }
 
 export function LiveDashboardOverview() {
@@ -176,11 +201,12 @@ export function LiveDashboardOverview() {
   const next = nextAction(payload);
   const upcoming = upcomingBookings(payload.bookings);
   const latestRoadmap = payload.roadmaps[0];
+  const latestRoadmapProgress = roadmapProgress(payload.latestRoadmapDetail);
 
   const stats = [
     {
       label: 'Tiến độ lộ trình',
-      value: formatPercent(roadmapProgress(payload.roadmaps)),
+      value: latestRoadmapProgress === null ? 'Chưa có' : formatPercent(latestRoadmapProgress),
       icon: GraduationCap,
       tone: 'cyan' as const,
     },
@@ -246,8 +272,8 @@ export function LiveDashboardOverview() {
             <p className="mt-4 text-sm font-medium text-mutedText">Xin chào</p>
             <p className="mt-1 text-2xl font-semibold text-white">{payload.account.fullName}</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-              {payload.account.email}. Dashboard này chỉ hiển thị lộ trình, lịch học, bài nộp,
-              phỏng vấn và thông báo lấy từ tài khoản hiện tại.
+              {payload.account.email}. Dashboard này chỉ hiển thị lộ trình, lịch học, bài nộp, phỏng
+              vấn và thông báo lấy từ tài khoản hiện tại.
             </p>
           </div>
           <div className="grid gap-3">
@@ -264,72 +290,52 @@ export function LiveDashboardOverview() {
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <StaggerContainer className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
+          <StaggerItem key={stat.label} className="[&>*]:h-full">
+            <StatCard {...stat} />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-4">
+      <StaggerContainer className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {actionTiles.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href} className="group block">
-              <div
-                className={`theme-on-color relative min-h-[13rem] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${item.accent} p-5 shadow-soft transition duration-300 group-hover:-translate-y-1 group-hover:border-white/20`}
+            <StaggerItem key={item.href}>
+              <Link
+                href={item.href}
+                className="group block h-full rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <div className="relative z-10 flex h-full flex-col">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/14 bg-white/12 text-white">
-                    <Icon className="h-5 w-5" />
+                <GlowingCard className="theme-on-color h-full min-h-[13rem]">
+                  <div
+                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${item.accent}`}
+                    aria-hidden="true"
+                  />
+                  <div className="relative z-10 flex min-h-[13rem] flex-col p-5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-white/14 bg-white/12 text-white">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <h3 className="mt-5 text-lg font-semibold text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-200">{item.description}</p>
+                    <span className="mt-auto inline-flex items-center gap-2 pt-4 text-sm font-semibold text-white">
+                      Mở ngay
+                      <ArrowRight
+                        className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                        aria-hidden="true"
+                      />
+                    </span>
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-white">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">{item.description}</p>
-                  <span className="mt-auto inline-flex items-center gap-2 pt-4 text-sm font-semibold text-white">
-                    Mở ngay
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </div>
-            </Link>
+                </GlowingCard>
+              </Link>
+            </StaggerItem>
           );
         })}
-      </div>
+      </StaggerContainer>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        {latestRoadmap ? (
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <CardTitle>Lộ trình gần nhất</CardTitle>
-                  <CardDescription>{latestRoadmap.goal}</CardDescription>
-                </div>
-                <StatusBadge value={latestRoadmap.status} />
-              </div>
-            </CardHeader>
-            <div className="grid gap-3 md:grid-cols-2">
-              <Info label="Vai trò mục tiêu" value={latestRoadmap.targetRole} />
-              <Info label="Trình độ hiện tại" value={latestRoadmap.currentLevel} />
-              <Info label="Số giờ mỗi tuần" value={`${latestRoadmap.weeklyHours} giờ`} />
-              <Info label="Cập nhật" value={formatDateTime(latestRoadmap.updatedAt)} />
-            </div>
-            <Link className="mt-4 inline-flex" href={`/dashboard/roadmaps/${latestRoadmap.id}`}>
-              <Button variant="secondary">
-                Mở lộ trình
-                <Map className="h-4 w-4" />
-              </Button>
-            </Link>
-          </Card>
-        ) : (
-          <EmptyState
-            title="Chưa có lộ trình"
-            description="Tạo lộ trình để dashboard có tiến độ, timeline và bước học tiếp theo theo đúng tài khoản."
-            actionHref="/create-roadmap"
-            actionLabel="Tạo lộ trình"
-          />
-        )}
-
-        <Card>
+      <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+        <PerformanceChart submissions={payload.submissions} interviews={payload.interviews} />
+        <Card reveal className="h-full">
           <CardHeader>
             <CardTitle>{next.title}</CardTitle>
             <CardDescription>{next.description}</CardDescription>
@@ -356,6 +362,56 @@ export function LiveDashboardOverview() {
             </p>
           </div>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        {latestRoadmap ? (
+          <Card reveal>
+            <div className="grid gap-6 md:grid-cols-[7rem_minmax(0,1fr)] md:items-start">
+              <div className="flex justify-center md:justify-start">
+                <CircularProgress
+                  value={latestRoadmapProgress}
+                  label="Tiến độ"
+                  valueText={
+                    latestRoadmapProgress === null
+                      ? `Chưa có mốc tiến độ, trạng thái ${formatStatus(latestRoadmap.status)}`
+                      : `${formatPercent(latestRoadmapProgress)} mốc đã hoàn thành`
+                  }
+                />
+              </div>
+              <div className="min-w-0">
+                <CardHeader>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <CardTitle>Lộ trình gần nhất</CardTitle>
+                      <CardDescription>{latestRoadmap.goal}</CardDescription>
+                    </div>
+                    <StatusBadge value={latestRoadmap.status} />
+                  </div>
+                </CardHeader>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Info label="Vai trò mục tiêu" value={latestRoadmap.targetRole} />
+                  <Info label="Trình độ hiện tại" value={latestRoadmap.currentLevel} />
+                  <Info label="Số giờ mỗi tuần" value={`${latestRoadmap.weeklyHours} giờ`} />
+                  <Info label="Cập nhật" value={formatDateTime(latestRoadmap.updatedAt)} />
+                </div>
+                <Link className="mt-4 inline-flex" href={`/dashboard/roadmaps/${latestRoadmap.id}`}>
+                  <Button variant="secondary">
+                    Mở lộ trình
+                    <Map className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <EmptyState
+            title="Chưa có lộ trình"
+            description="Tạo lộ trình để dashboard có tiến độ, timeline và bước học tiếp theo theo đúng tài khoản."
+            actionHref="/create-roadmap"
+            actionLabel="Tạo lộ trình"
+          />
+        )}
       </div>
     </>
   );

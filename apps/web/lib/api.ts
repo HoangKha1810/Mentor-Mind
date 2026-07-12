@@ -1,3 +1,5 @@
+import { clearStoredLearningAssistantContexts } from './learning-assistant-context';
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const ACCESS_TOKEN_KEY = 'mentormind.accessToken';
 
@@ -167,6 +169,7 @@ export async function ensureAccessToken() {
 
 export async function logoutSession() {
   clearAccessToken();
+  clearStoredLearningAssistantContexts();
   try {
     await apiFetch('/auth/logout', {
       method: 'POST',

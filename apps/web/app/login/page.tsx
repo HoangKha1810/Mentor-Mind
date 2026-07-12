@@ -98,19 +98,21 @@ export default function LoginPage() {
       {twoFactor ? (
         <form onSubmit={verifyAdminTwoFactor} className="mx-auto w-full max-w-sm">
           <div className="mb-9 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#57b846]/12 text-[#57b846]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-success/[0.12] text-success">
               <ShieldCheck className="h-7 w-7" />
             </div>
-            <h2 className="font-display text-2xl text-[#333]">Xác thực admin</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <h2 className="font-display text-2xl text-foreground">Xác thực admin</h2>
+            <p className="mt-3 text-sm leading-6 text-mutedText">
               Mã 6 số đã được gửi tới {twoFactor.email}. Mã hết hạn lúc{' '}
               {new Date(twoFactor.expiresAt).toLocaleTimeString('vi-VN')}.
             </p>
           </div>
           <AuthInput
             icon={ShieldCheck}
+            label="Mã xác thực"
             name="code"
             inputMode="numeric"
+            autoComplete="one-time-code"
             pattern="[0-9]{6}"
             maxLength={6}
             placeholder="Nhập mã 6 số"
@@ -124,7 +126,7 @@ export default function LoginPage() {
               setTwoFactor(null);
               setError('');
             }}
-            className="mt-4 w-full text-center text-sm font-semibold text-slate-500 transition hover:text-[#57b846]"
+            className="mt-4 w-full rounded-sm text-center text-sm font-semibold text-mutedText outline-none transition hover:text-success focus-visible:ring-2 focus-visible:ring-success/60"
           >
             Đăng nhập lại
           </button>
@@ -132,28 +134,38 @@ export default function LoginPage() {
       ) : (
         <form onSubmit={submit} className="mx-auto w-full max-w-sm">
           <div className="mb-9 text-center">
-            <h2 className="font-display text-2xl text-[#333]">Đăng nhập</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <h2 className="font-display text-2xl text-foreground">Đăng nhập</h2>
+            <p className="mt-3 text-sm leading-6 text-mutedText">
               Tiếp tục hành trình học 1-1 cùng MentorMind.
             </p>
           </div>
           <div className="space-y-3">
-            <AuthInput icon={Mail} name="email" type="email" placeholder="Email" required />
+            <AuthInput
+              icon={Mail}
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              placeholder="ban@example.com"
+              required
+            />
             <AuthInput
               icon={LockKeyhole}
+              label="Mật khẩu"
               name="password"
               type="password"
+              autoComplete="current-password"
               placeholder="Mật khẩu"
               required
             />
           </div>
           <FormMessage message={error} />
           <Button className="mt-6 h-[50px] w-full">Đăng nhập</Button>
-          <p className="mt-5 text-center text-xs leading-6 text-slate-400">
+          <p className="mt-5 text-center text-xs leading-6 text-mutedText">
             Quên mật khẩu?{' '}
             <Link
               href="/forgot-password"
-              className="font-medium text-slate-600 transition hover:text-[#57b846]"
+              className="rounded-sm font-medium text-foreground/75 outline-none transition hover:text-success focus-visible:ring-2 focus-visible:ring-success/60"
             >
               Đặt lại mật khẩu
             </Link>

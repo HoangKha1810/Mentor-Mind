@@ -28,6 +28,7 @@ import { AuthRequiredCard, ErrorCard, LoadingCard } from '@/components/dashboard
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { MarkdownContent } from '@/components/ui/markdown-content';
 
 const suggestions = [
   'Mình muốn lương 20 triệu/tháng và làm ở Đà Nẵng, hãy nhớ giúp tôi.',
@@ -100,6 +101,7 @@ export default function AiAssistantPage() {
         body: JSON.stringify({
           message,
           conversationId: selectedConversation?.id,
+          clientContext: buildAssistantPageClientContext(accountQuery.data),
         }),
       });
 
@@ -301,6 +303,50 @@ export default function AiAssistantPage() {
   );
 }
 
+function buildAssistantPageClientContext(account: Account | null) {
+  const observedAt = new Date().toISOString();
+  return {
+    version: 2,
+    trigger: 'assistant-page-chat',
+    route: '/dashboard/ai-assistant',
+    idleSeconds: 0,
+    observedAt,
+    page: {
+      surface: 'dashboard',
+      source: 'assistant-page',
+      routeKey: '/dashboard/ai-assistant',
+      title: 'Trợ lý học tập AI',
+      summary:
+        'Cuộc trò chuyện tổng hợp; dùng hồ sơ và dữ liệu học tập do server xác minh để cá nhân hóa.',
+      updatedAt: observedAt,
+    },
+    related: {
+      account: account
+        ? {
+            id: account.id,
+            email: account.email,
+            fullName: account.fullName,
+            role: account.role,
+            studentProfile: account.studentProfile
+              ? {
+                  targetRole: account.studentProfile.targetRole,
+                  currentLevel: account.studentProfile.currentLevel,
+                  goals: account.studentProfile.goals,
+                  weeklyHours: account.studentProfile.weeklyHours,
+                  learningStyle: account.studentProfile.learningStyle,
+                  expectedSalary: account.studentProfile.expectedSalary,
+                  preferredLocation: account.studentProfile.preferredLocation,
+                }
+              : null,
+          }
+        : null,
+      latestCvReview: null,
+      latestInterview: null,
+    },
+    verifiedResources: [],
+  };
+}
+
 function WelcomeState({ onPickSuggestion }: { onPickSuggestion: (value: string) => void }) {
   return (
     <div className="mx-auto flex min-h-[24rem] max-w-3xl flex-col items-center justify-center text-center">
@@ -352,7 +398,7 @@ function ChatMessage({ message }: { message: AiMessage }) {
               Đang suy nghĩ...
             </span>
           ) : (
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <MarkdownContent>{message.content}</MarkdownContent>
           )}
         </div>
       </div>

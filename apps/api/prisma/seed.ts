@@ -117,42 +117,114 @@ async function main() {
   });
 
   const packageData = [
-    ['Frontend Intern 1-on-1 Roadmap', 'frontend-intern-1-on-1-roadmap', 'FRONTEND', 'Frontend Intern', 'FOUNDATION', 12, 24, 699],
-    ['Backend Foundation 1-on-1 Roadmap', 'backend-foundation-1-on-1-roadmap', 'BACKEND', 'Backend Developer', 'FOUNDATION', 14, 28, 799],
-    ['Fullstack Portfolio Builder', 'fullstack-portfolio-builder', 'FULLSTACK', 'Fullstack Developer', 'INTERMEDIATE', 16, 32, 999],
-    ['AI/ML Beginner Mentorship', 'ai-ml-beginner-mentorship', 'AI_ML', 'AI/ML Beginner', 'BEGINNER', 12, 24, 899],
-    ['Data Analyst Interview Prep', 'data-analyst-interview-prep', 'DATA', 'Data Analyst', 'JOB_READY', 8, 16, 649],
-    ['Coding Interview Bootcamp', 'coding-interview-bootcamp', 'CAREER', 'Software Engineer', 'JOB_READY', 8, 16, 899],
-    ['CV + Portfolio Career Coaching', 'cv-portfolio-career-coaching', 'CAREER', 'Junior Developer', 'JOB_READY', 4, 6, 299],
+    [
+      'Frontend Intern 1-on-1 Roadmap',
+      'frontend-intern-1-on-1-roadmap',
+      'FRONTEND',
+      'Frontend Intern',
+      'FOUNDATION',
+      12,
+      24,
+      699,
+    ],
+    [
+      'Backend Foundation 1-on-1 Roadmap',
+      'backend-foundation-1-on-1-roadmap',
+      'BACKEND',
+      'Backend Developer',
+      'FOUNDATION',
+      14,
+      28,
+      799,
+    ],
+    [
+      'Fullstack Portfolio Builder',
+      'fullstack-portfolio-builder',
+      'FULLSTACK',
+      'Fullstack Developer',
+      'INTERMEDIATE',
+      16,
+      32,
+      999,
+    ],
+    [
+      'AI/ML Beginner Mentorship',
+      'ai-ml-beginner-mentorship',
+      'AI_ML',
+      'AI/ML Beginner',
+      'BEGINNER',
+      12,
+      24,
+      899,
+    ],
+    [
+      'Data Analyst Interview Prep',
+      'data-analyst-interview-prep',
+      'DATA',
+      'Data Analyst',
+      'JOB_READY',
+      8,
+      16,
+      649,
+    ],
+    [
+      'Coding Interview Bootcamp',
+      'coding-interview-bootcamp',
+      'CAREER',
+      'Software Engineer',
+      'JOB_READY',
+      8,
+      16,
+      899,
+    ],
+    [
+      'CV + Portfolio Career Coaching',
+      'cv-portfolio-career-coaching',
+      'CAREER',
+      'Junior Developer',
+      'JOB_READY',
+      4,
+      6,
+      299,
+    ],
   ] as const;
 
   const packages = await Promise.all(
-    packageData.map(([title, slug, category, targetRole, level, durationWeeks, recommendedSessions, price], index) =>
-      prisma.tutoringPackage.create({
-        data: {
-          title,
-          slug,
-          shortDescription: `Mentor-led ${targetRole} plan with AI-assisted practice and review.`,
-          longDescription:
-            'A structured 1-on-1 tutoring package with weekly outcomes, mentor sessions, homework review, coding/interview practice and admin consultation.',
-          targetAudience: 'Students who want guided, job-oriented learning rather than passive video courses.',
-          targetRole,
-          level,
-          category,
-          durationWeeks,
-          recommendedSessions,
-          sessionDurationMinutes: 60,
-          outcomes: ['Clear weekly plan', 'Reviewed portfolio progress', 'Interview-ready answers'],
-          skills: ['Planning', 'Practice', 'Communication', targetRole],
-          includedAiTools: ['AI Roadmap', 'AI Interview', 'AI Code Review', 'Resource Search'],
-          mentorType: index < 3 ? 'Senior software mentor' : 'Career and technical mentor',
-          price,
-          currency: 'USD',
-          status: 'PUBLISHED',
-          featured: index < 3,
-          heroConfig: { accent: index % 2 ? 'cyan' : 'violet' },
-        },
-      }),
+    packageData.map(
+      (
+        [title, slug, category, targetRole, level, durationWeeks, recommendedSessions, price],
+        index,
+      ) =>
+        prisma.tutoringPackage.create({
+          data: {
+            title,
+            slug,
+            shortDescription: `Mentor-led ${targetRole} plan with AI-assisted practice and review.`,
+            longDescription:
+              'A structured 1-on-1 tutoring package with weekly outcomes, mentor sessions, homework review, coding/interview practice and admin consultation.',
+            targetAudience:
+              'Students who want guided, job-oriented learning rather than passive video courses.',
+            targetRole,
+            level,
+            category,
+            durationWeeks,
+            recommendedSessions,
+            sessionDurationMinutes: 60,
+            outcomes: [
+              'Clear weekly plan',
+              'Reviewed portfolio progress',
+              'Interview-ready answers',
+            ],
+            skills: ['Planning', 'Practice', 'Communication', targetRole],
+            includedAiTools: ['AI Roadmap', 'AI Interview', 'AI Code Review', 'Resource Search'],
+            mentorType: index < 3 ? 'Senior software mentor' : 'Career and technical mentor',
+            price,
+            currency: 'USD',
+            status: 'PUBLISHED',
+            featured: index < 3,
+            heroConfig: { accent: index % 2 ? 'cyan' : 'violet' },
+          },
+        }),
     ),
   );
 
@@ -193,8 +265,10 @@ async function main() {
       studentId: student.id,
       requestId: roadmapRequest.id,
       title: 'Frontend Intern 12-week 1-on-1 Roadmap',
-      summary: 'A mentor-reviewed roadmap balancing React fundamentals, portfolio work and interview practice.',
-      targetOutcome: 'Apply to frontend internships with a reviewed portfolio and practiced interview answers.',
+      summary:
+        'A mentor-reviewed roadmap balancing React fundamentals, portfolio work and interview practice.',
+      targetOutcome:
+        'Apply to frontend internships with a reviewed portfolio and practiced interview answers.',
       durationWeeks: 12,
       level: 'FOUNDATION',
       status: 'APPROVED',
@@ -203,7 +277,9 @@ async function main() {
       mentorId: mentorFrontend.id,
       adminId: admin.id,
       risks: ['Scope creep in portfolio', 'Not enough interview repetition'],
-      recommendedResources: [{ title: 'React Documentation', reason: 'Primary source for React foundations' }],
+      recommendedResources: [
+        { title: 'React Documentation', reason: 'Primary source for React foundations' },
+      ],
       weeks: {
         create: Array.from({ length: 6 }, (_, index) => ({
           weekNumber: index + 1,
@@ -217,7 +293,12 @@ async function main() {
         })),
       },
       items: {
-        create: ['React fundamentals', 'Portfolio landing page', 'Mock interview', 'Final CV pass'].map((title, index) => ({
+        create: [
+          'React fundamentals',
+          'Portfolio landing page',
+          'Mock interview',
+          'Final CV pass',
+        ].map((title, index) => ({
           type: 'PRACTICE',
           title,
           description: `${title} milestone`,
@@ -270,9 +351,24 @@ async function main() {
     ['Frontend Intern', 'FRONTEND', 'FOUNDATION', 'React state vs props: when do you use each?'],
     ['Backend Developer', 'BACKEND', 'FOUNDATION', 'REST vs GraphQL: what are the trade-offs?'],
     ['Data Analyst', 'SQL', 'FOUNDATION', 'Explain SQL JOIN types with examples.'],
-    ['Software Engineer', 'SYSTEM_DESIGN', 'INTERMEDIATE', 'Authentication vs authorization: what is the difference?'],
-    ['Junior Developer', 'PROJECT_DEFENSE', 'FOUNDATION', 'Explain a project you built and your technical decisions.'],
-    ['Junior Developer', 'BEHAVIORAL', 'FOUNDATION', 'Tell me about a time you solved a difficult problem.'],
+    [
+      'Software Engineer',
+      'SYSTEM_DESIGN',
+      'INTERMEDIATE',
+      'Authentication vs authorization: what is the difference?',
+    ],
+    [
+      'Junior Developer',
+      'PROJECT_DEFENSE',
+      'FOUNDATION',
+      'Explain a project you built and your technical decisions.',
+    ],
+    [
+      'Junior Developer',
+      'BEHAVIORAL',
+      'FOUNDATION',
+      'Tell me about a time you solved a difficult problem.',
+    ],
     ['Junior Developer', 'HR', 'FOUNDATION', 'Why should we hire you?'],
   ] as const;
   await prisma.interviewQuestion.createMany({
@@ -290,10 +386,20 @@ async function main() {
 
   const resources = [
     ['Eloquent JavaScript', 'BOOK', 'Marijn Haverbeke', 'https://eloquentjavascript.net/'],
-    ['MDN JavaScript Guide', 'DOCUMENTATION', 'MDN', 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide'],
+    [
+      'MDN JavaScript Guide',
+      'DOCUMENTATION',
+      'MDN',
+      'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide',
+    ],
     ['React Documentation', 'DOCUMENTATION', 'React Team', 'https://react.dev/learn'],
     ["You Don't Know JS", 'BOOK', 'Kyle Simpson', 'https://github.com/getify/You-Dont-Know-JS'],
-    ['System Design Primer', 'ARTICLE', 'donnemartin', 'https://github.com/donnemartin/system-design-primer'],
+    [
+      'System Design Primer',
+      'ARTICLE',
+      'donnemartin',
+      'https://github.com/donnemartin/system-design-primer',
+    ],
     ['SQLBolt', 'ARTICLE', 'SQLBolt', 'https://sqlbolt.com/'],
     ['Python Official Tutorial', 'DOCUMENTATION', 'Python', 'https://docs.python.org/3/tutorial/'],
     ['FastAPI Docs', 'DOCUMENTATION', 'FastAPI', 'https://fastapi.tiangolo.com/'],
@@ -310,9 +416,13 @@ async function main() {
       description: `${title} is a high-signal learning resource for job-oriented software learners.`,
       difficulty: title.includes('System') ? 'ADVANCED' : 'BEGINNER',
       category: title.includes('SQL') || title.includes('PostgreSQL') ? 'DATA' : 'FRONTEND',
-      tags: title.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean),
+      tags: title
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean),
       estimatedMinutes: 90,
-      whyRecommended: 'Curated because it is accurate, practical and useful alongside mentor feedback.',
+      whyRecommended:
+        'Curated because it is accurate, practical and useful alongside mentor feedback.',
       isCurated: true,
       status: 'PUBLISHED',
     })),
@@ -338,7 +448,10 @@ async function main() {
         .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
         .join(' '),
       description: `Seeded prompt template for ${key}.`,
-      template: `You are MentorMind AI. Execute ${key} using variables: {{input}}. Output JSON only when structured output is required.`,
+      template:
+        key === 'LEARNING_ASSISTANT'
+          ? 'Hỗ trợ học viên theo đúng màn hình đang mở. Cá nhân hóa bằng dữ liệu tài khoản liên quan, trả lời ngắn gọn và đưa ra bước tiếp theo cụ thể.'
+          : `You are MentorMind AI. Execute ${key} using variables: {{input}}. Output JSON only when structured output is required.`,
       version: 1,
       isActive: true,
       updatedById: admin.id,

@@ -42,28 +42,45 @@ export default function ForgotPasswordPage() {
     >
       <form onSubmit={submit} className="mx-auto w-full max-w-sm">
         <div className="mb-9 text-center">
-          <h2 className="font-display text-2xl text-[#333]">Quên mật khẩu</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
+          <h2 className="font-display text-2xl text-foreground">Quên mật khẩu</h2>
+          <p className="mt-3 text-sm leading-6 text-mutedText">
             Link reset sẽ được gửi từ support@mentormind.center và hết hạn sau 30 phút.
           </p>
         </div>
-        <AuthInput icon={Mail} name="email" type="email" placeholder="Email tài khoản" required />
+        <AuthInput
+          icon={Mail}
+          label="Email tài khoản"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="ban@example.com"
+          required
+        />
         {message ? (
-          <p className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <p
+            role="status"
+            aria-live="polite"
+            className="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"
+          >
             {message}
           </p>
         ) : null}
         {error ? (
-          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-red-500/25 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:bg-danger/10 dark:text-red-200"
+          >
+            {error}
+          </p>
         ) : null}
         <Button className="mt-6 h-[50px] w-full" disabled={loading}>
           {loading ? 'Đang gửi...' : 'Gửi link đặt lại mật khẩu'}
         </Button>
-        <p className="mt-5 text-center text-xs leading-6 text-slate-400">
+        <p className="mt-5 text-center text-xs leading-6 text-mutedText">
           Cần hỗ trợ?{' '}
           <Link
             href="mailto:support@mentormind.center"
-            className="font-medium text-slate-600 transition hover:text-[#57b846]"
+            className="rounded-sm font-medium text-foreground/75 outline-none transition hover:text-success focus-visible:ring-2 focus-visible:ring-success/60"
           >
             support@mentormind.center
           </Link>

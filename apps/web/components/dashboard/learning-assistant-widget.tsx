@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createPortal } from 'react-dom';
@@ -9,9 +10,15 @@ import { BookOpen, ExternalLink, Lightbulb, Loader2, Route, Send, Sparkles, X } 
 import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
 import {
   excerpt,
+  clearStoredLearningAssistantContexts,
+  isLearningAssistantContextCurrent,
   LEARNING_ASSISTANT_CONTEXT_EVENT,
   LearningAssistantContextSnapshot,
+  learningAssistantSurfaceForRoute,
+  normalizeLearningAssistantRoute,
+  readLatestPublishedLearningAssistantContext,
   readStoredLearningAssistantContext,
+  storeLearningAssistantContext,
 } from '@/lib/learning-assistant-context';
 import { useLiveQuery } from '@/lib/live-query';
 import {
@@ -32,6 +39,13 @@ const IDLE_TRIGGER_SECONDS = 40;
 const NUDGE_COOLDOWN_MS = 5 * 60 * 1000;
 const NUDGE_STORAGE_KEY = 'mentormind.learningAssistantLastNudgeAt';
 const ASSISTANT_ICON_SRC = '/assistant/ai-assistant-bot.webp';
+const AssistantMarkdownContent = dynamic(
+  () => import('@/components/ui/markdown-content').then((module) => module.MarkdownContent),
+  {
+    ssr: false,
+    loading: () => <span className="text-mutedText">Đang định dạng câu trả lời...</span>,
+  },
+);
 
 type SearchResponse = {
   query: string;
@@ -45,6 +59,23 @@ type AssistantNudge = {
   action: 'hint' | 'resources' | 'roadmap' | 'chat';
   actionLabel: string;
 };
+
+type OwnedSurfaceContext = {
+  snapshot: LearningAssistantContextSnapshot;
+  ownerId: string | null;
+};
+
+function selectNewestContext(
+  live: LearningAssistantContextSnapshot | null | undefined,
+  stored: LearningAssistantContextSnapshot | null | undefined,
+) {
+  if (!live) return stored ?? null;
+  if (!stored) return live;
+
+  const liveUpdatedAt = Date.parse(live.updatedAt ?? '');
+  const storedUpdatedAt = Date.parse(stored.updatedAt ?? '');
+  return liveUpdatedAt >= storedUpdatedAt ? live : stored;
+}
 
 export function LearningAssistantWidget() {
   const pathname = usePathname();
@@ -60,9 +91,7 @@ export function LearningAssistantWidget() {
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [messages, setMessages] = useState<AiMessage[]>([]);
-  const [surfaceContext, setSurfaceContext] = useState<LearningAssistantContextSnapshot | null>(
-    null,
-  );
+  const [surfaceContext, setSurfaceContext] = useState<OwnedSurfaceContext | null>(null);
   const [idleSeconds, setIdleSeconds] = useState(0);
   const [nudge, setNudge] = useState<AssistantNudge | null>(null);
   const [dismissedNudgeId, setDismissedNudgeId] = useState<string | null>(null);
@@ -76,12 +105,20 @@ export function LearningAssistantWidget() {
   const idleBucketRef = useRef(0);
   const panelRef = useRef<HTMLElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
+  const previousRouteRef = useRef<string | null>(null);
+  const previousAccountIdRef = useRef<string | null>(null);
 
+  const accountId = accountQuery.data?.id ?? null;
   const latestCvReview = cvQuery.data?.[0];
   const latestInterview = interviewQuery.data?.[0];
   const activeContext = useMemo(
-    () => surfaceContext ?? inferRouteContext(pathname),
-    [pathname, surfaceContext],
+    () =>
+      surfaceContext &&
+      (surfaceContext.ownerId === null || surfaceContext.ownerId === accountId) &&
+      isLearningAssistantContextCurrent(surfaceContext.snapshot, pathname)
+        ? surfaceContext.snapshot
+        : inferRouteContext(pathname),
+    [accountId, pathname, surfaceContext],
   );
   const candidateNudge = useMemo(
     () => buildNudge(activeContext, idleSeconds, open),
@@ -90,14 +127,71 @@ export function LearningAssistantWidget() {
 
   useEffect(() => {
     setMounted(true);
-    setSurfaceContext(readStoredLearningAssistantContext());
   }, []);
+
+  useEffect(() => {
+    const routeKey = normalizeLearningAssistantRoute(pathname);
+    const routeChanged = previousRouteRef.current !== null && previousRouteRef.current !== routeKey;
+    const accountChanged =
+      previousAccountIdRef.current !== null && previousAccountIdRef.current !== accountId;
+
+    previousRouteRef.current = routeKey;
+    previousAccountIdRef.current = accountId;
+
+    if (routeChanged || accountChanged || accountQuery.unauthenticated) {
+      setConversationId(undefined);
+      setMessages([]);
+      setResources([]);
+      setResourceMessage('');
+      setOpen(false);
+    }
+    setNudge(null);
+    setDismissedNudgeId(null);
+    lastActivityAtRef.current = Date.now();
+    idleSecondsRef.current = 0;
+    idleBucketRef.current = 0;
+    setIdleSeconds(0);
+
+    if (accountQuery.unauthenticated) {
+      clearStoredLearningAssistantContexts();
+      setSurfaceContext(null);
+      return;
+    }
+
+    const liveContext = readLatestPublishedLearningAssistantContext(routeKey);
+    const stored = accountId ? readStoredLearningAssistantContext(accountId, routeKey) : null;
+    setSurfaceContext((current) => {
+      const freshestContext = accountChanged ? stored : selectNewestContext(liveContext, stored);
+      if (freshestContext) {
+        return { snapshot: freshestContext, ownerId: accountId };
+      }
+      if (
+        current &&
+        isLearningAssistantContextCurrent(current.snapshot, routeKey) &&
+        (current.ownerId === null || current.ownerId === accountId)
+      ) {
+        return { snapshot: current.snapshot, ownerId: accountId };
+      }
+      return null;
+    });
+  }, [accountId, accountQuery.unauthenticated, pathname]);
+
+  useEffect(() => {
+    if (
+      accountId &&
+      surfaceContext?.ownerId === accountId &&
+      isLearningAssistantContextCurrent(surfaceContext.snapshot, pathname)
+    ) {
+      storeLearningAssistantContext(accountId, surfaceContext.snapshot);
+    }
+  }, [accountId, pathname, surfaceContext]);
 
   useEffect(() => {
     function handleContext(event: Event) {
       const detail = (event as CustomEvent<LearningAssistantContextSnapshot>).detail;
-      if (!detail) return;
-      setSurfaceContext(detail);
+      if (!detail || !isLearningAssistantContextCurrent(detail, pathname)) return;
+      setSurfaceContext({ snapshot: detail, ownerId: accountId });
+      setNudge(null);
       if (detail.completion) {
         setDismissedNudgeId(null);
         setResourceMessage('');
@@ -107,7 +201,7 @@ export function LearningAssistantWidget() {
 
     window.addEventListener(LEARNING_ASSISTANT_CONTEXT_EVENT, handleContext);
     return () => window.removeEventListener(LEARNING_ASSISTANT_CONTEXT_EVENT, handleContext);
-  }, []);
+  }, [accountId, pathname]);
 
   useEffect(() => {
     function markActivity() {
@@ -165,27 +259,42 @@ export function LearningAssistantWidget() {
   }, [open]);
 
   useEffect(() => {
-    if (!candidateNudge || open || dismissedNudgeId === candidateNudge.id) return;
+    if (!candidateNudge || open || dismissedNudgeId === candidateNudge.id) {
+      if (nudge) setNudge(null);
+      return;
+    }
     if (nudge?.id === candidateNudge.id) return;
 
     const isCompletionNudge = candidateNudge.id.startsWith('completion:');
-    const lastNudgeAt = readLastNudgeAt();
+    const lastNudgeAt = readLastNudgeAt(pathname);
     if (!isCompletionNudge && Date.now() - lastNudgeAt < NUDGE_COOLDOWN_MS) return;
 
     setNudge(candidateNudge);
-    writeLastNudgeAt(Date.now());
-  }, [candidateNudge, dismissedNudgeId, nudge?.id, open]);
+    writeLastNudgeAt(pathname, Date.now());
+  }, [candidateNudge, dismissedNudgeId, nudge, open, pathname]);
 
   function buildClientContext(trigger: string) {
     return {
+      version: 2,
       trigger,
       route: pathname,
       idleSeconds,
       observedAt: new Date().toISOString(),
       page: summarizeSurfaceContext(activeContext),
-      account: summarizeAccount(accountQuery.data),
-      latestCvReview: summarizeCvReview(latestCvReview),
-      latestInterview: summarizeInterview(latestInterview),
+      related: {
+        account: summarizeAccount(accountQuery.data),
+        latestCvReview: summarizeCvReview(latestCvReview),
+        latestInterview: summarizeInterview(latestInterview),
+      },
+      verifiedResources: resources
+        .filter((resource) => Boolean(resource.url))
+        .slice(0, 4)
+        .map((resource) => ({
+          title: resource.title,
+          url: resource.url,
+          source: resource.source,
+          description: excerpt(resource.description, 500),
+        })),
     };
   }
 
@@ -586,7 +695,7 @@ function ChatBubble({ message }: { message: AiMessage }) {
             {message.content}
           </span>
         ) : (
-          message.content
+          <AssistantMarkdownContent compact>{message.content}</AssistantMarkdownContent>
         )}
       </div>
     </div>
@@ -665,6 +774,29 @@ function buildNudge(
     };
   }
 
+  if (context.surface === 'roadmap') {
+    const weekCount = context.roadmap?.weeks?.length ?? 0;
+    return {
+      id: `idle:roadmap:${context.roadmap?.requestId ?? context.title ?? 'current'}`,
+      title: 'Cần chọn đúng việc tiếp theo?',
+      body: weekCount
+        ? `Mình có thể đọc mục tiêu và ${weekCount} tuần trong lộ trình để chỉ ra đúng một việc nên làm tiếp.`
+        : 'Mình có thể đối chiếu mục tiêu, trình độ và trạng thái lộ trình để gợi ý bước tiếp theo.',
+      action: 'hint',
+      actionLabel: 'Gợi ý bước tiếp',
+    };
+  }
+
+  if (context.surface === 'resources') {
+    return {
+      id: `idle:resources:${context.title ?? 'current'}`,
+      title: 'Chưa chọn được tài liệu?',
+      body: 'Mình có thể lọc tài liệu theo mục tiêu, trình độ và phần đang học trong lộ trình.',
+      action: 'resources',
+      actionLabel: 'Lọc tài liệu',
+    };
+  }
+
   return {
     id: `idle:${context.surface}:${context.title ?? 'general'}`,
     title: 'Cần một bước nhỏ tiếp theo không?',
@@ -687,10 +819,22 @@ function buildHintPrompt(context: LearningAssistantContextSnapshot) {
     return 'Hãy đọc CV/JD hiện tại trong ngữ cảnh quan sát được và gợi ý 3 chỉnh sửa ưu tiên nhất, thật cụ thể.';
   }
 
+  if (context.surface === 'roadmap') {
+    const roadmap = context.roadmap;
+    return `Hãy đọc đúng lộ trình đang mở cho vị trí "${roadmap?.targetRole ?? context.title ?? 'mục tiêu hiện tại'}", mục tiêu, trạng thái và kế hoạch từng tuần trong ngữ cảnh trang. Chỉ ra đúng một việc cụ thể nên làm tiếp, nêu rõ tuần hoặc hạng mục liên quan và lý do. Không chuyển sang bài code, CV hay phỏng vấn trừ khi chính hạng mục lộ trình đó yêu cầu.`;
+  }
+
+  if (context.surface === 'resources') {
+    return 'Dựa trên mục tiêu học, trình độ và lộ trình hiện tại, hãy nêu một chủ đề nên ưu tiên tìm tài liệu ngay lúc này và lý do.';
+  }
+
   return 'Dựa trên màn hình và hồ sơ hiện tại, hãy gợi ý một bước nhỏ tiếp theo.';
 }
 
 function buildRoadmapPrompt(context: LearningAssistantContextSnapshot) {
+  if (context.surface === 'roadmap') {
+    return `Hãy rà đúng lộ trình "${context.roadmap?.title ?? context.title ?? 'đang mở'}" trong ngữ cảnh trang. Giữ nguyên mục tiêu chính, xác định phần còn thiếu hoặc chưa cân đối, rồi đề xuất tối đa 3 điều chỉnh cụ thể theo đúng tuần hiện có. Không tạo một lộ trình chung mới.`;
+  }
   const surface = context.surface === 'general' ? 'dashboard' : context.surface;
   return `Dựa trên CV gần nhất, điểm phỏng vấn, mục tiêu tài khoản và ngữ cảnh màn hình ${surface}, hãy đề xuất lộ trình học ngắn hạn 2-4 tuần với các việc cần làm tiếp theo.`;
 }
@@ -718,6 +862,16 @@ function deriveResourceQuery(
       context.interview?.level,
       context.interview?.mode,
       'interview practice',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+  if (context.surface === 'roadmap') {
+    return [
+      context.roadmap?.targetRole,
+      context.roadmap?.currentLevel,
+      context.roadmap?.weeks?.[0]?.topics,
+      context.roadmap?.weeks?.[0]?.practiceTasks,
     ]
       .filter(Boolean)
       .join(' ');
@@ -750,6 +904,8 @@ function deriveResourceGoal(
   const cv = summarizeCvReview(cvReview);
   return (
     context.completion?.label ||
+    context.roadmap?.goal ||
+    context.roadmap?.targetOutcome ||
     account?.studentProfile?.goals ||
     cv?.recommendedRoadmapItems?.[0] ||
     context.title ||
@@ -798,6 +954,25 @@ function summarizeSurfaceContext(context: LearningAssistantContextSnapshot) {
           jdExcerpt: excerpt(context.cv.jdExcerpt, 1800),
         }
       : undefined,
+    roadmap: context.roadmap
+      ? {
+          ...context.roadmap,
+          goal: excerpt(context.roadmap.goal, 1200),
+          preferredSchedule: excerpt(context.roadmap.preferredSchedule, 500),
+          learningStyle: excerpt(context.roadmap.learningStyle, 500),
+          summary: excerpt(context.roadmap.summary, 1400),
+          targetOutcome: excerpt(context.roadmap.targetOutcome, 1200),
+          weeks: context.roadmap.weeks?.slice(0, 8).map((week) => ({
+            ...week,
+            title: excerpt(week.title, 240),
+            objectives: excerpt(week.objectives, 850),
+            topics: excerpt(week.topics, 850),
+            practiceTasks: excerpt(week.practiceTasks, 850),
+            projectTasks: excerpt(week.projectTasks, 850),
+            interviewTasks: excerpt(week.interviewTasks, 850),
+          })),
+        }
+      : undefined,
   };
 }
 
@@ -817,7 +992,7 @@ function summarizeAccount(account: Account | null) {
           learningStyle: account.studentProfile.learningStyle,
           expectedSalary: account.studentProfile.expectedSalary,
           preferredLocation: account.studentProfile.preferredLocation,
-          personalContext: account.studentProfile.personalContext,
+          personalContext: summarizePersonalContext(account.studentProfile.personalContext),
         }
       : null,
   };
@@ -841,6 +1016,9 @@ function summarizeCvReview(review?: CvReview) {
 
 function summarizeInterview(session?: InterviewSession) {
   if (!session) return null;
+  const latestAnswer = [...(session.answers ?? [])].sort(
+    (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+  )[0];
   return {
     id: session.id,
     targetRole: session.targetRole,
@@ -850,60 +1028,86 @@ function summarizeInterview(session?: InterviewSession) {
     overallScore: session.overallScore,
     completedAt: session.completedAt,
     answeredCount: session.answers?.length ?? 0,
-    latestAnswer: session.answers?.[0]
+    latestAnswer: latestAnswer
       ? {
-          question: excerpt(session.answers[0].question, 900),
-          score: session.answers[0].score,
-          feedback: session.answers[0].feedback,
+          question: excerpt(latestAnswer.question, 900),
+          score: latestAnswer.score,
+          feedback: latestAnswer.feedback,
         }
       : null,
   };
 }
 
 function inferRouteContext(pathname: string | null): LearningAssistantContextSnapshot {
-  const path = pathname ?? '/dashboard';
-  if (path.includes('/code-practice')) {
+  const path = normalizeLearningAssistantRoute(pathname);
+  const surface = learningAssistantSurfaceForRoute(path);
+  const routeMetadata = { routeKey: path, updatedAt: new Date().toISOString() };
+  if (surface === 'code') {
     return {
+      ...routeMetadata,
       surface: 'code',
       source: 'route',
       title: 'Luyện code',
       summary: 'Trợ lý sẽ ưu tiên hint theo bài code và trạng thái editor.',
     };
   }
-  if (path.includes('/interview')) {
+  if (surface === 'interview') {
     return {
+      ...routeMetadata,
       surface: 'interview',
       source: 'route',
       title: 'Phỏng vấn AI',
       summary: 'Trợ lý sẽ ưu tiên khung trả lời và phản hồi phỏng vấn.',
     };
   }
-  if (path.includes('/cv-review')) {
+  if (surface === 'cv') {
     return {
+      ...routeMetadata,
       surface: 'cv',
       source: 'route',
       title: 'Sửa CV',
       summary: 'Trợ lý sẽ ưu tiên CV, JD, keyword còn thiếu và lộ trình bù kỹ năng.',
     };
   }
-  if (path.includes('/resources')) {
+  if (surface === 'resources') {
     return {
+      ...routeMetadata,
       surface: 'resources',
       source: 'route',
       title: 'Tài nguyên',
       summary: 'Trợ lý sẽ ưu tiên chọn tài liệu phù hợp mục tiêu hiện tại.',
     };
   }
-  if (path.includes('/roadmaps')) {
+  if (surface === 'roadmap') {
     return {
+      ...routeMetadata,
       surface: 'roadmap',
       source: 'route',
       title: 'Lộ trình',
       summary: 'Trợ lý sẽ ưu tiên bước học tiếp theo trong lộ trình.',
     };
   }
+  if (surface === 'booking') {
+    return {
+      ...routeMetadata,
+      surface: 'booking',
+      source: 'route',
+      title: 'Lịch học',
+      summary: 'Trợ lý sẽ ưu tiên lịch mentor, thời gian rảnh và việc cần chuẩn bị trước buổi học.',
+    };
+  }
+  if (surface === 'profile') {
+    return {
+      ...routeMetadata,
+      surface: 'profile',
+      source: 'route',
+      title: 'Hồ sơ học viên',
+      summary: 'Trợ lý sẽ ưu tiên mục tiêu, trình độ, thời gian học và các ưu tiên đã lưu.',
+    };
+  }
   return {
-    surface: 'dashboard',
+    ...routeMetadata,
+    surface: surface === 'general' ? 'general' : 'dashboard',
     source: 'route',
     title: 'Tổng quan học viên',
     summary: 'Trợ lý có thể kết nối dữ liệu CV, phỏng vấn, code và lộ trình.',
@@ -918,6 +1122,9 @@ function contextLabel(context: LearningAssistantContextSnapshot) {
       : 'Phỏng vấn AI';
   }
   if (context.surface === 'cv') return context.cv?.targetRole ?? context.title ?? 'Sửa CV';
+  if (context.surface === 'roadmap') {
+    return context.roadmap?.targetRole ?? context.roadmap?.title ?? context.title ?? 'Lộ trình';
+  }
   return context.title ?? 'MentorMind';
 }
 
@@ -927,16 +1134,34 @@ function recordFromUnknown(value: unknown) {
     : {};
 }
 
+function summarizePersonalContext(value: unknown) {
+  const record = recordFromUnknown(value);
+  return Object.entries(record)
+    .slice(0, 20)
+    .reduce<Record<string, unknown>>((result, [key, item]) => {
+      if (typeof item === 'string') {
+        result[key] = excerpt(item, 500);
+      } else if (typeof item === 'number' || typeof item === 'boolean') {
+        result[key] = item;
+      } else if (Array.isArray(item)) {
+        result[key] = item.slice(0, 10).map((entry) => excerpt(entry, 240));
+      }
+      return result;
+    }, {});
+}
+
 function stringList(value: unknown) {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
 }
 
-function readLastNudgeAt() {
+function readLastNudgeAt(pathname: string | null) {
   if (typeof window === 'undefined') return 0;
-  return Number(window.localStorage.getItem(NUDGE_STORAGE_KEY) ?? 0);
+  const routeKey = encodeURIComponent(normalizeLearningAssistantRoute(pathname));
+  return Number(window.localStorage.getItem(`${NUDGE_STORAGE_KEY}:${routeKey}`) ?? 0);
 }
 
-function writeLastNudgeAt(value: number) {
+function writeLastNudgeAt(pathname: string | null, value: number) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(NUDGE_STORAGE_KEY, String(value));
+  const routeKey = encodeURIComponent(normalizeLearningAssistantRoute(pathname));
+  window.localStorage.setItem(`${NUDGE_STORAGE_KEY}:${routeKey}`, String(value));
 }

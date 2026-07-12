@@ -43,7 +43,7 @@ export function GlowingCard({ children, className = '' }: GlowingCardProps) {
       onPointerMove={handlePointerMove}
       onPointerEnter={showSpotlight}
       onPointerLeave={hideSpotlight}
-      whileHover={{ y: -3, scale: 1.006 }}
+      whileHover={reduceMotion ? undefined : { y: -3, scale: 1.006 }}
       transition={motionSpring.interaction}
       className={`relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] shadow-soft backdrop-blur-md transition-colors hover:bg-white/[0.04] ${className}`}
     >

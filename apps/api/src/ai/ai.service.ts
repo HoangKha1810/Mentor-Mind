@@ -18,6 +18,12 @@ import {
   normalizeInterviewAnswer,
   normalizeInterviewEvaluation,
 } from './interview-evaluation.policy';
+import {
+  LEARNING_ASSISTANT_SYSTEM_PROMPT,
+  buildLearningAssistantPrompt,
+  sanitizeLearningAssistantClientContext,
+  summarizeLearningAssistantClientContext,
+} from './learning-assistant.policy';
 import { codingHintSchema, codeReviewSchema } from './schemas/code-review.schema';
 import { cvReviewSchema } from './schemas/cv-review.schema';
 import {
@@ -113,17 +119,21 @@ export class AiService {
     const answer = normalizeInterviewAnswer(input.answer);
     const question = typeof input.question === 'string' ? input.question.trim() : '';
     const variables = { ...input, answer };
+    const templateVariables = Object.fromEntries(
+      Object.keys(variables).map((key) => [key, '[xem INTERVIEW_DATA.' + key + ']']),
+    );
     const evaluation = await this.runJson(
       'INTERVIEW_ANSWER_EVALUATION',
       'INTERVIEW_ANSWER_EVALUATION',
-      variables,
+      templateVariables,
       interviewEvaluationSchema,
       createInterviewEvaluationFallback(answer, question),
       userId,
       {
         systemPrompt: INTERVIEW_EVALUATION_SYSTEM_PROMPT,
         temperature: 0,
-        buildPrompt: () => buildInterviewEvaluationPrompt(variables),
+        buildPrompt: (renderedTemplate) =>
+          buildInterviewEvaluationPrompt(variables, renderedTemplate),
       },
     );
 
@@ -271,6 +281,7 @@ export class AiService {
       conversationId,
       clientContext: rawClientContext,
     });
+    const clientContext = sanitizeLearningAssistantClientContext(body.clientContext);
     const conversation = body.conversationId
       ? await this.prisma.aIConversation.findFirst({ where: { id: body.conversationId, userId } })
       : null;
@@ -290,33 +301,27 @@ export class AiService {
     );
     const context = await this.loadStudentContext(userId);
     const template = await this.prompts.getActiveTemplate('LEARNING_ASSISTANT');
-    const clientContextForPrompt = this.stringifyForPrompt(body.clientContext);
-    const prompt = `${this.prompts.render(template, {
+    const history = this.formatConversationHistory(previousMessages);
+    const templateInstruction = this.prompts.render(template, {
+      message: '[xem USER_MESSAGE]',
+      context: '[xem SERVER_CONTEXT]',
+      history: '[xem RECENT_HISTORY]',
+      contextUpdates: '[xem REMEMBERED_FACTS_FROM_THIS_MESSAGE]',
+      clientContext: '[xem CURRENT_PAGE và RELATED_CONTEXT]',
+    });
+    const prompt = buildLearningAssistantPrompt({
+      templateInstruction,
+      clientContext,
+      serverContext: context,
+      history,
+      rememberedFacts: contextUpdates.rememberedFacts,
       message: body.message,
-      context,
-      history: this.formatConversationHistory(previousMessages),
-      contextUpdates,
-      clientContext: body.clientContext,
-    })}
-
-Bạn là trợ lý học tập AI của MentorMind. Hãy trả lời bằng Tiếng Việt tự nhiên, giống một cuộc chat với mentor kỹ thuật.
-Ngữ cảnh tài khoản hiện tại: ${JSON.stringify(context)}
-Ngữ cảnh quan sát từ giao diện hiện tại: ${clientContextForPrompt}
-Lịch sử hội thoại gần nhất: ${this.formatConversationHistory(previousMessages)}
-Thông tin vừa ghi nhớ từ tin nhắn mới: ${JSON.stringify(contextUpdates.rememberedFacts)}
-Tin nhắn mới của học viên: ${body.message}
-
-Quy tắc:
-- Trả lời trực tiếp, hữu ích, có bước tiếp theo rõ ràng.
-- Nếu ngữ cảnh giao diện có code, câu hỏi phỏng vấn, CV/JD hoặc điểm gần nhất, hãy dùng nó để cá nhân hóa câu trả lời.
-- Khi học viên xin hint code hoặc phỏng vấn, chỉ gợi ý nhẹ và tránh đưa lời giải đầy đủ trừ khi học viên yêu cầu rõ.
-- Nếu ngữ cảnh cho thấy học viên vừa hoàn thành code/phỏng vấn/CV, hãy gợi ý tài liệu và bước học tiếp theo.
-- Nếu vừa ghi nhớ thông tin mới như lương, địa điểm, lịch học, mục tiêu, hãy xác nhận ngắn gọn.
-- Không bịa dữ liệu nền tảng nếu context chưa có.`;
+    });
     const result = await this.provider.generateText({
       prompt,
+      systemPrompt: LEARNING_ASSISTANT_SYSTEM_PROMPT,
       fallback:
-        'Mình đã nhận câu hỏi của bạn. Dựa trên ngữ cảnh hiện tại, hãy chọn một bước nhỏ có thể làm ngay trong tuần này và lưu lại điểm còn vướng để trao đổi với mentor.',
+        'Mình đã đọc màn hình hiện tại nhưng chưa thể tạo gợi ý ngay lúc này. Hãy chọn hạng mục chưa hoàn thành gần nhất trên trang và làm một bước nhỏ trong 20 phút, sau đó thử hỏi lại.',
     });
     await this.usage.log({
       userId,
@@ -342,7 +347,7 @@ Quy tắc:
             content: body.message,
             metadata: {
               contextUpdates,
-              clientContext: this.toJsonValue(body.clientContext ?? {}),
+              clientContext: this.toJsonValue(clientContext),
             } as Prisma.InputJsonValue,
           },
           {
@@ -352,7 +357,9 @@ Quy tắc:
             metadata: {
               context,
               contextUpdates,
-              clientContext: this.toJsonValue(body.clientContext ?? {}),
+              clientContext: this.toJsonValue(
+                summarizeLearningAssistantClientContext(clientContext),
+              ),
             } as Prisma.InputJsonValue,
           },
         ],
@@ -502,8 +509,12 @@ Trả về JSON đúng dạng:
       'thu nhập',
       'địa điểm',
       'location',
-      'ở ',
-      'tại ',
+      'đang sống',
+      'sống ở',
+      'đang ở',
+      'làm việc tại',
+      'muốn làm ở',
+      'ưu tiên làm việc',
       'remote',
       'hybrid',
       'onsite',
@@ -541,7 +552,7 @@ Trả về JSON đúng dạng:
     }
 
     const location = this.matchFirst(message, [
-      /(?:địa điểm|location|sống ở|đang ở|ở|tại|muốn làm ở|làm việc tại|ưu tiên ở)\s+([A-Za-zÀ-ỹ\s]{2,40})(?=[,.!?\n]|$)/i,
+      /(?:địa điểm(?:\s+ưu tiên)?|location|sống ở|đang ở|muốn làm ở|làm việc tại|ưu tiên(?:\s+làm việc)?\s+(?:ở|tại))\s*[:]?\s+([A-Za-zÀ-ỹ\s]{2,40})(?=[,.!?\n]|$)/i,
     ]);
     if (location) {
       profileUpdates.preferredLocation = location;
@@ -825,15 +836,6 @@ Trả về JSON đúng dạng:
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 
-  private stringifyForPrompt(value: unknown, maxLength = 14_000) {
-    try {
-      const json = JSON.stringify(value ?? {});
-      return json.length > maxLength ? `${json.slice(0, maxLength)}...` : json;
-    } catch {
-      return '{}';
-    }
-  }
-
   private toJsonValue(value: unknown): Prisma.InputJsonValue {
     try {
       return JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue;
@@ -937,28 +939,112 @@ Yêu cầu ngôn ngữ: trả lời bằng Tiếng Việt tự nhiên. Nếu out
   }
 
   private async loadStudentContext(userId: string) {
-    const [profile, roadmap, submissions, interviews] = await this.prisma.$transaction([
+    const [profile, roadmaps, submissions, interviews, cvReview] = await this.prisma.$transaction([
       this.prisma.studentProfile.findUnique({ where: { userId } }),
-      this.prisma.roadmap.findFirst({
+      this.prisma.roadmap.findMany({
         where: { studentId: userId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { updatedAt: 'desc' },
+        take: 3,
+        select: {
+          id: true,
+          requestId: true,
+          title: true,
+          summary: true,
+          targetOutcome: true,
+          durationWeeks: true,
+          level: true,
+          status: true,
+          updatedAt: true,
+          weeks: {
+            orderBy: { weekNumber: 'asc' },
+            take: 12,
+            select: {
+              weekNumber: true,
+              title: true,
+              objectives: true,
+              topics: true,
+              practiceTasks: true,
+              projectTasks: true,
+              interviewTasks: true,
+            },
+          },
+        },
       }),
       this.prisma.codeSubmission.findMany({
         where: { studentId: userId },
         orderBy: { createdAt: 'desc' },
         take: 5,
+        select: {
+          id: true,
+          language: true,
+          verdict: true,
+          runtimeMs: true,
+          memoryKb: true,
+          passedTests: true,
+          totalTests: true,
+          errorMessage: true,
+          createdAt: true,
+          problem: {
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              difficulty: true,
+              category: true,
+            },
+          },
+        },
       }),
       this.prisma.interviewSession.findMany({
         where: { studentId: userId },
         orderBy: { createdAt: 'desc' },
         take: 5,
+        select: {
+          id: true,
+          targetRole: true,
+          level: true,
+          mode: true,
+          status: true,
+          overallScore: true,
+          feedback: true,
+          createdAt: true,
+          completedAt: true,
+          answers: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: {
+              question: true,
+              score: true,
+              feedback: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+      this.prisma.cvReview.findFirst({
+        where: { studentId: userId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          overallScore: true,
+          result: true,
+          portfolioUrl: true,
+          githubUrl: true,
+          createdAt: true,
+        },
       }),
     ]);
+    const activeRoadmap =
+      roadmaps.find((roadmap) => roadmap.status === 'ACTIVE') ??
+      roadmaps.find((roadmap) => roadmap.status === 'APPROVED') ??
+      roadmaps[0] ??
+      null;
     return {
       profile,
-      activeRoadmap: roadmap,
+      activeRoadmap,
       recentSubmissions: submissions,
       recentInterviews: interviews,
+      latestCvReview: cvReview,
     };
   }
 

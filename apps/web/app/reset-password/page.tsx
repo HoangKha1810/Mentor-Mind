@@ -84,8 +84,8 @@ function ResetPasswordContent() {
     >
       <form onSubmit={submit} className="mx-auto w-full max-w-sm">
         <div className="mb-9 text-center">
-          <h2 className="font-display text-2xl text-[#333]">Đặt lại mật khẩu</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
+          <h2 className="font-display text-2xl text-foreground">Đặt lại mật khẩu</h2>
+          <p className="mt-3 text-sm leading-6 text-mutedText">
             Mật khẩu tối thiểu 8 ký tự. Link reset chỉ dùng được một lần.
           </p>
         </div>
@@ -96,16 +96,20 @@ function ResetPasswordContent() {
             <div className="space-y-3">
               <AuthInput
                 icon={LockKeyhole}
+                label="Mật khẩu mới"
                 name="password"
                 type="password"
+                autoComplete="new-password"
                 minLength={8}
                 placeholder="Mật khẩu mới"
                 required
               />
               <AuthInput
                 icon={LockKeyhole}
+                label="Xác nhận mật khẩu mới"
                 name="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 minLength={8}
                 placeholder="Nhập lại mật khẩu mới"
                 required
@@ -118,11 +122,11 @@ function ResetPasswordContent() {
             </Button>
           </>
         )}
-        <p className="mt-5 text-center text-xs leading-6 text-slate-400">
+        <p className="mt-5 text-center text-xs leading-6 text-mutedText">
           Link hết hạn?{' '}
           <Link
             href="/forgot-password"
-            className="font-medium text-slate-600 transition hover:text-[#57b846]"
+            className="rounded-sm font-medium text-foreground/75 outline-none transition hover:text-success focus-visible:ring-2 focus-visible:ring-success/60"
           >
             Gửi lại link reset
           </Link>

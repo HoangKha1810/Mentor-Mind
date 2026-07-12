@@ -45,19 +45,42 @@ export default function RegisterPage() {
     >
       <form onSubmit={submit} className="mx-auto w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl text-[#333]">Đăng ký</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
+          <h2 className="font-display text-2xl text-foreground">Đăng ký</h2>
+          <p className="mt-3 text-sm leading-6 text-mutedText">
             Tạo hồ sơ học viên và tiếp tục sang bước tạo lộ trình.
           </p>
         </div>
         <div className="space-y-3">
-          <AuthInput icon={UserRound} name="fullName" placeholder="Họ và tên" required />
-          <AuthInput icon={Mail} name="email" type="email" placeholder="Email" required />
-          <AuthInput icon={Target} name="targetRole" placeholder="Vai trò mục tiêu" />
+          <AuthInput
+            icon={UserRound}
+            label="Họ và tên"
+            name="fullName"
+            autoComplete="name"
+            placeholder="Nguyễn Minh Anh"
+            required
+          />
+          <AuthInput
+            icon={Mail}
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="ban@example.com"
+            required
+          />
+          <AuthInput
+            icon={Target}
+            label="Vai trò mục tiêu"
+            name="targetRole"
+            placeholder="Frontend Intern"
+          />
           <AuthInput
             icon={LockKeyhole}
+            label="Mật khẩu"
             name="password"
             type="password"
+            autoComplete="new-password"
+            minLength={8}
             placeholder="Mật khẩu tối thiểu 8 ký tự"
             required
           />

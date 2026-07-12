@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BookOpen,
   Bot,
@@ -14,6 +14,7 @@ import {
 import { apiFetch, authHeaders } from '@/lib/api';
 import { RoadmapDetail, RoadmapWeek } from '@/lib/domain-types';
 import { formatDateTime } from '@/lib/format';
+import { excerpt, publishLearningAssistantContext } from '@/lib/learning-assistant-context';
 import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -254,6 +255,15 @@ function cleanWeekTitle(title: string | null | undefined, weekNumber: number) {
   return translatedTitles[cleaned.toLowerCase()] ?? cleaned;
 }
 
+function summarizeRoadmapField(value: unknown, maxLength = 1200) {
+  return excerpt(
+    normalizeRoadmapContent(value)
+      .map((item) => (item.description ? `${item.title}: ${item.description}` : item.title))
+      .join('; '),
+    maxLength,
+  );
+}
+
 function RoadmapWeekSection({ section, value }: { section: WeekSection; value: unknown }) {
   const items = normalizeRoadmapContent(value);
   if (!items.length) return null;
@@ -336,6 +346,64 @@ function RoadmapWeekCard({ week }: { week: RoadmapWeek }) {
 export function RoadmapDetailPanel({ id }: { id: string }) {
   const query = useLiveQuery<RoadmapDetail>(`/roadmap-requests/${id}`, { auth: true, deps: [id] });
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const detail = query.data;
+    if (!detail) return;
+
+    const roadmap = detail.finalRoadmap ?? detail.aiDraft;
+    const weeks = [...(roadmap?.weeks ?? [])]
+      .sort((first, second) => first.weekNumber - second.weekNumber)
+      .slice(0, 16)
+      .map((week) => ({
+        weekNumber: week.weekNumber,
+        title: cleanWeekTitle(week.title, week.weekNumber),
+        objectives: summarizeRoadmapField(week.objectives),
+        topics: summarizeRoadmapField(week.topics),
+        practiceTasks: summarizeRoadmapField(week.practiceTasks),
+        projectTasks: summarizeRoadmapField(week.projectTasks),
+        interviewTasks: summarizeRoadmapField(week.interviewTasks),
+      }));
+
+    publishLearningAssistantContext({
+      surface: 'roadmap',
+      source: 'roadmap-detail',
+      title: roadmap?.title
+        ? translateLegacyText(roadmap.title)
+        : `Lộ trình ${detail.request.targetRole}`,
+      summary: excerpt(
+        [
+          detail.request.goal,
+          roadmap?.summary ? translateLegacyText(roadmap.summary) : '',
+          weeks.length ? `${weeks.length} tuần đã có nội dung` : 'Chưa có kế hoạch theo tuần',
+        ]
+          .filter(Boolean)
+          .join('. '),
+        600,
+      ),
+      roadmap: {
+        requestId: detail.request.id,
+        targetRole: detail.request.targetRole,
+        goal: excerpt(detail.request.goal, 1200),
+        currentLevel: detail.request.currentLevel,
+        requestStatus: detail.request.status,
+        weeklyHours: detail.request.weeklyHours,
+        preferredSchedule: excerpt(detail.request.preferredSchedule, 500),
+        learningStyle: excerpt(detail.request.learningStyle, 500),
+        wantsInterviewPrep: detail.request.wantsInterviewPrep,
+        wantsCodePractice: detail.request.wantsCodePractice,
+        roadmapId: roadmap?.id,
+        title: roadmap?.title ? translateLegacyText(roadmap.title) : undefined,
+        summary: roadmap?.summary ? excerpt(translateLegacyText(roadmap.summary), 1400) : undefined,
+        targetOutcome: roadmap?.targetOutcome
+          ? excerpt(translateLegacyText(roadmap.targetOutcome), 1200)
+          : undefined,
+        durationWeeks: roadmap?.durationWeeks,
+        roadmapStatus: roadmap?.status,
+        weeks,
+      },
+    });
+  }, [query.data]);
 
   async function generateDraft() {
     setMessage('');

@@ -127,5 +127,28 @@ describe('AiService interview evaluation', () => {
     expect(result.score).toBe(1);
     expect(result.strengths).toEqual([]);
     expect(Object.values(result.rubric).every((score) => score <= 1)).toBe(true);
+    const providerPrompt = subject.providerGenerateJson.mock.calls[0]?.[0]?.prompt as string;
+    expect(providerPrompt).toContain('Evaluate [xem INTERVIEW_DATA.answer].');
+    expect(providerPrompt).toContain('"answer":"Hi"');
+  });
+
+  it('normalizes an eight-word refusal to answer down to 1', async () => {
+    const subject = createSubject();
+    subject.providerGenerateJson.mockResolvedValue({
+      data: allTensEvaluation(),
+      usage: { promptTokens: 100, completionTokens: 50 },
+      provider: 'real-provider',
+      model: 'real-model',
+      latencyMs: 25,
+    });
+
+    const result = await subject.service.evaluateInterviewAnswer('student-id', {
+      ...interviewInput,
+      answer: 'Tôi không biết câu trả lời này đâu',
+    });
+
+    expect(result.score).toBe(1);
+    expect(result.strengths).toEqual([]);
+    expect(Object.values(result.rubric).every((score) => score <= 1)).toBe(true);
   });
 });

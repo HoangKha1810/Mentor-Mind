@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
+    "assistant:smoke": "tsx --env-file-if-exists=.env scripts/learning-assistant-smoke.ts",
     "interview:smoke": "tsx --env-file-if-exists=.env scripts/interview-grading-smoke.ts",
     "interview:repair-scores": "tsx --env-file-if-exists=.env scripts/repair-interview-scores.ts",
     "prisma:generate": "prisma generate",

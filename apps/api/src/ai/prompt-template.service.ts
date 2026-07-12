@@ -56,7 +56,7 @@ export const builtinPromptTemplates = [
     name: 'Learning Assistant',
     description: 'Context-aware learning assistant for students.',
     template:
-      'Bạn là trợ lý học tập AI của MentorMind. Ngữ cảnh học viên: {{context}}. Lịch sử gần nhất: {{history}}. Thông tin vừa ghi nhớ: {{contextUpdates}}. Tin nhắn mới: {{message}}. Trả lời bằng Tiếng Việt, ngắn gọn, thực tế, có bước tiếp theo rõ ràng.',
+      'Hỗ trợ học viên theo đúng màn hình đang mở. Cá nhân hóa bằng dữ liệu tài khoản liên quan, trả lời ngắn gọn và đưa ra bước tiếp theo cụ thể.',
   },
   {
     key: 'WEEKLY_REPORT',
@@ -73,10 +73,17 @@ export class PromptTemplateService {
 
   async getActiveTemplate(key: string) {
     const fromDb = await this.prisma.promptTemplate.findFirst({ where: { key, isActive: true } });
-    if (fromDb) {
+    if (fromDb && !this.isLegacyLearningAssistantTemplate(key, fromDb.template)) {
       return fromDb.template;
     }
     return builtinPromptTemplates.find((item) => item.key === key)?.template ?? '{{input}}';
+  }
+
+  private isLegacyLearningAssistantTemplate(key: string, template: string) {
+    return (
+      key === 'LEARNING_ASSISTANT' &&
+      template.includes('Execute LEARNING_ASSISTANT using variables: {{input}}')
+    );
   }
 
   render(template: string, variables: Record<string, unknown>) {
