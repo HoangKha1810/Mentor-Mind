@@ -22,7 +22,7 @@ import {
   TerminalSquare,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { authHeaders, apiFetch } from '@/lib/api';
 import { WalletSummary } from '@/lib/domain-types';
 import {
@@ -33,6 +33,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
+import { useConfirmDialog } from '../ui/confirm-dialog-provider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type CodeProblemAssistantContext = NonNullable<LearningAssistantContextSnapshot['problem']>;
@@ -86,19 +87,23 @@ export function CodeEditorPanel({
   isPremium?: boolean;
   unlockPrice?: number;
 }) {
+  const confirm = useConfirmDialog();
+  const actionLockRef = useRef(false);
   const [language, setLanguage] = useState<CodeLanguage>('JAVASCRIPT');
   const [drafts, setDrafts] = useState<Record<CodeLanguage, string>>(() =>
     buildLanguageDrafts(starterCode),
   );
   const [output, setOutput] = useState<OutputState>({ status: 'idle' });
+  const [confirmingAction, setConfirmingAction] = useState<CodeAction | null>(null);
   const code = drafts[language];
   const languageMeta = languageOptions.find((item) => item.value === language)!;
-  const busy = output.status === 'loading';
+  const busy = output.status === 'loading' || confirmingAction !== null;
 
   useEffect(() => {
     setLanguage('JAVASCRIPT');
     setDrafts(buildLanguageDrafts(starterCode));
     setOutput({ status: 'idle' });
+    setConfirmingAction(null);
   }, [problemId, starterCode]);
 
   useEffect(() => {
@@ -160,49 +165,64 @@ export function CodeEditorPanel({
   }
 
   async function call(action: CodeAction) {
-    if (!problemId) {
-      const message = 'Không tìm thấy ID bài code. Vui lòng mở bài từ danh sách luyện tập.';
-      setOutput({ status: 'error', action, message });
-      return;
-    }
-    if (isPremium && action !== 'hint' && unlockPrice > 0) {
-      const accepted = window.confirm(
-        `Bài đặc biệt có phí mở khóa ${formatCurrency(unlockPrice, 'VND')}. Nếu tài khoản chưa có gói Pro/Premium hoặc chưa mở khóa bài này, ví sẽ bị trừ khi chạy/nộp bài. Bạn muốn tiếp tục?`,
-      );
-      if (!accepted) return;
-    }
-
-    setOutput({ status: 'loading', action });
-    const path = `/code/problems/${problemId}/${action === 'hint' ? 'ai-hint' : action}`;
+    if (busy || actionLockRef.current) return;
+    actionLockRef.current = true;
     try {
-      const response = await apiFetch<unknown>(path, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ language, code, hintLevel: 1 }),
-      });
-      const wallet = extractWallet(response);
-      if (wallet) {
-        window.dispatchEvent(new CustomEvent('mentormind:wallet-updated', { detail: { wallet } }));
-      }
-
-      if (action === 'hint') {
-        const hint = normalizeHintResult(response);
-        if (!hint) throw new Error('Trợ lý chưa trả về nội dung gợi ý. Vui lòng thử lại.');
-        setOutput({ status: 'hint', result: hint });
-        publishCodeContext('hint', buildHintSummary(hint), response);
+      if (!problemId) {
+        const message = 'Không tìm thấy ID bài code. Vui lòng mở bài từ danh sách luyện tập.';
+        setOutput({ status: 'error', action, message });
         return;
       }
+      if (isPremium && action !== 'hint' && unlockPrice > 0) {
+        setConfirmingAction(action);
+        const accepted = await confirm({
+          title: action === 'run' ? 'Chạy bài code đặc biệt?' : 'Nộp bài code đặc biệt?',
+          description: `Nếu tài khoản chưa có Pro/Premium và bài chưa được mở khóa, ví sẽ bị trừ ${formatCurrency(unlockPrice, 'VND')} một lần.`,
+          confirmLabel: action === 'run' ? 'Tiếp tục chạy' : 'Tiếp tục nộp',
+          cancelLabel: 'Hủy',
+          tone: 'warning',
+        });
+        if (!accepted) return;
+      }
 
-      const result = normalizeJudgeResult(response);
-      if (!result) throw new Error('Máy chấm chưa trả về kết quả hợp lệ. Vui lòng chạy lại.');
-      setOutput({ status: 'judge', action, result });
-      publishCodeContext(action, buildJudgeSummary(result), response);
-    } catch (err) {
-      const message = humanizeError(
-        err instanceof Error ? err.message : 'Không thể chạy bài hiện tại. Vui lòng thử lại sau.',
-      );
-      setOutput({ status: 'error', action, message });
-      publishCodeContext(action, message);
+      setConfirmingAction(null);
+      setOutput({ status: 'loading', action });
+      const path = `/code/problems/${problemId}/${action === 'hint' ? 'ai-hint' : action}`;
+      try {
+        const response = await apiFetch<unknown>(path, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ language, code, hintLevel: 1 }),
+        });
+        const wallet = extractWallet(response);
+        if (wallet) {
+          window.dispatchEvent(
+            new CustomEvent('mentormind:wallet-updated', { detail: { wallet } }),
+          );
+        }
+
+        if (action === 'hint') {
+          const hint = normalizeHintResult(response);
+          if (!hint) throw new Error('Trợ lý chưa trả về nội dung gợi ý. Vui lòng thử lại.');
+          setOutput({ status: 'hint', result: hint });
+          publishCodeContext('hint', buildHintSummary(hint), response);
+          return;
+        }
+
+        const result = normalizeJudgeResult(response);
+        if (!result) throw new Error('Máy chấm chưa trả về kết quả hợp lệ. Vui lòng chạy lại.');
+        setOutput({ status: 'judge', action, result });
+        publishCodeContext(action, buildJudgeSummary(result), response);
+      } catch (err) {
+        const message = humanizeError(
+          err instanceof Error ? err.message : 'Không thể chạy bài hiện tại. Vui lòng thử lại sau.',
+        );
+        setOutput({ status: 'error', action, message });
+        publishCodeContext(action, message);
+      }
+    } finally {
+      actionLockRef.current = false;
+      setConfirmingAction(null);
     }
   }
 
@@ -269,24 +289,28 @@ export function CodeEditorPanel({
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <Button disabled={busy} onClick={() => call('run')}>
-            {busy && output.action === 'run' ? (
+          <Button aria-disabled={busy} onClick={() => call('run')}>
+            {output.status === 'loading' && output.action === 'run' ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Play className="h-4 w-4" />
             )}
-            {isPremium ? 'Mở khóa & chạy' : 'Chạy thử'}
+            {confirmingAction === 'run'
+              ? 'Đang xác nhận...'
+              : isPremium
+                ? 'Mở khóa & chạy'
+                : 'Chạy thử'}
           </Button>
-          <Button disabled={busy} variant="secondary" onClick={() => call('submit')}>
-            {busy && output.action === 'submit' ? (
+          <Button aria-disabled={busy} variant="secondary" onClick={() => call('submit')}>
+            {output.status === 'loading' && output.action === 'submit' ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />
             )}
-            Nộp bài
+            {confirmingAction === 'submit' ? 'Đang xác nhận...' : 'Nộp bài'}
           </Button>
-          <Button disabled={busy} variant="outline" onClick={() => call('hint')}>
-            {busy && output.action === 'hint' ? (
+          <Button aria-disabled={busy} variant="outline" onClick={() => call('hint')}>
+            {output.status === 'loading' && output.action === 'hint' ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Sparkles className="h-4 w-4" />

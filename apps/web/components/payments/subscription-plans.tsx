@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { formatCurrency, toCurrencyNumber } from '@mentormind/shared';
 import { CheckCircle2, Crown, Loader2, Sparkles, Wallet } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { apiFetch, authHeaders } from '@/lib/api';
 import { EntitlementsSummary, SubscriptionPlan, WalletSummary } from '@/lib/domain-types';
 import { formatDate } from '@/lib/format';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 
 type PurchaseResponse = {
   wallet?: WalletSummary;
@@ -19,9 +20,12 @@ type PurchaseResponse = {
 };
 
 export function SubscriptionPlans() {
+  const confirm = useConfirmDialog();
+  const purchaseLockRef = useRef(false);
   const publicPlans = useLiveQuery<SubscriptionPlan[]>('/payments/plans');
   const entitlements = useLiveQuery<EntitlementsSummary>('/payments/entitlements', { auth: true });
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+  const [confirmingSlug, setConfirmingSlug] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
   const plans = entitlements.data?.plans ?? publicPlans.data ?? [];
@@ -29,40 +33,49 @@ export function SubscriptionPlans() {
   const wallet = entitlements.data?.wallet;
 
   async function purchase(plan: SubscriptionPlan) {
+    if (purchaseLockRef.current) return;
     if (!entitlements.data && entitlements.unauthenticated) {
       window.location.href = '/login';
       return;
     }
     const planPrice = toCurrencyNumber(plan.price);
     if (planPrice <= 0) return;
-    if (
-      !window.confirm(
-        `Mua gói "${plan.name}" sẽ trừ ${formatCurrency(planPrice, plan.currency)} từ ví của bạn. Bạn muốn tiếp tục?`,
-      )
-    ) {
-      return;
-    }
-
-    setMessage('');
-    setPendingSlug(plan.slug);
+    purchaseLockRef.current = true;
+    setConfirmingSlug(plan.slug);
     try {
-      const response = await apiFetch<PurchaseResponse>(
-        `/payments/subscriptions/${plan.slug}/purchase`,
-        {
-          method: 'POST',
-          headers: authHeaders(),
-        },
-      );
-      if (response.wallet) {
-        window.dispatchEvent(
-          new CustomEvent('mentormind:wallet-updated', { detail: { wallet: response.wallet } }),
+      const accepted = await confirm({
+        title: 'Xác nhận mua gói sử dụng',
+        description: `Bạn sắp mua gói “${plan.name}”. Ví MentorMind sẽ bị trừ ${formatCurrency(planPrice, plan.currency)} và quyền sử dụng được kích hoạt sau khi giao dịch thành công.`,
+        confirmLabel: 'Xác nhận mua',
+        cancelLabel: 'Hủy',
+        tone: 'warning',
+      });
+      if (!accepted) return;
+
+      setConfirmingSlug(null);
+      setMessage('');
+      setPendingSlug(plan.slug);
+      try {
+        const response = await apiFetch<PurchaseResponse>(
+          `/payments/subscriptions/${plan.slug}/purchase`,
+          {
+            method: 'POST',
+            headers: authHeaders(),
+          },
         );
+        if (response.wallet) {
+          window.dispatchEvent(
+            new CustomEvent('mentormind:wallet-updated', { detail: { wallet: response.wallet } }),
+          );
+        }
+        entitlements.reload();
+        setMessage(`Đã kích hoạt ${plan.name}. Quyền sử dụng được cập nhật ngay.`);
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Không mua được gói sử dụng.');
       }
-      entitlements.reload();
-      setMessage(`Đã kích hoạt ${plan.name}. Quyền sử dụng được cập nhật ngay.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không mua được gói sử dụng.');
     } finally {
+      purchaseLockRef.current = false;
+      setConfirmingSlug(null);
       setPendingSlug(null);
     }
   }
@@ -192,12 +205,12 @@ export function SubscriptionPlans() {
                   <Button
                     className="w-full"
                     onClick={() => void purchase(plan)}
-                    disabled={pendingSlug === plan.slug}
+                    aria-disabled={Boolean(confirmingSlug || pendingSlug)}
                   >
                     {pendingSlug === plan.slug ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : null}
-                    Mua bằng ví
+                    {confirmingSlug === plan.slug ? 'Đang xác nhận...' : 'Mua bằng ví'}
                   </Button>
                 ) : (
                   <Link href="/dashboard/payments/top-up">

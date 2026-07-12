@@ -67,9 +67,8 @@ export const SelectContent = forwardRef<
       position={position}
       sideOffset={sideOffset}
       className={cn(
-        'relative z-50 max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[10rem] overflow-hidden rounded-lg border border-slate-400/35 bg-surface/95 text-foreground shadow-[0_18px_50px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl data-[state=closed]:animate-none data-[state=open]:animate-none dark:border-white/12 dark:shadow-[0_18px_50px_rgba(2,8,23,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]',
-        position === 'popper' &&
-          'w-[var(--radix-select-trigger-width)] data-[side=bottom]:translate-y-0 data-[side=top]:-translate-y-0',
+        'app-select-content relative z-50 max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[10rem] overflow-hidden rounded-lg border border-slate-400/35 bg-surface/95 text-foreground shadow-[0_18px_50px_rgba(2,8,23,0.24),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl dark:border-white/12 dark:shadow-[0_18px_50px_rgba(2,8,23,0.42),inset_0_1px_0_rgba(255,255,255,0.08)]',
+        position === 'popper' && 'w-[var(--radix-select-trigger-width)]',
         className,
       )}
       {...props}

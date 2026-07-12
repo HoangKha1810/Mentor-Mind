@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { formatCurrency, toCurrencyNumber } from '@mentormind/shared';
 import { CreditCard, Send } from 'lucide-react';
 import { apiFetch, authHeaders, ensureAccessToken } from '@/lib/api';
@@ -10,6 +10,7 @@ import { useLiveQuery } from '@/lib/live-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState, ErrorCard, LoadingCard } from '@/components/dashboard/live-common';
 
@@ -29,9 +30,20 @@ export function PackageDetail({
   initialData?: PackageDetailResponse;
 }) {
   const query = useLiveQuery<PackageDetailResponse>(`/packages/${slug}`, { deps: [slug] });
+  const confirm = useConfirmDialog();
   const packageData = query.data ?? initialData;
+  const mountedRef = useRef(true);
+  const purchaseLockRef = useRef(false);
   const [message, setMessage] = useState('');
+  const [confirmingPurchase, setConfirmingPurchase] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   async function requestConsultation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,37 +68,60 @@ export function PackageDetail({
   }
 
   async function purchaseWithWallet() {
-    if (!packageData || purchasing) return;
-    if (!(await ensureAccessToken())) {
-      setMessage('Vui lòng đăng nhập để mua gói học bằng số dư.');
-      return;
-    }
-    const price = toCurrencyNumber(packageData.price);
-    if (
-      price > 0 &&
-      !window.confirm(
-        `Mua gói "${packageData.title}" sẽ trừ ${formatCurrency(price, packageData.currency)} từ ví của bạn. Bạn muốn tiếp tục?`,
-      )
-    ) {
-      return;
-    }
+    if (!packageData || purchaseLockRef.current) return;
+    const selectedPackage = packageData;
+    purchaseLockRef.current = true;
+    setConfirmingPurchase(true);
 
-    setPurchasing(true);
-    setMessage('');
     try {
-      const result = await apiFetch<PurchasePackageResponse>('/payments/wallet/purchase-package', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ packageId: packageData.id }),
-      });
-      window.dispatchEvent(
-        new CustomEvent('mentormind:wallet-updated', { detail: { wallet: result.wallet } }),
-      );
-      setMessage('Đã mua gói học bằng số dư ví. Số dư đã được cập nhật.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không mua được gói học bằng số dư');
+      const hasAccessToken = await ensureAccessToken();
+      if (!mountedRef.current) return;
+      if (!hasAccessToken) {
+        setMessage('Vui lòng đăng nhập để mua gói học bằng số dư.');
+        return;
+      }
+
+      const price = toCurrencyNumber(selectedPackage.price);
+      if (price > 0) {
+        const accepted = await confirm({
+          title: 'Xác nhận mua gói học',
+          description: `Bạn sắp mua gói “${selectedPackage.title}”. Ví MentorMind sẽ bị trừ ${formatCurrency(price, selectedPackage.currency)} ngay sau khi giao dịch thành công.`,
+          confirmLabel: 'Mua bằng số dư',
+          cancelLabel: 'Hủy',
+          tone: 'warning',
+        });
+        if (!mountedRef.current || !accepted) return;
+      }
+
+      setConfirmingPurchase(false);
+      setPurchasing(true);
+      setMessage('');
+      try {
+        const result = await apiFetch<PurchasePackageResponse>(
+          '/payments/wallet/purchase-package',
+          {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ packageId: selectedPackage.id }),
+          },
+        );
+        window.dispatchEvent(
+          new CustomEvent('mentormind:wallet-updated', { detail: { wallet: result.wallet } }),
+        );
+        if (mountedRef.current) {
+          setMessage('Đã mua gói học bằng số dư ví. Số dư đã được cập nhật.');
+        }
+      } catch (error) {
+        if (mountedRef.current) {
+          setMessage(error instanceof Error ? error.message : 'Không mua được gói học bằng số dư');
+        }
+      }
     } finally {
-      setPurchasing(false);
+      purchaseLockRef.current = false;
+      if (mountedRef.current) {
+        setConfirmingPurchase(false);
+        setPurchasing(false);
+      }
     }
   }
 
@@ -150,11 +185,15 @@ export function PackageDetail({
             <Button
               type="button"
               className="w-full"
-              disabled={purchasing}
+              aria-disabled={confirmingPurchase || purchasing}
               onClick={purchaseWithWallet}
             >
               <CreditCard className="h-4 w-4" />
-              {purchasing ? 'Đang mua...' : 'Mua bằng số dư'}
+              {confirmingPurchase
+                ? 'Đang xác nhận...'
+                : purchasing
+                  ? 'Đang mua...'
+                  : 'Mua bằng số dư'}
             </Button>
             <Button variant="outline" className="w-full">
               <Send className="h-4 w-4" />

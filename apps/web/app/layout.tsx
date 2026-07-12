@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { CursorHalo } from '@/components/ui/cursor-halo';
+import { ConfirmDialogProvider } from '@/components/ui/confirm-dialog-provider';
 import { MotionProvider } from '@/components/ui/motion-provider';
 import { coreSeoKeywords, siteIndexingEnabled, siteName, siteUrl } from '@/lib/seo-content';
 
@@ -151,7 +152,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+        </MotionProvider>
         <CursorHalo />
       </body>
     </html>
